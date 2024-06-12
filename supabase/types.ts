@@ -564,10 +564,14 @@ export type Database = {
       }
       file_items: {
         Row: {
+          children: string[] | null
+          chunk_attachable_content: string | null
+          chunk_index: number | null
           content: string
           created_at: string
           file_id: string
           id: string
+          layer_number: number | null
           local_embedding: string | null
           openai_embedding: string | null
           sharing: string
@@ -576,10 +580,14 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          children?: string[] | null
+          chunk_attachable_content?: string | null
+          chunk_index?: number | null
           content: string
           created_at?: string
           file_id: string
           id?: string
+          layer_number?: number | null
           local_embedding?: string | null
           openai_embedding?: string | null
           sharing?: string
@@ -588,10 +596,14 @@ export type Database = {
           user_id: string
         }
         Update: {
+          children?: string[] | null
+          chunk_attachable_content?: string | null
+          chunk_index?: number | null
           content?: string
           created_at?: string
           file_id?: string
           id?: string
+          layer_number?: number | null
           local_embedding?: string | null
           openai_embedding?: string | null
           sharing?: string
@@ -614,7 +626,32 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "public_file_items_chunk_attachable_content_fkey"
+            columns: ["chunk_attachable_content"]
+            isOneToOne: false
+            referencedRelation: "file_items_attachable_content"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      file_items_attachable_content: {
+        Row: {
+          content: Json | null
+          created_at: string
+          id: string
+        }
+        Insert: {
+          content?: Json | null
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          content?: Json | null
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
       }
       file_workspaces: {
         Row: {
@@ -669,6 +706,7 @@ export type Database = {
           file_path: string
           folder_id: string | null
           id: string
+          metadata: Json | null
           name: string
           sharing: string
           size: number
@@ -683,6 +721,7 @@ export type Database = {
           file_path: string
           folder_id?: string | null
           id?: string
+          metadata?: Json | null
           name: string
           sharing?: string
           size: number
@@ -697,6 +736,7 @@ export type Database = {
           file_path?: string
           folder_id?: string | null
           id?: string
+          metadata?: Json | null
           name?: string
           sharing?: string
           size?: number
@@ -1670,6 +1710,101 @@ export type Database = {
           },
         ]
       }
+      s3_multipart_uploads: {
+        Row: {
+          bucket_id: string
+          created_at: string
+          id: string
+          in_progress_size: number
+          key: string
+          owner_id: string | null
+          upload_signature: string
+          version: string
+        }
+        Insert: {
+          bucket_id: string
+          created_at?: string
+          id: string
+          in_progress_size?: number
+          key: string
+          owner_id?: string | null
+          upload_signature: string
+          version: string
+        }
+        Update: {
+          bucket_id?: string
+          created_at?: string
+          id?: string
+          in_progress_size?: number
+          key?: string
+          owner_id?: string | null
+          upload_signature?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "s3_multipart_uploads_bucket_id_fkey"
+            columns: ["bucket_id"]
+            isOneToOne: false
+            referencedRelation: "buckets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      s3_multipart_uploads_parts: {
+        Row: {
+          bucket_id: string
+          created_at: string
+          etag: string
+          id: string
+          key: string
+          owner_id: string | null
+          part_number: number
+          size: number
+          upload_id: string
+          version: string
+        }
+        Insert: {
+          bucket_id: string
+          created_at?: string
+          etag: string
+          id?: string
+          key: string
+          owner_id?: string | null
+          part_number: number
+          size?: number
+          upload_id: string
+          version: string
+        }
+        Update: {
+          bucket_id?: string
+          created_at?: string
+          etag?: string
+          id?: string
+          key?: string
+          owner_id?: string | null
+          part_number?: number
+          size?: number
+          upload_id?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "s3_multipart_uploads_parts_bucket_id_fkey"
+            columns: ["bucket_id"]
+            isOneToOne: false
+            referencedRelation: "buckets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "s3_multipart_uploads_parts_upload_id_fkey"
+            columns: ["upload_id"]
+            isOneToOne: false
+            referencedRelation: "s3_multipart_uploads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1707,6 +1842,37 @@ export type Database = {
         Returns: {
           size: number
           bucket_id: string
+        }[]
+      }
+      list_multipart_uploads_with_delimiter: {
+        Args: {
+          bucket_id: string
+          prefix_param: string
+          delimiter_param: string
+          max_keys?: number
+          next_key_token?: string
+          next_upload_token?: string
+        }
+        Returns: {
+          key: string
+          id: string
+          created_at: string
+        }[]
+      }
+      list_objects_with_delimiter: {
+        Args: {
+          bucket_id: string
+          prefix_param: string
+          delimiter_param: string
+          max_keys?: number
+          start_after?: string
+          next_token?: string
+        }
+        Returns: {
+          name: string
+          id: string
+          metadata: Json
+          updated_at: string
         }[]
       }
       search: {

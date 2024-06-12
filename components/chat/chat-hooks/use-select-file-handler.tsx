@@ -46,10 +46,17 @@ export const useSelectFileHandler = () => {
   }
 
   const handleSelectDeviceFile = async (file: File) => {
-    if (!profile || !selectedWorkspace || !chatSettings) return
+    if (!profile || !selectedWorkspace || !chatSettings) {
+      console.log(
+        `Upload file: failed ${!profile} ${!selectedWorkspace} ${!chatSettings}`
+      )
+      return
+    }
 
     setShowFilesDisplay(true)
     setUseRetrieval(true)
+
+    console.log(`Upload file: ${file.name}`)
 
     if (file) {
       let simplifiedFileType = file.type.split("/")[1]
@@ -69,6 +76,8 @@ export const useSelectFileHandler = () => {
         ) {
           simplifiedFileType = "docx"
         }
+
+        console.log(`Upload file: ${simplifiedFileType}`)
 
         setNewMessageFiles(prev => [
           ...prev,

@@ -7,11 +7,12 @@ import {
   processTxt
 } from "@/lib/retrieval/processing"
 import { checkApiKey, getServerProfile } from "@/lib/server/server-chat-helpers"
-import { Database } from "@/supabase/types"
+import { Database, Json } from "@/supabase/types"
 import { FileItemChunk } from "@/types"
 import { createClient } from "@supabase/supabase-js"
 import { NextResponse } from "next/server"
 import OpenAI from "openai"
+import { ExtractedItemHtml } from "@/types/file-processing"
 
 export async function POST(req: Request) {
   try {
@@ -73,23 +74,23 @@ export async function POST(req: Request) {
       }
     }
 
-    let chunks: FileItemChunk[] = []
+    let chunksOld: FileItemChunk[] = []
 
     switch (fileExtension) {
       case "csv":
-        chunks = await processCSV(blob)
+        chunksOld = await processCSV(blob)
         break
       case "json":
-        chunks = await processJSON(blob)
+        chunksOld = await processJSON(blob)
         break
       case "md":
-        chunks = await processMarkdown(blob)
+        chunksOld = await processMarkdown(blob)
         break
       case "pdf":
-        chunks = await processPdf(blob)
+        // TODO: replace
         break
       case "txt":
-        chunks = await processTxt(blob)
+        chunksOld = await processTxt(blob)
         break
       default:
         return new NextResponse("Unsupported file type", {
@@ -97,68 +98,94 @@ export async function POST(req: Request) {
         })
     }
 
-    let embeddings: any = []
+    let [chunks, metadata, uuid_items] = await processPdf(blob)
 
-    let openai
-    if (profile.use_azure_openai) {
-      openai = new OpenAI({
-        apiKey: profile.azure_openai_api_key || "",
-        baseURL: `${profile.azure_openai_endpoint}/openai/deployments/${profile.azure_openai_embeddings_id}`,
-        defaultQuery: { "api-version": "2023-12-01-preview" },
-        defaultHeaders: { "api-key": profile.azure_openai_api_key }
-      })
-    } else {
-      openai = new OpenAI({
-        apiKey: profile.openai_api_key || "",
-        organization: profile.openai_organization_id
-      })
-    }
-
-    if (embeddingsProvider === "openai") {
-      const response = await openai.embeddings.create({
-        model: "text-embedding-3-small",
-        input: chunks.map(chunk => chunk.content)
-      })
-
-      embeddings = response.data.map((item: any) => {
-        return item.embedding
-      })
-    } else if (embeddingsProvider === "local") {
-      const embeddingPromises = chunks.map(async chunk => {
-        try {
-          return await generateLocalEmbedding(chunk.content)
-        } catch (error) {
-          console.error(`Error generating embedding for chunk: ${chunk}`, error)
-
-          return null
+    // add attachable content entries for each chunk
+    // -> for each chunk create an entry in the attachable content table with all the applicable UUIDs
+    let file_items = await Promise.all(
+      chunks.map(async (chunk, index) => {
+        let out = {
+          chunk_index: chunk.index,
+          file_id: file_id,
+          user_id: profile.user_id,
+          content: chunk.content,
+          tokens: chunk.tokens,
+          openai_embedding: null,
+          local_embedding: chunk.embedding as any,
+          layer_number: chunk.layer,
+          chunk_attachable_content: null
         }
+        let uuidsInChunk = chunk.uuidsInChunk
+        if (uuidsInChunk && uuidsInChunk.length > 0) {
+          let attachableContent: {
+            [key: string]: ExtractedItemHtml
+          } = {}
+          for (let uuidWeUseInText of uuidsInChunk) {
+            attachableContent[uuidWeUseInText] = uuid_items[uuidWeUseInText]
+          }
+          const { data: attachableContentRes, error: attachableContentError } =
+            await supabaseAdmin
+              .from("file_items_attachable_content")
+              .upsert({
+                content: attachableContent as any
+              })
+              .select("id")
+              .single()
+          if (!attachableContentError) {
+            // @ts-ignore
+            out.chunk_attachable_content = attachableContentRes.id
+          }
+        }
+        // find if the current chunk is a child of another chunk
+        //let parent = chunks.find((chunk) => chunk.children?.includes(index));
+        return out
       })
+    )
 
-      embeddings = await Promise.all(embeddingPromises)
+    // after adding all file items, update the layer == 0 with list of parents
+
+    /*const file_items = chunks.map((chunk, index) => ({
+          file_id,
+          user_id: profile.user_id,
+          content: chunk.content,
+          tokens: chunk.tokens,
+          openai_embedding: null,
+          local_embedding: chunk.embedding as any,
+        }))*/
+
+    let result = await supabaseAdmin
+      .from("file_items")
+      .upsert(file_items)
+      .select()
+
+    if (!result.error) {
+      await Promise.all(
+        result.data.map(async (item, index) => {
+          if (item.layer_number && item.chunk_index && item.layer_number > 0) {
+            // has children, find them by index in the original data set
+            let children = chunks[item.chunk_index].children
+              ?.map(childIndex => {
+                return result.data?.find(
+                  potentialChild => potentialChild.chunk_index === childIndex
+                )?.id
+              })
+              .filter(child => child)
+            if (children) {
+              await supabaseAdmin
+                .from("file_items")
+                .update({ children: children as any })
+                .eq("id", item.id)
+            }
+          }
+        })
+      )
     }
-
-    const file_items = chunks.map((chunk, index) => ({
-      file_id,
-      user_id: profile.user_id,
-      content: chunk.content,
-      tokens: chunk.tokens,
-      openai_embedding:
-        embeddingsProvider === "openai"
-          ? ((embeddings[index] || null) as any)
-          : null,
-      local_embedding:
-        embeddingsProvider === "local"
-          ? ((embeddings[index] || null) as any)
-          : null
-    }))
-
-    await supabaseAdmin.from("file_items").upsert(file_items)
 
     const totalTokens = file_items.reduce((acc, item) => acc + item.tokens, 0)
 
     await supabaseAdmin
       .from("files")
-      .update({ tokens: totalTokens })
+      .update({ tokens: totalTokens, metadata: metadata as any })
       .eq("id", file_id)
 
     return new NextResponse("Embed Successful", {

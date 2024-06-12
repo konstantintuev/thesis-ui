@@ -229,7 +229,11 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
             className="hidden"
             type="file"
             onChange={e => {
-              if (!e.target.files) return
+              if (!e.target.files) {
+                console.log(`Upload file: failed - no files`)
+                return
+              }
+              console.log(`Upload file: circle: ${e.target.files[0].name}`)
               handleSelectDeviceFile(e.target.files[0])
             }}
             accept={filesToAccept}
