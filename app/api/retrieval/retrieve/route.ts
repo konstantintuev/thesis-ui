@@ -1,4 +1,7 @@
-import { generateLocalEmbedding } from "@/lib/generate-local-embedding"
+import {
+  generateBgeLocalEmbedding,
+  generateLocalEmbedding
+} from "@/lib/generate-local-embedding"
 import { checkApiKey, getServerProfile } from "@/lib/server/server-chat-helpers"
 import { Database } from "@/supabase/types"
 import { createClient } from "@supabase/supabase-js"
@@ -69,10 +72,10 @@ export async function POST(request: Request) {
 
       chunks = openaiFileItems
     } else if (embeddingsProvider === "local") {
-      const localEmbedding = await generateLocalEmbedding(userInput)
+      const localEmbedding = await generateBgeLocalEmbedding(userInput)
 
       const { data: localFileItems, error: localFileItemsError } =
-        await supabaseAdmin.rpc("match_file_items_local", {
+        await supabaseAdmin.rpc("match_file_items_bge", {
           query_embedding: localEmbedding as any,
           match_count: sourceCount,
           file_ids: uniqueFileIds

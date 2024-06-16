@@ -7,6 +7,7 @@ import { TablesInsert } from "@/supabase/types"
 import { CollectionFile } from "@/types"
 import { FC, useContext, useState } from "react"
 import { CollectionFileSelect } from "./collection-file-select"
+import { ACCEPTED_FILE_TYPES } from "@/components/chat/chat-hooks/use-select-file-handler"
 
 interface CreateCollectionProps {
   isOpen: boolean
@@ -25,6 +26,7 @@ export const CreateCollection: FC<CreateCollectionProps> = ({
   const [selectedCollectionFiles, setSelectedCollectionFiles] = useState<
     CollectionFile[]
   >([])
+  const [selectedUploadFiles, setSelectedUploadFiles] = useState<File[]>([])
 
   const handleFileSelect = (file: CollectionFile) => {
     setSelectedCollectionFiles(prevState => {
@@ -38,6 +40,19 @@ export const CreateCollection: FC<CreateCollectionProps> = ({
         return [...prevState, file]
       }
     })
+  }
+
+  const handleSelectedFiles = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    if (!e.target.files) return
+
+    let files = e.target.files
+    let outFiles = []
+    for (let i = 0; i < files.length; i++) {
+      outFiles.push(files[i])
+    }
+    setSelectedUploadFiles(outFiles)
   }
 
   if (!profile) return null
@@ -54,6 +69,7 @@ export const CreateCollection: FC<CreateCollectionProps> = ({
             file_id: file.id
           })),
           user_id: profile.user_id,
+          uploadFiles: selectedUploadFiles,
           name,
           description
         } as TablesInsert<"collections">
@@ -69,6 +85,17 @@ export const CreateCollection: FC<CreateCollectionProps> = ({
             <CollectionFileSelect
               selectedCollectionFiles={selectedCollectionFiles}
               onCollectionFileSelect={handleFileSelect}
+            />
+          </div>
+
+          <div className="space-y-1">
+            <Label>Upload Files:</Label>
+
+            <Input
+              type="file"
+              multiple
+              onChange={handleSelectedFiles}
+              accept={ACCEPTED_FILE_TYPES}
             />
           </div>
 

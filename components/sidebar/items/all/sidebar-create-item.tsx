@@ -28,6 +28,7 @@ import { Tables, TablesInsert } from "@/supabase/types"
 import { ContentType } from "@/types"
 import { FC, useContext, useRef, useState } from "react"
 import { toast } from "sonner"
+import { useSelectMultipleFilesHandler } from "@/components/chat/chat-hooks/use-select-multiple-files-handler"
 
 interface SidebarCreateItemProps {
   isOpen: boolean
@@ -59,6 +60,8 @@ export const SidebarCreateItem: FC<SidebarCreateItemProps> = ({
     setModels
   } = useContext(ChatbotUIContext)
 
+  const { handleSelectDeviceFiles } = useSelectMultipleFilesHandler()
+
   const buttonRef = useRef<HTMLButtonElement>(null)
 
   const [creating, setCreating] = useState(false)
@@ -88,12 +91,15 @@ export const SidebarCreateItem: FC<SidebarCreateItemProps> = ({
       createState: {
         image: File
         collectionFiles: TablesInsert<"collection_files">[]
+        uploadFiles: File[]
       } & Tables<"collections">,
       workspaceId: string
     ) => {
-      const { collectionFiles, ...rest } = createState
+      const { collectionFiles, uploadFiles, ...rest } = createState
 
       const createdCollection = await createCollection(rest, workspaceId)
+
+      void handleSelectDeviceFiles(createdCollection, uploadFiles)
 
       const finalCollectionFiles = collectionFiles.map(collectionFile => ({
         ...collectionFile,

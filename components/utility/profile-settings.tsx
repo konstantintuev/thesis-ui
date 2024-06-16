@@ -172,7 +172,8 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
       "mistral",
       "groq",
       "perplexity",
-      "openrouter"
+      "openrouter",
+      "file_retriever"
     ]
 
     providers.forEach(async provider => {

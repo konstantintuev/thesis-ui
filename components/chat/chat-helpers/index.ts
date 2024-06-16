@@ -275,12 +275,14 @@ export const fetchChatResponse = async (
     toast.error(errorData.message)
 
     setIsGenerating(false)
+    // remove last 2 msges
     setChatMessages(prevMessages => prevMessages.slice(0, -2))
   }
 
   return response
 }
 
+// we read the api stream from the api continuously and update the last message with each new char received
 export const processResponse = async (
   response: Response,
   lastChatMessage: ChatMessage,
@@ -387,6 +389,7 @@ export const handleCreateChat = async (
   return createdChat
 }
 
+// we save the messages to the database
 export const handleCreateMessages = async (
   chatMessages: ChatMessage[],
   currentChat: Tables<"chats">,

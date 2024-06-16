@@ -7,6 +7,7 @@ export type LLMID =
   | MistralLLMID
   | GroqLLMID
   | PerplexityLLMID
+  | FileRetriever
 
 // OpenAI Models (UPDATED 5/13/24)
 export type OpenAILLMID =
@@ -57,6 +58,7 @@ export type PerplexityLLMID =
   | "sonar-medium-chat" // Sonar Medium Chat
   | "sonar-medium-online" // Sonar Medium Online
 
+export type FileRetriever = "file_retriever"
 export interface LLM {
   modelId: LLMID
   modelName: string

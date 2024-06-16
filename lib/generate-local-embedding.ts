@@ -1,4 +1,5 @@
 import { pipeline } from "@xenova/transformers"
+import OpenAI from "openai"
 
 export async function generateLocalEmbedding(content: string) {
   const generateEmbedding = await pipeline(
@@ -14,4 +15,18 @@ export async function generateLocalEmbedding(content: string) {
   const embedding = Array.from(output.data)
 
   return embedding
+}
+
+export async function generateBgeLocalEmbedding(content: string) {
+  let openai = new OpenAI({
+    baseURL: `http://127.0.0.1:8000/file_processing`
+  })
+  const response = await openai.embeddings.create({
+    model: "default",
+    input: content
+  })
+
+  const openaiEmbedding = response.data.map(item => item.embedding)[0]
+
+  return openaiEmbedding
 }

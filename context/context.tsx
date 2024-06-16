@@ -79,10 +79,6 @@ interface ChatbotUIContext {
   chatFileItems: Tables<"file_items">[]
   setChatFileItems: Dispatch<SetStateAction<Tables<"file_items">[]>>
 
-  // PASSIVE RETRIEVE STORE
-  retrievedFiles: ChatMessage[]
-  retrieveFileItems: Tables<"file_items">[]
-
   // ACTIVE CHAT STORE
   abortController: AbortController | null
   setAbortController: Dispatch<SetStateAction<AbortController | null>>
@@ -208,6 +204,10 @@ export const ChatbotUIContext = createContext<ChatbotUIContext>({
   setChatSettings: () => {},
   chatFileItems: [],
   setChatFileItems: () => {},
+
+  // PASSIVE RETRIEVE STORE
+  retrievedFiles: [],
+  retrieveFileItems: [],
 
   // ACTIVE CHAT STORE
   isGenerating: false,

@@ -653,6 +653,56 @@ export type Database = {
         }
         Relationships: []
       }
+      file_quality_rules: {
+        Row: {
+          attribute_rules: Json | null
+          content_rules: Json | null
+          created_at: string
+          id: number
+          topic: string | null
+        }
+        Insert: {
+          attribute_rules?: Json | null
+          content_rules?: Json | null
+          created_at?: string
+          id?: number
+          topic?: string | null
+        }
+        Update: {
+          attribute_rules?: Json | null
+          content_rules?: Json | null
+          created_at?: string
+          id?: number
+          topic?: string | null
+        }
+        Relationships: []
+      }
+      file_upload_queue: {
+        Row: {
+          created_at: string
+          id: string
+          target_collection_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          target_collection_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          target_collection_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "public_file_upload_queue_target_collection_id_fkey"
+            columns: ["target_collection_id"]
+            isOneToOne: false
+            referencedRelation: "collections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       file_workspaces: {
         Row: {
           created_at: string
@@ -1544,6 +1594,45 @@ export type Database = {
         }
         Returns: Record<string, unknown>
       }
+      match_file_items_any_bge: {
+        Args: {
+          query_embedding: string
+          match_count?: number
+        }
+        Returns: {
+          id: string
+          file_id: string
+          content: string
+          tokens: number
+          similarity: number
+        }[]
+      }
+      match_file_items_bge: {
+        Args: {
+          query_embedding: string
+          match_count?: number
+          file_ids?: string[]
+        }
+        Returns: {
+          id: string
+          file_id: string
+          content: string
+          tokens: number
+          similarity: number
+        }[]
+      }
+      match_file_items_bge_2: {
+        Args: {
+          query_embedding: string
+        }
+        Returns: {
+          id: string
+          file_id: string
+          content: string
+          tokens: number
+          similarity: number
+        }[]
+      }
       match_file_items_local: {
         Args: {
           query_embedding: string
@@ -1570,6 +1659,20 @@ export type Database = {
           content: string
           tokens: number
           similarity: number
+        }[]
+      }
+      match_files_by_items_bge: {
+        Args: {
+          query_embedding: string
+          match_files?: number
+          match_file_items_count?: number
+        }
+        Returns: {
+          file_id: string
+          name: string
+          description: string
+          similarity: number
+          items: Json
         }[]
       }
       non_private_assistant_exists: {

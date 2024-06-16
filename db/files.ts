@@ -152,6 +152,88 @@ export const createFile = async (
   return fetchedFile
 }
 
+export const createMultipleFiles = async (
+  files: [File, TablesInsert<"files">][],
+  targetCollectionID: string,
+  workspace_id: string,
+  embeddingsProvider: "openai" | "local"
+): Promise<string | undefined> => {
+  let uploadedFileIDs = await Promise.all(
+    files.map(async fileInfo => {
+      let [file, fileRecord] = fileInfo
+      let validFilename = fileRecord.name
+        .replace(/[^a-z0-9.]/gi, "_")
+        .toLowerCase()
+      const extension = file.name.split(".").pop()
+      const baseName = validFilename.substring(
+        0,
+        validFilename.lastIndexOf(".")
+      )
+      const maxBaseNameLength = 100 - (extension?.length || 0) - 1
+      if (baseName.length > maxBaseNameLength) {
+        fileRecord.name =
+          baseName.substring(0, maxBaseNameLength) + "." + extension
+      } else {
+        fileRecord.name = baseName + "." + extension
+      }
+      const { data: createdFile, error } = await supabase
+        .from("files")
+        .insert([fileRecord])
+        .select("*")
+        .single()
+
+      if (error) {
+        throw new Error(error.message)
+      }
+
+      await createFileWorkspace({
+        user_id: createdFile.user_id,
+        file_id: createdFile.id,
+        workspace_id
+      })
+
+      const filePath = await uploadFile(file, {
+        name: createdFile.name,
+        user_id: createdFile.user_id,
+        file_id: createdFile.name
+      })
+
+      await updateFile(createdFile.id, {
+        file_path: filePath
+      })
+
+      return createdFile.id
+    })
+  )
+
+  const formData = new FormData()
+  for (let uploadedFileID of uploadedFileIDs) {
+    formData.append("file_ids", uploadedFileID)
+  }
+  formData.append("embeddingsProvider", embeddingsProvider)
+  formData.append("targetCollectionID", targetCollectionID)
+
+  const response = await fetch("/api/retrieval/process/multiple", {
+    method: "POST",
+    body: formData
+  })
+
+  const jsonText = await response.text()
+  const json = JSON.parse(jsonText)
+
+  if (!response.ok) {
+    console.error(
+      `Error processing files(${uploadedFileIDs.length}):${uploadedFileIDs.join(", ")}, status:${response.status}, response:${json.message}`
+    )
+    toast.error("Failed to process file. Reason:" + json.message, {
+      duration: 10000
+    })
+    await deleteMultipleFiles(uploadedFileIDs)
+  }
+
+  return json["multiple_file_queue_id"]
+}
+
 // // Handle docx files
 export const createDocXFile = async (
   text: string,
@@ -291,6 +373,16 @@ export const updateFile = async (
 
 export const deleteFile = async (fileId: string) => {
   const { error } = await supabase.from("files").delete().eq("id", fileId)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return true
+}
+
+export const deleteMultipleFiles = async (fileIds: string[]) => {
+  const { error } = await supabase.from("files").delete().in("id", fileIds)
 
   if (error) {
     throw new Error(error.message)
