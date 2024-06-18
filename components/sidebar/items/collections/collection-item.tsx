@@ -1,12 +1,13 @@
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { COLLECTION_DESCRIPTION_MAX, COLLECTION_NAME_MAX } from "@/db/limits"
-import { Tables } from "@/supabase/types"
+import { Tables, TablesUpdate } from "@/supabase/types"
 import { CollectionFile } from "@/types"
 import { IconBooks } from "@tabler/icons-react"
 import { FC, useState } from "react"
 import { SidebarItem } from "../all/sidebar-display-item"
 import { CollectionFileSelect } from "./collection-file-select"
+import { ACCEPTED_FILE_TYPES } from "@/components/chat/chat-hooks/use-select-file-handler"
 
 interface CollectionItemProps {
   collection: Tables<"collections">
@@ -16,6 +17,7 @@ export const CollectionItem: FC<CollectionItemProps> = ({ collection }) => {
   const [name, setName] = useState(collection.name)
   const [isTyping, setIsTyping] = useState(false)
   const [description, setDescription] = useState(collection.description)
+  const [selectedUploadFiles, setSelectedUploadFiles] = useState<File[]>([])
 
   const handleFileSelect = (
     file: CollectionFile,
@@ -36,16 +38,32 @@ export const CollectionItem: FC<CollectionItemProps> = ({ collection }) => {
     })
   }
 
+  const handleSelectedFiles = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    if (!e.target.files) return
+
+    let files = e.target.files
+    let outFiles = []
+    for (let i = 0; i < files.length; i++) {
+      outFiles.push(files[i])
+    }
+    setSelectedUploadFiles(outFiles)
+  }
+
   return (
     <SidebarItem
       item={collection}
       isTyping={isTyping}
       contentType="collections"
       icon={<IconBooks size={30} />}
-      updateState={{
-        name,
-        description
-      }}
+      updateState={
+        {
+          name,
+          description,
+          uploadFiles: selectedUploadFiles
+        } as TablesUpdate<"collections">
+      }
       renderInputs={(renderState: {
         startingCollectionFiles: CollectionFile[]
         setStartingCollectionFiles: React.Dispatch<
@@ -85,6 +103,17 @@ export const CollectionItem: FC<CollectionItemProps> = ({ collection }) => {
                 onCollectionFileSelect={file =>
                   handleFileSelect(file, renderState.setSelectedCollectionFiles)
                 }
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label>Upload Files:</Label>
+
+              <Input
+                type="file"
+                multiple
+                onChange={handleSelectedFiles}
+                accept={ACCEPTED_FILE_TYPES}
               />
             </div>
 

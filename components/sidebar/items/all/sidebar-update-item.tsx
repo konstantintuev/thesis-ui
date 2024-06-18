@@ -84,6 +84,7 @@ import { FC, useContext, useEffect, useRef, useState } from "react"
 import profile from "react-syntax-highlighter/dist/esm/languages/hljs/profile"
 import { toast } from "sonner"
 import { SidebarDeleteItem } from "./sidebar-delete-item"
+import { useSelectMultipleFilesHandler } from "@/components/chat/chat-hooks/use-select-multiple-files-handler"
 
 interface SidebarUpdateItemProps {
   isTyping: boolean
@@ -169,6 +170,8 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
       fetchData()
     }
   }, [isOpen])
+
+  const { handleSelectDeviceFiles } = useSelectMultipleFilesHandler()
 
   const renderState = {
     chats: null,
@@ -371,11 +374,13 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
     },
     collections: async (
       collectionId: string,
-      updateState: TablesUpdate<"assistants">
+      updateState: {
+        uploadFiles: File[]
+      } & TablesUpdate<"collections">
     ) => {
       if (!profile) return
 
-      const { ...rest } = updateState
+      const { uploadFiles, ...rest } = updateState
 
       const filesToAdd = selectedCollectionFiles.filter(
         selectedFile =>
@@ -412,6 +417,8 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
         createCollectionWorkspaces as any,
         "collection_id"
       )
+
+      void handleSelectDeviceFiles(updatedCollection, uploadFiles)
 
       return updatedCollection
     },

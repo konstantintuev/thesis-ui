@@ -170,16 +170,24 @@ export const processMultipleResult = async (
     })
   )
 
-  let colFiles = await supabaseAdmin
-    .from("collection_files")
-    .insert(
-      res.map(file_id => ({
-        collection_id: targetCollectionID,
-        file_id,
-        user_id: fileInDB.user_id
-      }))
-    )
-    .select("*")
+  let collectionInfo = await supabaseAdmin
+    .from("collections")
+    .select("id")
+    .eq("id", targetCollectionID)
+    .single()
+
+  if (collectionInfo.data && !collectionInfo.error) {
+    await supabaseAdmin
+      .from("collection_files")
+      .insert(
+        res.map(file_id => ({
+          collection_id: targetCollectionID,
+          file_id,
+          user_id: fileInDB.user_id
+        }))
+      )
+      .select("*")
+  }
 
   return res
 }

@@ -92,9 +92,12 @@ export async function POST(req: Request) {
       throw new Error("Failed to add entry to file_upload_queue table")
     }
 
-    return new NextResponse("Upload queue created successfully!", {
-      status: 200
-    })
+    return new NextResponse(
+      JSON.stringify({ multiple_file_queue_id: upload_queue_id }),
+      {
+        status: 200
+      }
+    )
   } catch (error: any) {
     console.log(`Error in retrieval/process: ${error.stack}`)
     const errorMessage = error?.message || "An unexpected error occurred"

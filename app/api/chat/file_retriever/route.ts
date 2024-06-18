@@ -4,17 +4,45 @@ import { ChatSettings } from "@/types"
 import { OpenAIStream, StreamingTextResponse } from "ai"
 import OpenAI from "openai"
 import { createClient } from "@supabase/supabase-js"
-import { Database } from "@/supabase/types"
+import { Database, Tables } from "@/supabase/types"
 import { generateBgeLocalEmbedding } from "@/lib/generate-local-embedding"
-import { ChatCompletionMessageParam } from "@/node_modules/openai/src/resources"
+import { NextResponse } from "next/server"
 
 export const runtime = "edge"
+
+async function* getStreamingResponses(
+  openai: OpenAI,
+  chatSettings: ChatSettings,
+  messagesArray: Array<
+    Array<{
+      content: string
+      role: string
+    }>
+  >
+) {
+  for (const messages of messagesArray) {
+    const response = await openai.chat.completions.create({
+      model: "llama3-70b-8192",
+      messages: messages as any,
+      max_tokens:
+        CHAT_SETTING_LIMITS["llama3-70b-8192"].MAX_TOKEN_OUTPUT_LENGTH,
+      stream: true
+    })
+
+    // Convert the response into a friendly text-stream.
+    const stream = OpenAIStream(response)
+    yield stream
+  }
+}
 
 export async function POST(request: Request) {
   const json = await request.json()
   const { chatSettings, messages } = json as {
     chatSettings: ChatSettings
-    messages: Array<ChatCompletionMessageParam>
+    messages: Array<{
+      content: string
+      role: string
+    }>
   }
 
   try {
@@ -29,13 +57,17 @@ export async function POST(request: Request) {
         status: 500
       })
     }
-    const localEmbedding = await generateBgeLocalEmbedding(
-      messages[messages.length - 1].content
-    )
+    const fileQuery = messages[messages.length - 1].content
+    /* What is the plan:
+     * Rewrite the latest user message based on the theme of the corpus + previous user messages.
+     * Use the last user message to retrieve filesRaw
+     * */
+    const localEmbedding = await generateBgeLocalEmbedding(fileQuery)
 
     const { data: localFileItems, error: localFileItemsError } =
       await supabaseAdmin.rpc("match_file_items_any_bge", {
-        query_embedding: localEmbedding as any
+        query_embedding: localEmbedding as any,
+        min_layer_number: 1
       })
 
     if (localFileItemsError) {
@@ -46,13 +78,12 @@ export async function POST(request: Request) {
       (a, b) => b.similarity - a.similarity
     )
 
-    let filesFound: (Database["public"]["Tables"]["files"]["Row"] & {
-      chunks?:
-        | Database["public"]["Functions"]["match_file_items_any_bge"]["Returns"]
-        | undefined
-    })[] = []
-    // map chunks to files
-    const { data: files, error: filesError } = await supabaseAdmin
+    type ExtendedFile = Tables<"files"> & {
+      chunks: Database["public"]["Functions"]["match_file_items_any_bge"]["Returns"]
+    }
+    let filesFound: ExtendedFile[]
+    // map chunks to filesRaw
+    const { data: filesRaw, error: filesError } = await supabaseAdmin
       .from("files")
       .select("*")
       .in(
@@ -60,13 +91,14 @@ export async function POST(request: Request) {
         mostSimilarChunks?.map(chunk => chunk.file_id)
       )
 
-    filesFound = files ?? []
-    // add the first 10 chunks of a file to files
+    // add the first 10 chunks of a file to filesRaw
+    // @ts-ignore
     filesFound =
-      filesFound?.map(file => {
-        const fileChunks = mostSimilarChunks?.filter(
-          chunk => chunk.file_id === file.id
-        )
+      filesRaw?.map((file: ExtendedFile) => {
+        // reverse sort
+        const fileChunks = mostSimilarChunks
+          ?.filter(chunk => chunk.file_id === file.id)
+          .sort((a, b) => b.similarity - a.similarity)
         file.chunks = fileChunks?.slice(0, 10)
         return file
       }) ?? []
@@ -82,19 +114,59 @@ export async function POST(request: Request) {
         baseURL: "https://api.groq.com/openai/v1"
       })
 
-      const response = await groq.chat.completions.create({
-        model: chatSettings.model,
-        messages,
-        max_tokens:
-          CHAT_SETTING_LIMITS[chatSettings.model].MAX_TOKEN_OUTPUT_LENGTH,
-        stream: true
+      // for each file run summary and return streaming text response
+      //  -> when the stream ends, replace with new stream of next file
+      const messagesArray = filesFound.map(file => [
+        {
+          role: "system",
+          content:
+            "Today is 18/06/2024.\n\nUser Instructions:\nYou are a friendly, helpful AI assistant."
+        },
+        {
+          role: "user",
+          content:
+            "I have the following question: " +
+            fileQuery +
+            "\n\n" +
+            "With bulletpoints please tell me what information does the following file contain about my question:" +
+            "\n" +
+            file.chunks.map(item => `${item.content}`).join("\n\n")
+        }
+      ])
+
+      const encoder = new TextEncoder()
+      let decoder = new TextDecoder("utf-8")
+      const readableStream = new ReadableStream({
+        async start(controller) {
+          const generator = getStreamingResponses(
+            groq,
+            chatSettings,
+            messagesArray
+          )
+
+          try {
+            for await (const stream of generator) {
+              // @ts-ignore
+              for await (const chunk of stream) {
+                controller.enqueue(encoder.encode(decoder.decode(chunk)))
+              }
+              // Add custom chunk after each stream ends
+              const customChunk = "Custom message after each response.\n"
+              controller.enqueue(encoder.encode(customChunk))
+            }
+          } catch (err) {
+            controller.error(err)
+          } finally {
+            controller.close()
+          }
+        }
       })
-
-      // Convert the response into a friendly text-stream.
-      const stream = OpenAIStream(response)
-
-      // Respond with the stream
-      return new StreamingTextResponse(stream)
+      return new NextResponse(readableStream, {
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8"
+          //'Transfer-Encoding': 'chunked'
+        }
+      })
     } catch (error: any) {
       let errorMessage = error.message || "An unexpected error occurred"
       const errorCode = error.status || 500

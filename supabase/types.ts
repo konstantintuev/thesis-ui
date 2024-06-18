@@ -1598,12 +1598,23 @@ export type Database = {
         Args: {
           query_embedding: string
           match_count?: number
+          min_layer_number?: number
         }
         Returns: {
           id: string
           file_id: string
+          user_id: string
+          created_at: string
+          updated_at: string
+          sharing: string
           content: string
+          local_embedding: string
+          openai_embedding: string
           tokens: number
+          children: string[]
+          chunk_attachable_content: string
+          chunk_index: number
+          layer_number: number
           similarity: number
         }[]
       }
