@@ -4,7 +4,7 @@ import { ChatSettings } from "@/types"
 import { OpenAIStream, StreamingTextResponse } from "ai"
 import OpenAI from "openai"
 import { createClient } from "@supabase/supabase-js"
-import { Database, Tables } from "@/supabase/types"
+import { Database, Json, Tables } from "@/supabase/types"
 import { generateBgeLocalEmbedding } from "@/lib/generate-local-embedding"
 import { NextResponse } from "next/server"
 
@@ -30,7 +30,7 @@ async function* getStreamingResponses(
     })
 
     // Convert the response into a friendly text-stream.
-    const stream = OpenAIStream(response)
+    const stream: ReadableStream<Uint8Array> = OpenAIStream(response)
     yield stream
   }
 }
@@ -80,6 +80,7 @@ export async function POST(request: Request) {
 
     type ExtendedFile = Tables<"files"> & {
       chunks: Database["public"]["Functions"]["match_file_items_any_bge"]["Returns"]
+      avgChunkRelevance: number
     }
     let filesFound: ExtendedFile[]
     // map chunks to filesRaw
@@ -94,14 +95,23 @@ export async function POST(request: Request) {
     // add the first 10 chunks of a file to filesRaw
     // @ts-ignore
     filesFound =
-      filesRaw?.map((file: ExtendedFile) => {
+      filesRaw?.map(file => {
+        let relevantFile = file as ExtendedFile
         // reverse sort
         const fileChunks = mostSimilarChunks
           ?.filter(chunk => chunk.file_id === file.id)
           .sort((a, b) => b.similarity - a.similarity)
-        file.chunks = fileChunks?.slice(0, 10)
+        relevantFile.chunks = fileChunks?.slice(0, 10) ?? []
+        relevantFile.avgChunkRelevance =
+          relevantFile.chunks.length > 0
+            ? relevantFile.chunks.reduce(
+                (acc, cur) => acc + cur.similarity,
+                0
+              ) / relevantFile.chunks.length
+            : 0 // format: 0.343523
         return file
       }) ?? []
+    filesFound.sort((a, b) => b.avgChunkRelevance - a.avgChunkRelevance)
 
     try {
       const profile = await getServerProfile()
@@ -128,16 +138,33 @@ export async function POST(request: Request) {
             "I have the following question: " +
             fileQuery +
             "\n\n" +
-            "With bulletpoints please tell me what information does the following file contain about my question:" +
-            "\n" +
-            file.chunks.map(item => `${item.content}`).join("\n\n")
+            "Here are relevant sections from a document:\n" +
+            +"<DOCUEMENT SECTIONS>\n" +
+            file.chunks?.map(item => `${item.content}`).join("\n\n") +
+            "\n</DOCUEMENT SECTIONS>\n" +
+            "Start your answers with 'Given your question, the document was found to address the following:'\n" +
+            "Using markdown formatting, give me the main topic of the document and if it's relevant to the question.\n" +
+            "Aditionally, with bullet points please tell me what information do the document sections contain about my question."
         }
       ])
 
+      const { data: fileUrls, error: fileUrlsError } =
+        await supabaseAdmin.storage.from("files").createSignedUrls(
+          filesFound.map(file => file.file_path),
+          10 * 60
+        ) // 10 mins
+
       const encoder = new TextEncoder()
       let decoder = new TextDecoder("utf-8")
-      const readableStream = new ReadableStream({
+      let index = 0
+      const readableStream = new ReadableStream<Uint8Array>({
         async start(controller) {
+          controller.enqueue(
+            encoder.encode(
+              `We found ${filesFound.length} potentially relevant files to your query:\n\n\n\n`
+            )
+          )
+
           const generator = getStreamingResponses(
             groq,
             chatSettings,
@@ -146,13 +173,37 @@ export async function POST(request: Request) {
 
           try {
             for await (const stream of generator) {
+              let relevantFile = filesFound[index]
+              let avgChunkRelevance = Math.round(
+                relevantFile.avgChunkRelevance * 10
+              ) // format: 3
+              let addInfo =
+                ((relevantFile.metadata as any)?.author?.length > 0
+                  ? `Author: ${(relevantFile.metadata as any)?.author}`
+                  : undefined) ??
+                ((relevantFile.metadata as any)?.subject?.length > 0
+                  ? `Subject: ${(relevantFile.metadata as any)?.subject}`
+                  : undefined) ??
+                ((relevantFile.metadata as any)?.title?.length > 0
+                  ? `Title: ${(relevantFile.metadata as any)?.title}`
+                  : undefined) ??
+                `Added on: ${relevantFile.created_at}`
+              controller.enqueue(
+                encoder.encode(
+                  (!fileUrlsError && fileUrls
+                    ? `[${relevantFile.name}](${fileUrls?.[index].signedUrl})`
+                    : `${relevantFile.name}`) +
+                    ` - ${addInfo}\n\n` +
+                    `Relevance: ${avgChunkRelevance}/10 (Vector Search: ${avgChunkRelevance}/10; Company Rules: WIP)\n\n`
+                )
+              )
               // @ts-ignore
               for await (const chunk of stream) {
-                controller.enqueue(encoder.encode(decoder.decode(chunk)))
+                controller.enqueue(chunk)
               }
-              // Add custom chunk after each stream ends
-              const customChunk = "Custom message after each response.\n"
-              controller.enqueue(encoder.encode(customChunk))
+              // Line end
+              controller.enqueue(encoder.encode("\n\n******\n\n"))
+              index++
             }
           } catch (err) {
             controller.error(err)
