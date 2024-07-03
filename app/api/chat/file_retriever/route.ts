@@ -93,7 +93,6 @@ export async function POST(request: Request) {
       )
 
     // add the first 10 chunks of a file to filesRaw
-    // @ts-ignore
     filesFound =
       filesRaw?.map(file => {
         let relevantFile = file as ExtendedFile
@@ -109,7 +108,7 @@ export async function POST(request: Request) {
                 0
               ) / relevantFile.chunks.length
             : 0 // format: 0.343523
-        return file
+        return relevantFile
       }) ?? []
     filesFound.sort((a, b) => b.avgChunkRelevance - a.avgChunkRelevance)
 
@@ -234,10 +233,6 @@ export async function POST(request: Request) {
         status: errorCode
       })
     }
-
-    return new Response(JSON.stringify({ results: mostSimilarChunks }), {
-      status: 200
-    })
   } catch (error: any) {
     const errorMessage = error.error?.message || "An unexpected error occurred"
     const errorCode = error.status || 500

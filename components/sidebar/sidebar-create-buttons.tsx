@@ -10,7 +10,7 @@ import { CreateCollection } from "./items/collections/create-collection"
 import { CreateFile } from "./items/files/create-file"
 import { CreateModel } from "./items/models/create-model"
 import { CreatePreset } from "./items/presets/create-preset"
-import { CreatePrompt } from "./items/prompts/create-prompt"
+import { CreateRulePrompt } from "./items/prompts/create-rule-prompt"
 import { CreateTool } from "./items/tools/create-tool"
 
 interface SidebarCreateButtonsProps {
@@ -111,7 +111,7 @@ export const SidebarCreateButtons: FC<SidebarCreateButtonsProps> = ({
       )}
 
       {isCreatingPrompt && (
-        <CreatePrompt
+        <CreateRulePrompt
           isOpen={isCreatingPrompt}
           onOpenChange={setIsCreatingPrompt}
         />

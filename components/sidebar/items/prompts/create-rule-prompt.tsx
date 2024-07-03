@@ -7,12 +7,12 @@ import { PROMPT_NAME_MAX } from "@/db/limits"
 import { TablesInsert } from "@/supabase/types"
 import { FC, useContext, useState } from "react"
 
-interface CreatePromptProps {
+interface CreateRulePromptProps {
   isOpen: boolean
   onOpenChange: (isOpen: boolean) => void
 }
 
-export const CreatePrompt: FC<CreatePromptProps> = ({
+export const CreateRulePrompt: FC<CreateRulePromptProps> = ({
   isOpen,
   onOpenChange
 }) => {
@@ -37,6 +37,7 @@ export const CreatePrompt: FC<CreatePromptProps> = ({
           content
         } as TablesInsert<"prompts">
       }
+      //TODO: idea -> fetch all different metadata types from all (e.g. pdf) files
       renderInputs={() => (
         <>
           <div className="space-y-1">
