@@ -37,14 +37,17 @@ export const CreateRulePrompt: FC<CreateRulePromptProps> = ({
           content
         } as TablesInsert<"prompts">
       }
-      //TODO: idea -> fetch all different metadata types from all (e.g. pdf) files
+      /* TODO: idea
+           -> fetch all different metadata types from all (e.g. pdf) files
+
+           */
       renderInputs={() => (
         <>
           <div className="space-y-1">
             <Label>Name</Label>
 
             <Input
-              placeholder="Prompt name..."
+              placeholder="Rule name..."
               value={name}
               onChange={e => setName(e.target.value)}
               maxLength={PROMPT_NAME_MAX}
@@ -54,10 +57,10 @@ export const CreateRulePrompt: FC<CreateRulePromptProps> = ({
           </div>
 
           <div className="space-y-1">
-            <Label>Prompt</Label>
+            <Label>Rule</Label>
 
             <TextareaAutosize
-              placeholder="Prompt content..."
+              placeholder="Rule content..."
               value={content}
               onValueChange={setContent}
               minRows={6}

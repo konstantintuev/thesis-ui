@@ -7,6 +7,8 @@ import { createClient } from "@supabase/supabase-js"
 import { Database, Json, Tables } from "@/supabase/types"
 import { generateBgeLocalEmbedding } from "@/lib/generate-local-embedding"
 import { NextResponse } from "next/server"
+import { searchFilesMLServer } from "@/lib/retrieval/processing/multiple"
+import { FileItemSearchResult } from "@/types/ml-server-communication"
 
 export const runtime = "edge"
 
@@ -62,7 +64,7 @@ export async function POST(request: Request) {
      * Rewrite the latest user message based on the theme of the corpus + previous user messages.
      * Use the last user message to retrieve filesRaw
      * */
-    const localEmbedding = await generateBgeLocalEmbedding(fileQuery)
+    /* const localEmbedding = await generateBgeLocalEmbedding(fileQuery)
 
     const { data: localFileItems, error: localFileItemsError } =
       await supabaseAdmin.rpc("match_file_items_any_bge", {
@@ -72,15 +74,21 @@ export async function POST(request: Request) {
 
     if (localFileItemsError) {
       throw localFileItemsError
-    }
+    }*/
 
-    const mostSimilarChunks = localFileItems?.sort(
-      (a, b) => b.similarity - a.similarity
+    let localFileItems = await searchFilesMLServer(
+      supabaseAdmin as any,
+      fileQuery
     )
 
+    const mostSimilarChunks = localFileItems?.sort((a, b) => b.score - a.score)
+
     type ExtendedFile = Tables<"files"> & {
-      chunks: Database["public"]["Functions"]["match_file_items_any_bge"]["Returns"]
+      chunks: FileItemSearchResult[]
       avgChunkRelevance: number
+      basicRuleRelevance?: number
+      basicRuleInfo?: Json
+      score: number
     }
     let filesFound: ExtendedFile[]
     // map chunks to filesRaw
@@ -92,25 +100,38 @@ export async function POST(request: Request) {
         mostSimilarChunks?.map(chunk => chunk.file_id)
       )
 
+    const { data: basicRulesRes, error: basicRulesError } =
+      await supabaseAdmin.rpc("rank_files", {
+        file_ids: filesRaw?.map(file => file.id)
+      })
     // add the first 10 chunks of a file to filesRaw
     filesFound =
-      filesRaw?.map(file => {
+      filesRaw?.map((file, index) => {
         let relevantFile = file as ExtendedFile
+        if (!basicRulesError) {
+          let basicRulesFile = basicRulesRes.find(item => item.id === file.id)
+          if (basicRulesFile) {
+            relevantFile.basicRuleInfo = basicRulesFile.comparison_results
+            relevantFile.basicRuleRelevance = basicRulesFile.total_score // format: 0.343523
+          }
+        }
         // reverse sort
         const fileChunks = mostSimilarChunks
           ?.filter(chunk => chunk.file_id === file.id)
-          .sort((a, b) => b.similarity - a.similarity)
+          .sort((a, b) => b.score - a.score)
         relevantFile.chunks = fileChunks?.slice(0, 10) ?? []
         relevantFile.avgChunkRelevance =
           relevantFile.chunks.length > 0
-            ? relevantFile.chunks.reduce(
-                (acc, cur) => acc + cur.similarity,
-                0
-              ) / relevantFile.chunks.length
+            ? relevantFile.chunks.reduce((acc, cur) => acc + cur.score, 0) /
+              relevantFile.chunks.length
             : 0 // format: 0.343523
+        relevantFile.score = relevantFile.avgChunkRelevance
+        if (relevantFile.basicRuleRelevance) {
+          //relevantFile.score = relevantFile.score * 0.5 + relevantFile.basicRuleRelevance * 0.5
+        }
         return relevantFile
       }) ?? []
-    filesFound.sort((a, b) => b.avgChunkRelevance - a.avgChunkRelevance)
+    filesFound.sort((a, b) => b.score - a.score)
 
     try {
       const profile = await getServerProfile()
@@ -129,7 +150,7 @@ export async function POST(request: Request) {
         {
           role: "system",
           content:
-            "Today is 18/06/2024.\n\nUser Instructions:\nYou are a friendly, helpful AI assistant."
+            "Today is 03/07/2024.\n\nUser Instructions:\nYou are a friendly, helpful AI assistant."
         },
         {
           role: "user",
@@ -176,6 +197,11 @@ export async function POST(request: Request) {
               let avgChunkRelevance = Math.round(
                 relevantFile.avgChunkRelevance * 10
               ) // format: 3
+              let basicRuleRelevance = Math.round(
+                (relevantFile.basicRuleRelevance ?? 0) * 10
+              ) // format: 3
+              let totalScore = Math.round(relevantFile.score * 10) // format: 3
+
               let addInfo =
                 ((relevantFile.metadata as any)?.author?.length > 0
                   ? `Author: ${(relevantFile.metadata as any)?.author}`
@@ -187,13 +213,16 @@ export async function POST(request: Request) {
                   ? `Title: ${(relevantFile.metadata as any)?.title}`
                   : undefined) ??
                 `Added on: ${relevantFile.created_at}`
+              // TODO: normalise scores
               controller.enqueue(
                 encoder.encode(
                   (!fileUrlsError && fileUrls
                     ? `[${relevantFile.name}](${fileUrls?.[index].signedUrl})`
                     : `${relevantFile.name}`) +
                     ` - ${addInfo}\n\n` +
-                    `Relevance: ${avgChunkRelevance}/10 (Vector Search: ${avgChunkRelevance}/10; Company Rules: WIP)\n\n`
+                    `Relevance: ${totalScore}/10 ` +
+                    `(Vector Search: ${avgChunkRelevance}/10; Company Rules: ${basicRuleRelevance}/10)\n\n` +
+                    `Company rule breakdown:\n\`\`\`json\n${JSON.stringify(relevantFile.basicRuleInfo ?? {}, null, 4)}\n\`\`\`\n\n`
                 )
               )
               // @ts-ignore

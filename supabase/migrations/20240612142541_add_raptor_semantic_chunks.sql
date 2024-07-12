@@ -19,9 +19,24 @@ alter table "public"."file_items" alter column "local_embedding" type vector(102
 
 CREATE UNIQUE INDEX file_items_attachable_content_pkey ON public.file_items_attachable_content USING btree (id);
 
-alter table "public"."file_items_attachable_content" add constraint "file_items_attachable_content_pkey" PRIMARY KEY using index "file_items_attachable_content_pkey";
+DO
+$$
+    BEGIN
 
-alter table "public"."file_items" add constraint "public_file_items_chunk_attachable_content_fkey" FOREIGN KEY (chunk_attachable_content) REFERENCES file_items_attachable_content(id) ON UPDATE CASCADE ON DELETE SET DEFAULT not valid;
+        BEGIN
+            alter table "public"."file_items_attachable_content"
+                add constraint "file_items_attachable_content_pkey" PRIMARY KEY using index "file_items_attachable_content_pkey";
+
+            alter table "public"."file_items"
+                add constraint "public_file_items_chunk_attachable_content_fkey" FOREIGN KEY (chunk_attachable_content) REFERENCES file_items_attachable_content (id) ON UPDATE CASCADE ON DELETE SET DEFAULT not valid;
+        EXCEPTION
+            WHEN duplicate_table THEN -- postgres raises duplicate_table at surprising times. Ex.: for UNIQUE constraints.
+            WHEN duplicate_object THEN
+                RAISE NOTICE 'Table constraint file_items_attachable_content_pkey or public_file_items_chunk_attachable_content_fkey already exists';
+        END;
+
+    END
+$$;
 
 alter table "public"."file_items" validate constraint "public_file_items_chunk_attachable_content_fkey";
 

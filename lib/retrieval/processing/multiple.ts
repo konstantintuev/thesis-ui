@@ -11,7 +11,11 @@ import {
 
 import { SupabaseClient } from "@supabase/supabase-js/src"
 import { Database, Tables, TablesInsert } from "@/supabase/types"
-import { MultipleFilesQueueResult } from "@/types/ml-server-communication"
+import {
+  FileItemSearchResult,
+  MultipleFilesQueueResult,
+  SearchResults
+} from "@/types/ml-server-communication"
 
 export const processMultiple = async (
   fileURLs: string[],
@@ -86,6 +90,7 @@ export const processMultipleResult = async (
           )
 
           let out: TablesInsert<"file_items"> = {
+            id: doc.id,
             chunk_index: i,
             file_id: fileRes.file_uuid,
             user_id: fileInDB.user_id,
@@ -94,7 +99,8 @@ export const processMultipleResult = async (
             openai_embedding: null,
             local_embedding: doc.embedding as any,
             layer_number: doc.layer,
-            chunk_attachable_content: null
+            chunk_attachable_content: null,
+            children: doc.children
           }
 
           if (uuidsInChunk && uuidsInChunk.length > 0) {
@@ -126,38 +132,7 @@ export const processMultipleResult = async (
       )
 
       // after adding all file items, update the layer == 0 with list of parents
-
-      let result = await supabaseAdmin
-        .from("file_items")
-        .upsert(file_items)
-        .select()
-
-      if (!result.error) {
-        await Promise.all(
-          result.data.map(async (item, index) => {
-            if (
-              item.layer_number &&
-              item.chunk_index &&
-              item.layer_number > 0
-            ) {
-              // has children, find them by index in the original data set
-              let children = tree[item.chunk_index].children
-                ?.map(childIndex => {
-                  return result.data?.find(
-                    potentialChild => potentialChild.chunk_index === childIndex
-                  )?.id
-                })
-                .filter(child => child)
-              if (children) {
-                await supabaseAdmin
-                  .from("file_items")
-                  .update({ children: children as any })
-                  .eq("id", item.id)
-              }
-            }
-          })
-        )
-      }
+      await supabaseAdmin.from("file_items").upsert(file_items).select()
 
       const totalTokens = file_items.reduce((acc, item) => acc + item.tokens, 0)
 
@@ -190,4 +165,38 @@ export const processMultipleResult = async (
   }
 
   return res
+}
+
+export const searchFilesMLServer = async (
+  supabaseAdmin: SupabaseClient<Database, "public", Database["public"]>,
+  query: string
+): Promise<FileItemSearchResult[]> => {
+  const response = await fetch(
+    `http://127.0.0.1:8000/file_processing/search_query`,
+    {
+      method: "POST",
+      body: JSON.stringify({ query: query })
+    }
+  )
+  let res = (await response.json()) as SearchResults
+  let fileItems = await Promise.all(
+    res.map(async searchResult => {
+      let { data } = await supabaseAdmin
+        .from("file_items")
+        .select("*")
+        .eq("id", searchResult.document_metadata.chunk_id)
+        .single()
+      if (data) {
+        let ret = data as FileItemSearchResult
+        ret.score = searchResult.score
+        ret.rank = searchResult.rank
+        return ret
+      }
+      return null
+    })
+  )
+  fileItems = fileItems.filter(
+    fileItem => fileItem !== undefined && fileItem !== null
+  )
+  return fileItems as FileItemSearchResult[]
 }

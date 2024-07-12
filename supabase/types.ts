@@ -562,6 +562,30 @@ export type Database = {
           },
         ]
       }
+      comparisons: {
+        Row: {
+          attribute: string | null
+          comparator: string | null
+          comparison_name: string | null
+          value: string | null
+          weight: number | null
+        }
+        Insert: {
+          attribute?: string | null
+          comparator?: string | null
+          comparison_name?: string | null
+          value?: string | null
+          weight?: number | null
+        }
+        Update: {
+          attribute?: string | null
+          comparator?: string | null
+          comparison_name?: string | null
+          value?: string | null
+          weight?: number | null
+        }
+        Relationships: []
+      }
       file_items: {
         Row: {
           children: string[] | null
@@ -1556,6 +1580,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      aggregate_json_metadata_keys: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          key: string
+          value_types: string[]
+        }[]
+      }
       create_duplicate_messages_for_new_chat: {
         Args: {
           old_chat_id: string
@@ -1703,6 +1734,28 @@ export type Database = {
           p_name: string
         }
         Returns: boolean
+      }
+      rank_files: {
+        Args: {
+          file_ids?: string[]
+        }
+        Returns: {
+          id: string
+          user_id: string
+          folder_id: string
+          created_at: string
+          updated_at: string
+          sharing: string
+          description: string
+          file_path: string
+          name: string
+          size: number
+          tokens: number
+          type: string
+          metadata: Json
+          total_score: number
+          comparison_results: Json
+        }[]
       }
     }
     Enums: {

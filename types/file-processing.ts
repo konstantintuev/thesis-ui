@@ -1,8 +1,9 @@
 export interface Tree {
   [key: number]: {
+    id: string
     embedding: number[]
     text: string
-    children: number[]
+    children: string[]
     layer: number
   }
 }
