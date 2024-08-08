@@ -11,6 +11,7 @@ import {
 import { AssistantImage } from "@/types/images/assistant-image"
 import { VALID_ENV_KEYS } from "@/types/valid-keys"
 import { Dispatch, SetStateAction, createContext } from "react"
+import { IHighlight } from "@/components/document/react-pdf-highlighter"
 
 interface ChatbotUIContext {
   // PROFILE STORE
@@ -78,6 +79,9 @@ interface ChatbotUIContext {
   setSelectedChat: Dispatch<SetStateAction<Tables<"chats"> | null>>
   chatFileItems: Tables<"file_items">[]
   setChatFileItems: Dispatch<SetStateAction<Tables<"file_items">[]>>
+  // <ID,json>
+  chatFileHighlights: Record<string, IHighlight[]>
+  setChatFileHighlights: Dispatch<SetStateAction<Record<string, IHighlight[]>>>
 
   // ACTIVE CHAT STORE
   abortController: AbortController | null
@@ -204,10 +208,8 @@ export const ChatbotUIContext = createContext<ChatbotUIContext>({
   setChatSettings: () => {},
   chatFileItems: [],
   setChatFileItems: () => {},
-
-  // PASSIVE RETRIEVE STORE
-  retrievedFiles: [],
-  retrieveFileItems: [],
+  chatFileHighlights: {},
+  setChatFileHighlights: () => {},
 
   // ACTIVE CHAT STORE
   isGenerating: false,

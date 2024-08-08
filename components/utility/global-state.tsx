@@ -27,6 +27,7 @@ import { AssistantImage } from "@/types/images/assistant-image"
 import { VALID_ENV_KEYS } from "@/types/valid-keys"
 import { useRouter } from "next/navigation"
 import { FC, useEffect, useState } from "react"
+import { IHighlight } from "@/components/document/react-pdf-highlighter"
 
 interface GlobalStateProps {
   children: React.ReactNode
@@ -87,6 +88,9 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
   })
   const [selectedChat, setSelectedChat] = useState<Tables<"chats"> | null>(null)
   const [chatFileItems, setChatFileItems] = useState<Tables<"file_items">[]>([])
+  const [chatFileHighlights, setChatFileHighlights] = useState<
+    Record<string, IHighlight[]>
+  >({})
 
   // ACTIVE CHAT STORE
   const [isGenerating, setIsGenerating] = useState<boolean>(false)
@@ -265,6 +269,8 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
         setSelectedChat,
         chatFileItems,
         setChatFileItems,
+        chatFileHighlights,
+        setChatFileHighlights,
 
         // ACTIVE CHAT STORE
         isGenerating,
