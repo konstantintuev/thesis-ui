@@ -11,7 +11,8 @@ export function register() {
     if (process.env.NEXT_RUNTIME !== "nodejs") {
         return
     }
-    const supabaseAdmin = createClient<Database>(
+    const supabaseAdmin =
+        createClient<Database>(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
@@ -44,25 +45,31 @@ function getMultipleFileUploadFromMLServer(supabaseAdmin: SupabaseClient<Databas
                                            targetCollectionID: string,
                                            multiple_file_uuid: string) {
     (async function checkFileStatuesEvery30s() {
-        const response = await fetch(
-            `http://127.0.0.1:8000/file_processing/retrieve_multiple_files_from_queue?multiple_files_uuid=${multiple_file_uuid}`,
-            {
-                method: "GET"
+        try {
+            const response = await fetch(
+                `http://127.0.0.1:8000/file_processing/retrieve_multiple_files_from_queue?multiple_files_uuid=${multiple_file_uuid}`,
+                {
+                    method: "GET"
+                }
+            )
+
+
+            if (!response.ok) {
+                setTimeout(checkFileStatuesEvery30s, 30_000);
+                return
             }
-        )
 
-        if (!response.ok) {
+            const responseData = await response.json() as any
+            if (responseData["files"]) {
+                const parsed = responseData["files"] as MultipleFilesQueueResult
+                await processMultipleResult(supabaseAdmin, targetCollectionID, parsed);
+                await supabaseAdmin.from("file_upload_queue").delete().eq("id", multiple_file_uuid)
+            } else {
+                setTimeout(checkFileStatuesEvery30s, 30_000);
+            }
+        } catch (e) {
             setTimeout(checkFileStatuesEvery30s, 30_000);
-            return
-        }
-
-        const responseData = await response.json() as any
-        if (responseData["files"]) {
-            const parsed = responseData["files"] as MultipleFilesQueueResult
-            await processMultipleResult(supabaseAdmin, targetCollectionID, parsed);
-            await supabaseAdmin.from("file_upload_queue").delete().eq("id", multiple_file_uuid)
-        } else {
-            setTimeout(checkFileStatuesEvery30s, 30_000);
+            console.info("checkFileStatuesEvery30s failed with exception, try again in 30s:", e);
         }
     })();
 }

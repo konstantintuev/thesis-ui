@@ -296,6 +296,7 @@ export type Database = {
           created_at: string
           file_id: string
           highlights: Json | null
+          relevant: boolean | null
           score_metadata: Json | null
           summary_given_query: string | null
           updated_at: string | null
@@ -307,6 +308,7 @@ export type Database = {
           created_at?: string
           file_id: string
           highlights?: Json | null
+          relevant?: boolean | null
           score_metadata?: Json | null
           summary_given_query?: string | null
           updated_at?: string | null
@@ -318,6 +320,7 @@ export type Database = {
           created_at?: string
           file_id?: string
           highlights?: Json | null
+          relevant?: boolean | null
           score_metadata?: Json | null
           summary_given_query?: string | null
           updated_at?: string | null

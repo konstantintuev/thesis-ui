@@ -39,6 +39,8 @@ import {
 import { ChatbotUIContext } from "@/context/context"
 import dynamic from "next/dynamic"
 import { getFileFromStorage } from "@/db/storage/files"
+import { getChatById } from "@/db/chats"
+import { getMessagesByChatId } from "@/db/messages"
 
 const testHighlights: Record<string, Array<IHighlight>> = _testHighlights
 
@@ -73,11 +75,15 @@ interface DocumentUIProps {}
 export const DocumentUI: FC<DocumentUIProps> = ({}) => {
   const params = useParams()
   const documentid = params.documentid as string
+  const chatid = params.chatid as string
+  const workspaceid = params.workspaceid as string
 
   const { chatFileHighlights, setChatFileHighlights } =
     useContext(ChatbotUIContext)
 
   const [documentUrl, setDocumentUrl] = useState<string>("")
+  const [documentName, setDocumentName] = useState<string>("")
+  const [fileQuery, setFileQuery] = useState<string>("")
 
   // Prevent closing the highlight comment input by other hint tooltips
   const editingCommentTooltipOpen = useMemo(() => {
@@ -102,20 +108,49 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
 
   useEffect(() => {
     ;(async () => {
-      const chatFiles = await getChatFilesByChatId(params.chatid as string)
+      const chatFiles = await getChatFilesByChatId(chatid)
       console.log(chatFiles)
       const fileRecord = chatFiles.files.find(f => f.id === documentid)
 
-      if (!fileRecord) return
+      const chatMsges = await getMessagesByChatId(chatid)
 
-      const highlights = await getHighlights(
-        params.chatid as string,
-        documentid
-      )
+      if (!fileRecord || !chatMsges) return
+
+      const highlights = await getHighlights(chatid, documentid)
 
       const link = await getFileFromStorage(fileRecord.file_path)
 
+      /* Finding the relevant query for the file is very important.
+       * 1. Get file retriever chat messages
+       * 2. Find where our file is linked (only once)
+       * 3. Find the user query before that message
+       */
+
+      const documentMsgIndex = chatMsges.findIndex(msg =>
+        msg.content.includes(
+          `(/${workspaceid}` + `/chat/${chatid}` + `/document/${documentid})`
+        )
+      )
+
+      // At least 1 for userQueryForDocument to be 0
+      if (documentMsgIndex >= 1) return
+
+      let userQueryForDocument: string | null = null
+
+      // Find first user message before documentMsgIndex
+      for (let i = documentMsgIndex - 1; i >= 0; i--) {
+        if (chatMsges[i].role === "user") {
+          userQueryForDocument = chatMsges[i].content
+          break
+        }
+      }
+
+      setFileQuery(userQueryForDocument ?? "Unknown query")
+
       setDocumentUrl(link)
+
+      setDocumentName(fileRecord.name)
+
       // Always create a new object so the state knows something changed
       setChatFileHighlights(highlightsAll => {
         let ret = { ...highlightsAll }
@@ -156,7 +191,7 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
         { ...highlight, id: getNextId() },
         ...thisDocHighlights
       ]
-      void saveHighlights(params.chatid as string, documentid, ret[documentid])
+      void saveHighlights(chatid, documentid, ret[documentid])
       return ret
     })
   }
@@ -169,7 +204,7 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
       ret[documentid] = ret[documentid].filter(
         highlight => highlight.id !== highlightId
       )
-      void saveHighlights(params.chatid as string, documentid, ret[documentid])
+      void saveHighlights(chatid, documentid, ret[documentid])
       return ret
     })
   }
@@ -202,7 +237,7 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
             }
           : h
       })
-      void saveHighlights(params.chatid as string, documentid, ret[documentid])
+      void saveHighlights(chatid, documentid, ret[documentid])
       return ret
     })
   }
@@ -214,6 +249,8 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
   return (
     <div style={{ display: "flex", height: "100vh" }}>
       <DocumentSidebar
+        fileQuery={fileQuery}
+        documentName={documentName}
         resetHighlights={resetHighlights}
         toggleDocument={() => {}}
       />
@@ -224,7 +261,7 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
           position: "relative"
         }}
       >
-        <PdfLoader url={documentUrl} beforeLoad={<Spinner />} workerSrc={""}>
+        <PdfLoader url={documentUrl} beforeLoad={<Spinner />}>
           {pdfDocument => (
             <PdfHighlighter
               pdfScaleValue={"auto"}

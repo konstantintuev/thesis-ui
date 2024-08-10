@@ -4,11 +4,12 @@ import { ChatSettings } from "@/types"
 import { OpenAIStream, StreamingTextResponse } from "ai"
 import OpenAI from "openai"
 import { createClient } from "@supabase/supabase-js"
-import { Database, Json, Tables } from "@/supabase/types"
+import { Database, Json, Tables, TablesInsert } from "@/supabase/types"
 import { generateBgeLocalEmbedding } from "@/lib/generate-local-embedding"
 import { NextResponse } from "next/server"
 import { searchFilesMLServer } from "@/lib/retrieval/processing/multiple"
 import { FileItemSearchResult } from "@/types/ml-server-communication"
+import { supabase } from "@/lib/supabase/browser-client"
 
 export const runtime = "edge"
 
@@ -39,12 +40,14 @@ async function* getStreamingResponses(
 
 export async function POST(request: Request) {
   const json = await request.json()
-  const { chatSettings, messages } = json as {
+  const { chatId, workspaceId, chatSettings, messages } = json as {
     chatSettings: ChatSettings
     messages: Array<{
       content: string
       role: string
     }>
+    chatId: string
+    workspaceId: string
   }
 
   try {
@@ -168,11 +171,25 @@ export async function POST(request: Request) {
         }
       ])
 
-      const { data: fileUrls, error: fileUrlsError } =
-        await supabaseAdmin.storage.from("files").createSignedUrls(
-          filesFound.map(file => file.file_path),
-          10 * 60
-        ) // 10 mins
+      let insertChatFiles: TablesInsert<"chat_files">[] = filesFound.map(
+        file => ({
+          chat_id: chatId,
+          file_id: file.id,
+          user_id: profile.user_id,
+          useful: false,
+          score_metadata: {
+            basicRuleInfo: file.basicRuleInfo,
+            basicRuleRelevance: file.basicRuleRelevance,
+            avgChunkRelevance: file.avgChunkRelevance,
+            score: file.score,
+            chunkIds: file.chunks.map(chunk => chunk.id)
+          }
+        })
+      )
+
+      const { data, error } = await supabaseAdmin
+        .from("chat_files")
+        .insert(insertChatFiles)
 
       const encoder = new TextEncoder()
       let decoder = new TextDecoder("utf-8")
@@ -192,6 +209,7 @@ export async function POST(request: Request) {
           )
 
           try {
+            let generatedText = ""
             for await (const stream of generator) {
               let relevantFile = filesFound[index]
               let avgChunkRelevance = Math.round(
@@ -216,9 +234,7 @@ export async function POST(request: Request) {
               // TODO: normalise scores
               controller.enqueue(
                 encoder.encode(
-                  (!fileUrlsError && fileUrls
-                    ? `[${relevantFile.name}](${fileUrls?.[index].signedUrl})`
-                    : `${relevantFile.name}`) +
+                  `[${relevantFile.name}](/${workspaceId}/chat/${chatId}/document/${relevantFile.id})` +
                     ` - ${addInfo}\n\n` +
                     `Relevance: ${totalScore}/10 ` +
                     `(Vector Search: ${avgChunkRelevance}/10; Company Rules: ${basicRuleRelevance}/10)\n\n` +
@@ -227,10 +243,17 @@ export async function POST(request: Request) {
               )
               // @ts-ignore
               for await (const chunk of stream) {
+                generatedText += decoder.decode(chunk)
                 controller.enqueue(chunk)
               }
               // Line end
               controller.enqueue(encoder.encode("\n\n******\n\n"))
+              await supabaseAdmin
+                .from("chat_files")
+                .update({ summary_given_query: generatedText })
+                .eq("chat_id", chatId!)
+                .eq("file_id", relevantFile.id)
+              generatedText = ""
               index++
             }
           } catch (err) {
@@ -263,7 +286,8 @@ export async function POST(request: Request) {
       })
     }
   } catch (error: any) {
-    const errorMessage = error.error?.message || "An unexpected error occurred"
+    const errorMessage =
+      error.error?.message || error?.message || "An unexpected error occurred"
     const errorCode = error.status || 500
     return new Response(JSON.stringify({ message: errorMessage }), {
       status: errorCode

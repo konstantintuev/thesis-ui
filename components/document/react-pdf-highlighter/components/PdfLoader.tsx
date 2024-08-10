@@ -7,7 +7,7 @@ import type { PDFDocumentProxy } from "pdfjs-dist"
 
 interface Props {
   /** See `GlobalWorkerOptionsType`. */
-  workerSrc: string
+  workerSrc?: string | undefined
 
   url: string
   beforeLoad: JSX.Element
@@ -27,10 +27,6 @@ export class PdfLoader extends Component<Props, State> {
   state: State = {
     pdfDocument: null,
     error: null
-  }
-
-  static defaultProps = {
-    workerSrc: "https://unpkg.com/pdfjs-dist@4.4.168/build/pdf.worker.min.mjs"
   }
 
   documentRef = React.createRef<HTMLElement>()
@@ -81,10 +77,9 @@ export class PdfLoader extends Component<Props, State> {
     const { pdfDocument: discardedDocument } = this.state
     this.setState({ pdfDocument: null, error: null })
 
-    GlobalWorkerOptions.workerSrc = new URL(
-      "pdfjs-dist/legacy/build/pdf.worker.min.mjs",
-      import.meta.url
-    ).toString()
+    GlobalWorkerOptions.workerSrc =
+      workerSrc ??
+      new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString()
 
     Promise.resolve()
       .then(() => discardedDocument?.destroy())

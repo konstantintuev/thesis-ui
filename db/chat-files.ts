@@ -78,3 +78,27 @@ export const getHighlights = async (
     .single()
   return (updatedChatFiles?.highlights ?? []) as any
 }
+
+export const markRelevant = async (
+  chatId: string,
+  fileId: string
+): Promise<boolean> => {
+  const { error } = await supabase
+    .from("chat_files")
+    .update({ relevant: true })
+    .eq("chat_id", chatId)
+    .eq("file_id", fileId)
+  return !error
+}
+
+export const markIrrelevant = async (
+  chatId: string,
+  fileId: string
+): Promise<boolean> => {
+  const { error } = await supabase
+    .from("chat_files")
+    .update({ relevant: false })
+    .eq("chat_id", chatId)
+    .eq("file_id", fileId)
+  return !error
+}

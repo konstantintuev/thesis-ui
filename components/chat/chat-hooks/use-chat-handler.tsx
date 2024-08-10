@@ -259,7 +259,43 @@ export const useChatHandler = () => {
           selectedAssistant
         )
 
+      // Create a new chat session before first message
+      //  We do this so the internally managed providers can save data based on chatID
+      if (!currentChat) {
+        currentChat = await handleCreateChat(
+          chatSettings!,
+          profile!,
+          selectedWorkspace!,
+          messageContent,
+          selectedAssistant!,
+          newMessageFiles,
+          setSelectedChat,
+          setChats,
+          setChatFiles
+        )
+        window.history.pushState(
+          null,
+          "",
+          `/${selectedWorkspace!.id}/chat/${currentChat.id}`
+        )
+      } else {
+        const updatedChat = await updateChat(currentChat.id, {
+          updated_at: new Date().toISOString()
+        })
+
+        setChats(prevChats => {
+          const updatedChats = prevChats.map(prevChat =>
+            prevChat.id === updatedChat.id ? updatedChat : prevChat
+          )
+
+          return updatedChats
+        })
+      }
+
+      // TODO: don't pass chatId, workspaceId on external providers
       let payload: ChatPayload = {
+        chatId: currentChat!.id,
+        workspaceId: selectedWorkspace!.id,
         chatSettings: chatSettings!,
         workspaceInstructions: selectedWorkspace!.instructions || "",
         chatMessages: isRegeneration
@@ -336,32 +372,6 @@ export const useChatHandler = () => {
             setToolInUse
           )
         }
-      }
-
-      if (!currentChat) {
-        currentChat = await handleCreateChat(
-          chatSettings!,
-          profile!,
-          selectedWorkspace!,
-          messageContent,
-          selectedAssistant!,
-          newMessageFiles,
-          setSelectedChat,
-          setChats,
-          setChatFiles
-        )
-      } else {
-        const updatedChat = await updateChat(currentChat.id, {
-          updated_at: new Date().toISOString()
-        })
-
-        setChats(prevChats => {
-          const updatedChats = prevChats.map(prevChat =>
-            prevChat.id === updatedChat.id ? updatedChat : prevChat
-          )
-
-          return updatedChats
-        })
       }
 
       await handleCreateMessages(
