@@ -1,12 +1,3 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
-  background-color: #ffffff;
-  color: #fff;
-}
-
 .document_sidebar {
   overflow: auto;
   color: rgb(119, 119, 119);
@@ -45,20 +36,4 @@ body {
 
 .document_sidebar__highlight:hover {
   background: rgba(58, 56, 52, 0.08);
-}
-
-a {
-  color: #d35400;
-}
-
-blockquote {
-  padding: 0;
-  margin: 0;
-  quotes: "\201c" "\201d";
-}
-blockquote:before {
-  content: open-quote;
-}
-blockquote:after {
-  content: close-quote;
 }

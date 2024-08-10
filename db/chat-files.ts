@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase/browser-client"
 import { TablesInsert } from "@/supabase/types"
+import { IHighlight } from "@/components/document/react-pdf-highlighter"
 
 export const getChatFilesByChatId = async (chatId: string) => {
   const { data: chatFiles, error } = await supabase
@@ -48,4 +49,32 @@ export const createChatFiles = async (
   }
 
   return createdChatFiles
+}
+
+export const saveHighlights = async (
+  chatId: string,
+  fileId: string,
+  highlights: IHighlight[]
+) => {
+  const { data: updatedChatFiles, error } = await supabase
+    .from("chat_files")
+    .update({ highlights: highlights as any })
+    .eq("chat_id", chatId)
+    .eq("file_id", fileId)
+    .select("*")
+    .single()
+  return updatedChatFiles
+}
+
+export const getHighlights = async (
+  chatId: string,
+  fileId: string
+): Promise<IHighlight[]> => {
+  const { data: updatedChatFiles, error } = await supabase
+    .from("chat_files")
+    .select("*")
+    .eq("chat_id", chatId)
+    .eq("file_id", fileId)
+    .single()
+  return (updatedChatFiles?.highlights ?? []) as any
 }

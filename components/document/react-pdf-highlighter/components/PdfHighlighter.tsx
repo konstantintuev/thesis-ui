@@ -80,6 +80,7 @@ interface Props<T_HT> {
     transformSelection: () => void
   ) => JSX.Element | null
   enableAreaSelection: (event: MouseEvent) => boolean
+  onTipHide?: () => void
 }
 
 const EMPTY_ID = "empty-id"
@@ -325,6 +326,7 @@ export class PdfHighlighter<T_HT extends IHighlight> extends PureComponent<
     this.setState({ ghostHighlight: null, tip: null }, () =>
       this.renderHighlightLayers()
     )
+    this.props.onTipHide?.()
   }
 
   setTip(position: Position, inner: JSX.Element | null) {

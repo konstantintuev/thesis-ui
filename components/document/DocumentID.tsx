@@ -8,7 +8,15 @@ import React, {
   useState
 } from "react"
 
-import { AreaHighlight, Highlight, Popup, Tip } from "./react-pdf-highlighter"
+import {
+  AreaHighlight,
+  Comment,
+  Highlight,
+  PdfHighlighter,
+  PdfLoader,
+  Popup,
+  Tip
+} from "./react-pdf-highlighter"
 
 import type {
   Content,
@@ -23,19 +31,14 @@ import { testHighlights as _testHighlights } from "./test-highlights"
 
 import "./style/PDFHighlighter.css"
 import { useParams } from "next/navigation"
-import { getChatFilesByChatId } from "@/db/chat-files"
+import {
+  getChatFilesByChatId,
+  getHighlights,
+  saveHighlights
+} from "@/db/chat-files"
 import { ChatbotUIContext } from "@/context/context"
 import dynamic from "next/dynamic"
 import { getFileFromStorage } from "@/db/storage/files"
-
-const PdfLoader = dynamic(
-  () => import("./react-pdf-highlighter/components/PdfLoader"),
-  { ssr: false }
-)
-const PdfHighlighter = dynamic(
-  () => import("./react-pdf-highlighter/components/PdfHighlighter"),
-  { ssr: false }
-)
 
 const testHighlights: Record<string, Array<IHighlight>> = _testHighlights
 
@@ -59,12 +62,12 @@ const HighlightPopup = ({
 }) =>
   comment.text ? (
     <div className="Highlight__popup">
-      {comment.emoji} {comment.text}
+      {comment.emoji.length > 0
+        ? `${comment.emoji} ${comment.text}`
+        : comment.text}
     </div>
   ) : null
 
-const PRIMARY_PDF_URL = "https://arxiv.org/pdf/1708.08021"
-const SECONDARY_PDF_URL = "https://arxiv.org/pdf/1604.02480"
 interface DocumentUIProps {}
 
 export const DocumentUI: FC<DocumentUIProps> = ({}) => {
@@ -75,6 +78,13 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
     useContext(ChatbotUIContext)
 
   const [documentUrl, setDocumentUrl] = useState<string>("")
+
+  // Prevent closing the highlight comment input by other hint tooltips
+  const editingCommentTooltipOpen = useMemo(() => {
+    return {
+      open: false
+    }
+  }, [])
 
   const resetHighlights = () => {
     setChatFileHighlights(prevState => {
@@ -98,11 +108,22 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
 
       if (!fileRecord) return
 
+      const highlights = await getHighlights(
+        params.chatid as string,
+        documentid
+      )
+
       const link = await getFileFromStorage(fileRecord.file_path)
 
       setDocumentUrl(link)
+      // Always create a new object so the state knows something changed
+      setChatFileHighlights(highlightsAll => {
+        let ret = { ...highlightsAll }
+        ret[documentid] = highlights
+        return ret
+      })
     })()
-  }, [documentid, params.chatid])
+  }, [documentid, params.chatid, setChatFileHighlights])
 
   const getHighlightById = useCallback(
     (id: string) => {
@@ -135,6 +156,20 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
         { ...highlight, id: getNextId() },
         ...thisDocHighlights
       ]
+      void saveHighlights(params.chatid as string, documentid, ret[documentid])
+      return ret
+    })
+  }
+
+  const deleteHighlight = (highlightId: string) => {
+    console.log("Deleting highlight", highlightId)
+
+    setChatFileHighlights(highlightsAll => {
+      let ret = { ...highlightsAll }
+      ret[documentid] = ret[documentid].filter(
+        highlight => highlight.id !== highlightId
+      )
+      void saveHighlights(params.chatid as string, documentid, ret[documentid])
       return ret
     })
   }
@@ -142,7 +177,8 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
   const updateHighlight = (
     highlightId: string,
     position: Partial<ScaledPosition>,
-    content: Partial<Content>
+    content: Partial<Content>,
+    comment: Partial<Comment>
   ) => {
     console.log("Updating highlight", highlightId, position, content)
 
@@ -153,6 +189,7 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
           id,
           position: originalPosition,
           content: originalContent,
+          comment: originalComment,
           ...rest
         } = h
         return id === highlightId
@@ -160,10 +197,12 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
               id,
               position: { ...originalPosition, ...position },
               content: { ...originalContent, ...content },
+              comment: { ...originalComment, ...comment },
               ...rest
             }
           : h
       })
+      void saveHighlights(params.chatid as string, documentid, ret[documentid])
       return ret
     })
   }
@@ -185,13 +224,7 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
           position: "relative"
         }}
       >
-        <PdfLoader
-          url={documentUrl}
-          beforeLoad={<Spinner />}
-          workerSrc={
-            "https://unpkg.com/pdfjs-dist@4.4.168/build/pdf.worker.min.mjs"
-          }
-        >
+        <PdfLoader url={documentUrl} beforeLoad={<Spinner />} workerSrc={""}>
           {pdfDocument => (
             <PdfHighlighter
               pdfScaleValue={"auto"}
@@ -203,6 +236,7 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
                 scrollViewerTo.scrollTo = scrollTo
                 scrollToHighlightFromHash()
               }}
+              onTipHide={() => (editingCommentTooltipOpen.open = false)}
               onSelectionFinished={(
                 position,
                 content,
@@ -210,7 +244,11 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
                 transformSelection
               ) => (
                 <Tip
-                  onOpen={transformSelection}
+                  onOpen={() => {
+                    editingCommentTooltipOpen.open = true
+                    transformSelection()
+                  }}
+                  closeTip={hideTipAndSelection}
                   onConfirm={comment => {
                     addHighlight({ content, position, comment })
 
@@ -235,16 +273,31 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
                     position={highlight.position}
                     comment={highlight.comment}
                     onClick={() => {
-                      console.log(
-                        "Highlight clicked:",
-                        highlight,
-                        index,
-                        setTip,
-                        hideTip,
-                        viewportToScaled,
-                        screenshot,
-                        isScrolledTo
-                      )
+                      console.log("Highlight clicked:", highlight.content.text)
+                      editingCommentTooltipOpen.open = true
+                      setTip(highlight, highlight => (
+                        <Tip
+                          text={highlight?.comment?.text}
+                          emoji={highlight?.comment?.emoji}
+                          onOpen={() => {}}
+                          onDeleteClick={() => {
+                            deleteHighlight(highlight.id)
+
+                            editingCommentTooltipOpen.open = false
+
+                            hideTip()
+                          }}
+                          closeTip={hideTip}
+                          compact={false}
+                          onConfirm={comment => {
+                            updateHighlight(highlight.id, {}, {}, comment)
+
+                            hideTip()
+
+                            editingCommentTooltipOpen.open = false
+                          }}
+                        />
+                      ))
                     }}
                   />
                 ) : (
@@ -255,8 +308,39 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
                       updateHighlight(
                         highlight.id,
                         { boundingRect: viewportToScaled(boundingRect) },
-                        { image: screenshot(boundingRect) }
+                        { image: screenshot(boundingRect) },
+                        {}
                       )
+                    }}
+                    onClick={() => {
+                      console.log(
+                        "Area highlight clicked:",
+                        highlight.content.text
+                      )
+                      editingCommentTooltipOpen.open = true
+                      setTip(highlight, highlight => (
+                        <Tip
+                          text={highlight?.comment?.text}
+                          emoji={highlight?.comment?.emoji}
+                          onOpen={() => {}}
+                          onDeleteClick={() => {
+                            deleteHighlight(highlight.id)
+
+                            editingCommentTooltipOpen.open = false
+
+                            hideTip()
+                          }}
+                          closeTip={hideTip}
+                          compact={false}
+                          onConfirm={comment => {
+                            updateHighlight(highlight.id, {}, {}, comment)
+
+                            hideTip()
+
+                            editingCommentTooltipOpen.open = false
+                          }}
+                        />
+                      ))
                     }}
                   />
                 )
@@ -265,9 +349,12 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
                   <Popup
                     popupContent={<HighlightPopup {...highlight} />}
                     onMouseOver={popupContent =>
+                      !editingCommentTooltipOpen.open &&
                       setTip(highlight, highlight => popupContent)
                     }
-                    onMouseOut={hideTip}
+                    onMouseOut={() =>
+                      !editingCommentTooltipOpen.open && hideTip()
+                    }
                     key={index}
                   >
                     {component}

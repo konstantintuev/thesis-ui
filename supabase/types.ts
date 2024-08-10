@@ -295,21 +295,33 @@ export type Database = {
           chat_id: string
           created_at: string
           file_id: string
+          highlights: Json | null
+          score_metadata: Json | null
+          summary_given_query: string | null
           updated_at: string | null
+          useful: boolean
           user_id: string
         }
         Insert: {
           chat_id: string
           created_at?: string
           file_id: string
+          highlights?: Json | null
+          score_metadata?: Json | null
+          summary_given_query?: string | null
           updated_at?: string | null
+          useful?: boolean
           user_id: string
         }
         Update: {
           chat_id?: string
           created_at?: string
           file_id?: string
+          highlights?: Json | null
+          score_metadata?: Json | null
+          summary_given_query?: string | null
           updated_at?: string | null
+          useful?: boolean
           user_id?: string
         }
         Relationships: [
@@ -564,24 +576,21 @@ export type Database = {
       }
       comparisons: {
         Row: {
-          attribute: string | null
-          comparator: string | null
+          batch_id: string
+          comparison: Json | null
           comparison_name: string | null
-          value: string | null
           weight: number | null
         }
         Insert: {
-          attribute?: string | null
-          comparator?: string | null
+          batch_id?: string
+          comparison?: Json | null
           comparison_name?: string | null
-          value?: string | null
           weight?: number | null
         }
         Update: {
-          attribute?: string | null
-          comparator?: string | null
+          batch_id?: string
+          comparison?: Json | null
           comparison_name?: string | null
-          value?: string | null
           weight?: number | null
         }
         Relationships: []
@@ -1625,6 +1634,13 @@ export type Database = {
         }
         Returns: Record<string, unknown>
       }
+      execute_schema_tables: {
+        Args: {
+          _schema: string
+          _query: string
+        }
+        Returns: string
+      }
       match_file_items_any_bge: {
         Args: {
           query_embedding: string
@@ -1663,18 +1679,6 @@ export type Database = {
           similarity: number
         }[]
       }
-      match_file_items_bge_2: {
-        Args: {
-          query_embedding: string
-        }
-        Returns: {
-          id: string
-          file_id: string
-          content: string
-          tokens: number
-          similarity: number
-        }[]
-      }
       match_file_items_local: {
         Args: {
           query_embedding: string
@@ -1701,20 +1705,6 @@ export type Database = {
           content: string
           tokens: number
           similarity: number
-        }[]
-      }
-      match_files_by_items_bge: {
-        Args: {
-          query_embedding: string
-          match_files?: number
-          match_file_items_count?: number
-        }
-        Returns: {
-          file_id: string
-          name: string
-          description: string
-          similarity: number
-          items: Json
         }[]
       }
       non_private_assistant_exists: {

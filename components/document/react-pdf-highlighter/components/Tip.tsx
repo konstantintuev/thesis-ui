@@ -3,6 +3,7 @@
 import React, { Component } from "react"
 
 import "../style/Tip.css"
+import { TextareaAutosize } from "@/components/ui/textarea-autosize"
 
 interface State {
   compact: boolean
@@ -14,6 +15,11 @@ interface Props {
   onConfirm: (comment: { text: string; emoji: string }) => void
   onOpen: () => void
   onUpdate?: () => void
+  closeTip?: () => void
+  text?: string | undefined
+  emoji?: string | undefined
+  compact?: boolean | undefined
+  onDeleteClick?: () => void | undefined
 }
 
 export class Tip extends Component<Props, State> {
@@ -21,6 +27,19 @@ export class Tip extends Component<Props, State> {
     compact: true,
     text: "",
     emoji: ""
+  }
+
+  textRef: React.RefObject<HTMLTextAreaElement> = React.createRef()
+
+  componentDidMount() {
+    this.setState({
+      text: this.props.text ?? "",
+      emoji: this.props.emoji ?? "",
+      compact: this.props.compact ?? true
+    })
+    if (this.textRef) {
+      this.textRef.current?.focus()
+    }
   }
 
   // for TipContainer
@@ -31,6 +50,8 @@ export class Tip extends Component<Props, State> {
       onUpdate()
     }
   }
+
+  emojiList = ["💩", "😱", "😍", "🔥", "😳", "⚠️"]
 
   render() {
     const { onConfirm, onOpen } = this.props
@@ -56,38 +77,75 @@ export class Tip extends Component<Props, State> {
               onConfirm({ text, emoji })
             }}
           >
-            <div>
-              <textarea
-                placeholder="Your comment"
-                // biome-ignore lint/a11y/noAutofocus: This is an example app
-                autoFocus
-                value={text}
-                onChange={event => this.setState({ text: event.target.value })}
-                ref={node => {
-                  if (node) {
-                    node.focus()
+            <h2
+              style={{
+                paddingBottom: "10px"
+              }}
+            >
+              Enter comment for the highlight:
+            </h2>
+            <TextareaAutosize
+              className="w-full"
+              placeholder="Your comment"
+              value={text}
+              onValueChange={event => this.setState({ text: event })}
+              minRows={2}
+              maxRows={6}
+              textareaRef={this.textRef}
+            />
+            {/* Inspired from https://flowbite.com/docs/forms/radio */}
+            <ul className="w-full items-center rounded-md pt-3 font-medium text-gray-900 sm:flex dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+              {this.emojiList.map((_emoji, index) => (
+                <li
+                  key={_emoji}
+                  className={
+                    index === this.emojiList.length - 1
+                      ? "my-2 w-full pl-0.5"
+                      : "my-2 w-full border-b border-gray-200 pl-0.5 sm:border-b-0 sm:border-r dark:border-gray-600"
                   }
-                }}
-              />
-              <div>
-                {["💩", "😱", "😍", "🔥", "😳", "⚠️"].map(_emoji => (
-                  <label key={_emoji}>
+                >
+                  <div className="flex items-center justify-start pl-0.5 pr-1">
                     <input
-                      checked={emoji === _emoji}
+                      id={`horizontal-list-${_emoji}`}
                       type="radio"
-                      name="emoji"
                       value={_emoji}
+                      name="list-radio-emoji"
+                      checked={emoji === _emoji}
+                      className="peer hidden"
+                      onClick={() => {
+                        if (this.state.emoji === _emoji) {
+                          this.setState({ emoji: "" })
+                        }
+                      }}
                       onChange={event =>
                         this.setState({ emoji: event.target.value })
                       }
                     />
-                    {_emoji}
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div>
+                    <label
+                      htmlFor={`horizontal-list-${_emoji}`}
+                      className="mx-1.5 w-full cursor-pointer text-3xl text-gray-400 transition-transform hover:scale-150 peer-checked:scale-150 peer-checked:text-gray-900 dark:text-gray-500 peer-checked:dark:text-white"
+                    >
+                      {_emoji}
+                    </label>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            <div className="Tip__card__button_row">
               <input type="submit" value="Save" />
+              {this.props.onDeleteClick ? (
+                <button
+                  type="button"
+                  onClick={this.props.onDeleteClick}
+                  style={{ color: "red" }}
+                >
+                  Delete
+                </button>
+              ) : undefined}
+              <button type="button" onClick={this.props.closeTip}>
+                Cancel
+              </button>
             </div>
           </form>
         )}

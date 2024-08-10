@@ -1,6 +1,6 @@
 "use client"
 
-import React, { Component } from "react"
+import React, { Component, type RefObject } from "react"
 
 import { Rnd } from "react-rnd"
 import { getPageFromElement } from "../lib/pdfjs-dom"
@@ -12,18 +12,31 @@ import type { LTWHP, ViewportHighlight } from "../types"
 interface Props {
   highlight: ViewportHighlight
   onChange: (rect: LTWHP) => void
+  onClick?: () => void
   isScrolledTo: boolean
 }
 
 export class AreaHighlight extends Component<Props> {
+  pointer: { x: number; y: number } = { x: 0, y: 0 }
+
   render() {
-    const { highlight, onChange, isScrolledTo, ...otherProps } = this.props
+    const { highlight, onChange, isScrolledTo, onClick, ...otherProps } =
+      this.props
 
     return (
       <div
         className={`AreaHighlight ${
           isScrolledTo ? "AreaHighlight--scrolledTo" : ""
         }`}
+        onMouseDown={e => (this.pointer = { x: e.clientX, y: e.clientY })}
+        onMouseUp={e => {
+          if (
+            Math.abs(e.clientX - this.pointer.x) < 4 &&
+            Math.abs(e.clientY - this.pointer.y) < 4
+          ) {
+            onClick?.()
+          }
+        }}
       >
         <Rnd
           className="AreaHighlight__part"
