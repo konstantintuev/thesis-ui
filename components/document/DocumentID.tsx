@@ -109,8 +109,10 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
   useEffect(() => {
     ;(async () => {
       const chatFiles = await getChatFilesByChatId(chatid)
-      console.log(chatFiles)
-      const fileRecord = chatFiles.files.find(f => f.id === documentid)
+
+      const fileRecord = chatFiles.chat_files.find(
+        f => f.file?.id === documentid
+      )?.file
 
       const chatMsges = await getMessagesByChatId(chatid)
 
@@ -133,7 +135,7 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
       )
 
       // At least 1 for userQueryForDocument to be 0
-      if (documentMsgIndex >= 1) return
+      if (documentMsgIndex < 1) return
 
       let userQueryForDocument: string | null = null
 
@@ -158,7 +160,7 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
         return ret
       })
     })()
-  }, [documentid, params.chatid, setChatFileHighlights])
+  }, [chatid, documentid, setChatFileHighlights, workspaceid])
 
   const getHighlightById = useCallback(
     (id: string) => {

@@ -4,7 +4,12 @@ import { useParams } from "next/navigation"
 import { ChatbotUIContext } from "@/context/context"
 import { IconCheck, IconPlus, IconX } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
-import { markIrrelevant, markRelevant } from "@/db/chat-files"
+import {
+  createChatFilesState,
+  getChatFilesByChatId,
+  markIrrelevant,
+  markRelevant
+} from "@/db/chat-files"
 
 interface Props {
   documentName: string
@@ -28,8 +33,7 @@ export const DocumentSidebar: FC<Props> = ({
   const chatid = params.chatid as string
   const workspaceid = params.workspaceid as string
 
-  const { chatFileHighlights, setChatFileHighlights } =
-    useContext(ChatbotUIContext)
+  const { chatFileHighlights, setChatFiles } = useContext(ChatbotUIContext)
   return (
     <div className="document_sidebar" style={{ width: "25vw" }}>
       <div className="description px-4 pt-4">
@@ -60,8 +64,13 @@ export const DocumentSidebar: FC<Props> = ({
         <div className="flex space-x-2">
           <button
             className="flex h-[36px] items-center justify-center rounded-md bg-blue-500 px-4 text-white transition-colors duration-150 hover:bg-blue-600"
-            onClick={() => {
-              void markRelevant(chatid, documentid)
+            onClick={async () => {
+              const ok = await markRelevant(chatid, documentid)
+              if (ok) {
+                const chatFiles = await getChatFilesByChatId(chatid)
+
+                setChatFiles(createChatFilesState(chatFiles))
+              }
             }}
           >
             <IconCheck className="mr-1" size={20} />
@@ -69,8 +78,13 @@ export const DocumentSidebar: FC<Props> = ({
           </button>
           <button
             className="flex h-[36px] items-center justify-center rounded-md bg-red-500 px-4 text-white transition-colors duration-150 hover:bg-red-600"
-            onClick={() => {
-              void markIrrelevant(chatid, documentid)
+            onClick={async () => {
+              const ok = await markIrrelevant(chatid, documentid)
+              if (ok) {
+                const chatFiles = await getChatFilesByChatId(chatid)
+
+                setChatFiles(createChatFilesState(chatFiles))
+              }
             }}
           >
             <IconX className="mr-1" size={20} />

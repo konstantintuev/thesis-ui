@@ -1,6 +1,10 @@
 // Only used in use-chat-handler.tsx to keep it clean
 
-import { createChatFiles } from "@/db/chat-files"
+import {
+  createChatFiles,
+  createChatFilesState,
+  getChatFilesByChatId
+} from "@/db/chat-files"
 import { createChat } from "@/db/chats"
 import { createMessageFileItems } from "@/db/message-file-items"
 import { createMessages, updateMessage } from "@/db/messages"
@@ -19,9 +23,10 @@ import {
   LLM,
   MessageImage
 } from "@/types"
-import React from "react"
+import React, { SetStateAction, useContext } from "react"
 import { toast } from "sonner"
 import { v4 as uuidv4 } from "uuid"
+import { ChatbotUIContext } from "@/context/context"
 
 export const validateChatSettings = (
   chatSettings: ChatSettings | null,
@@ -199,7 +204,8 @@ export const handleHostedChat = async (
   setIsGenerating: React.Dispatch<React.SetStateAction<boolean>>,
   setFirstTokenReceived: React.Dispatch<React.SetStateAction<boolean>>,
   setChatMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>,
-  setToolInUse: React.Dispatch<React.SetStateAction<string>>
+  setToolInUse: React.Dispatch<React.SetStateAction<string>>,
+  setChatFiles: React.Dispatch<SetStateAction<ChatFile[]>>
 ) => {
   const provider =
     modelData.provider === "openai" && profile.use_azure_openai
@@ -225,8 +231,10 @@ export const handleHostedChat = async (
     chatSettings: payload.chatSettings,
     messages: formattedMessages,
     customModelId: provider === "custom" ? modelData.hostedId : "",
-    chatId: payload.chatId,
-    workspaceId: payload.workspaceId
+    chatId:
+      modelData.provider === "file_retriever" ? payload.chatId : undefined,
+    workspaceId:
+      modelData.provider === "file_retriever" ? payload.workspaceId : undefined
   }
 
   const response = await fetchChatResponse(
@@ -237,6 +245,10 @@ export const handleHostedChat = async (
     setIsGenerating,
     setChatMessages
   )
+
+  const chatFiles = await getChatFilesByChatId(payload.chatId as string)
+
+  setChatFiles(createChatFilesState(chatFiles))
 
   return await processResponse(
     response,

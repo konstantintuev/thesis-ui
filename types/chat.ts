@@ -12,8 +12,8 @@ export interface ChatSettings {
 }
 
 export interface ChatPayload {
-  chatId?: string
-  workspaceId?: string
+  chatId: string
+  workspaceId: string
   chatSettings: ChatSettings
   workspaceInstructions: string
   chatMessages: ChatMessage[]

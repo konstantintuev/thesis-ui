@@ -1,16 +1,30 @@
 import { supabase } from "@/lib/supabase/browser-client"
-import { TablesInsert } from "@/supabase/types"
+import { Tables, TablesInsert } from "@/supabase/types"
 import { IHighlight } from "@/components/document/react-pdf-highlighter"
+import { ChatFile } from "@/types"
+import { format } from "date-fns"
 
-export const getChatFilesByChatId = async (chatId: string) => {
+type ChatFileWithFile = Tables<"chat_files"> & {
+  file: Tables<"files"> | null
+}
+
+type ChatAndFiles = Pick<Tables<"chats">, "id" | "name"> & {
+  chat_files: ChatFileWithFile[]
+}
+
+export const getChatFilesByChatId = async (
+  chatId: string
+): Promise<ChatAndFiles> => {
   const { data: chatFiles, error } = await supabase
     .from("chats")
     .select(
       `
       id, 
       name, 
-      files (*),
-      chat_files (*)
+      chat_files (
+        *,
+        file: files (*)
+      )
     `
     )
     .eq("id", chatId)
@@ -101,4 +115,21 @@ export const markIrrelevant = async (
     .eq("chat_id", chatId)
     .eq("file_id", fileId)
   return !error
+}
+
+export const createChatFilesState = (
+  chatAndFiles: ChatAndFiles
+): ChatFile[] => {
+  return chatAndFiles.chat_files.map((chat_file, index) => ({
+    id: chat_file.file?.id ?? "",
+    name: chat_file.file?.name ?? "",
+    type: chat_file.file?.type ?? "",
+    file: null,
+    relevant: chat_file.relevant,
+    fileDate: chat_file.file?.created_at
+      ? format(new Date(chat_file.file?.created_at), "dd.MM.yy")
+      : undefined,
+    // @ts-ignore
+    authorName: chat_file.file?.metadata?.["author"]
+  }))
 }

@@ -2,7 +2,7 @@ import Loading from "@/app/[locale]/loading"
 import { useChatHandler } from "@/components/chat/chat-hooks/use-chat-handler"
 import { ChatbotUIContext } from "@/context/context"
 import { getAssistantToolsByAssistantId } from "@/db/assistant-tools"
-import { getChatFilesByChatId } from "@/db/chat-files"
+import { createChatFilesState, getChatFilesByChatId } from "@/db/chat-files"
 import { getChatById } from "@/db/chats"
 import { getMessageFileItemsByMessageId } from "@/db/message-file-items"
 import { getMessagesByChatId } from "@/db/messages"
@@ -36,6 +36,7 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
     setSelectedAssistant,
     setChatFileItems,
     setChatFiles,
+    chatMessages,
     setShowFilesDisplay,
     setUseRetrieval,
     setSelectedTools
@@ -46,6 +47,7 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
   const {
     messagesStartRef,
     messagesEndRef,
+    scrollView,
     handleScroll,
     scrollToBottom,
     setIsAtBottom,
@@ -55,9 +57,15 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
     scrollToTop
   } = useScroll()
 
-  const [loading, setLoading] = useState(true)
+  const noNeedToUpdateData =
+    chatMessages.length > 0 && chatMessages[0].message.chat_id === params.chatid
+  const [loading, setLoading] = useState(!noNeedToUpdateData)
 
   useEffect(() => {
+    if (noNeedToUpdateData) {
+      return
+    }
+
     const fetchData = async () => {
       await fetchMessages()
       await fetchChat()
@@ -124,14 +132,7 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
 
     const chatFiles = await getChatFilesByChatId(params.chatid as string)
 
-    setChatFiles(
-      chatFiles.files.map(file => ({
-        id: file.id,
-        name: file.name,
-        type: file.type,
-        file: null
-      }))
-    )
+    setChatFiles(createChatFilesState(chatFiles))
 
     setUseRetrieval(true)
     setShowFilesDisplay(true)
@@ -208,6 +209,7 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
       </div>
 
       <div
+        ref={scrollView}
         className="flex size-full flex-col overflow-auto border-b"
         onScroll={handleScroll}
       >

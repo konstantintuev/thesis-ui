@@ -3,4 +3,7 @@ export interface ChatFile {
   name: string
   type: string
   file: File | null
+  relevant?: boolean | null
+  fileDate?: string
+  authorName?: string
 }

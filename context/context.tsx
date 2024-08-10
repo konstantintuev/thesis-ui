@@ -82,6 +82,10 @@ interface ChatbotUIContext {
   // <ID,json>
   chatFileHighlights: Record<string, IHighlight[]>
   setChatFileHighlights: Dispatch<SetStateAction<Record<string, IHighlight[]>>>
+  scrollHeight: {
+    pageId: string
+    scrollTop: number
+  }
 
   // ACTIVE CHAT STORE
   abortController: AbortController | null
@@ -210,6 +214,10 @@ export const ChatbotUIContext = createContext<ChatbotUIContext>({
   setChatFileItems: () => {},
   chatFileHighlights: {},
   setChatFileHighlights: () => {},
+  scrollHeight: {
+    pageId: "",
+    scrollTop: 0
+  },
 
   // ACTIVE CHAT STORE
   isGenerating: false,

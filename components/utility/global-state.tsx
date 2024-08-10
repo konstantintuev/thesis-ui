@@ -26,7 +26,7 @@ import {
 import { AssistantImage } from "@/types/images/assistant-image"
 import { VALID_ENV_KEYS } from "@/types/valid-keys"
 import { useRouter } from "next/navigation"
-import { FC, useEffect, useState } from "react"
+import { FC, useEffect, useMemo, useState } from "react"
 import { IHighlight } from "@/components/document/react-pdf-highlighter"
 
 interface GlobalStateProps {
@@ -91,6 +91,13 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
   const [chatFileHighlights, setChatFileHighlights] = useState<
     Record<string, IHighlight[]>
   >({})
+
+  const scrollHeight = useMemo(() => {
+    return {
+      pageId: "",
+      scrollTop: 0
+    }
+  }, [])
 
   // ACTIVE CHAT STORE
   const [isGenerating, setIsGenerating] = useState<boolean>(false)
@@ -271,6 +278,7 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
         setChatFileItems,
         chatFileHighlights,
         setChatFileHighlights,
+        scrollHeight,
 
         // ACTIVE CHAT STORE
         isGenerating,

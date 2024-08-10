@@ -7,12 +7,17 @@ import {
   useRef,
   useState
 } from "react"
+import { useParams } from "next/navigation"
 
 export const useScroll = () => {
-  const { isGenerating, chatMessages } = useContext(ChatbotUIContext)
+  const { isGenerating, chatMessages, scrollHeight } =
+    useContext(ChatbotUIContext)
+
+  const params = useParams()
 
   const messagesStartRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const scrollView = useRef<HTMLDivElement>(null)
   const isAutoScrolling = useRef(false)
 
   const [isAtTop, setIsAtTop] = useState(false)
@@ -34,6 +39,17 @@ export const useScroll = () => {
     }
   }, [chatMessages])
 
+  // Default next-js scroll restoration doesn't work with sub scroll views, so we implement it ourselves
+  useEffect(() => {
+    if (
+      scrollHeight.scrollTop !== 0 &&
+      scrollView.current &&
+      scrollHeight.pageId === `${params.workspaceid}/${params.chatid}`
+    ) {
+      scrollView.current.scrollTop = scrollHeight.scrollTop
+    }
+  }, [])
+
   const handleScroll: UIEventHandler<HTMLDivElement> = useCallback(e => {
     const target = e.target as HTMLDivElement
     const bottom =
@@ -52,6 +68,8 @@ export const useScroll = () => {
 
     const isOverflow = target.scrollHeight > target.clientHeight
     setIsOverflowing(isOverflow)
+    scrollHeight.scrollTop = target.scrollTop
+    scrollHeight.pageId = `${params.workspaceid}/${params.chatid}`
   }, [])
 
   const scrollToTop = useCallback(() => {
@@ -75,6 +93,7 @@ export const useScroll = () => {
   return {
     messagesStartRef,
     messagesEndRef,
+    scrollView,
     isAtTop,
     isAtBottom,
     userScrolled,
