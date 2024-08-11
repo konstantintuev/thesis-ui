@@ -4,6 +4,7 @@ import { Tables } from "@/supabase/types"
 import { FC, useContext, useState } from "react"
 import { Message } from "../messages/message"
 import {
+  IconCircleFilled,
   IconFileFilled,
   IconFileTypeCsv,
   IconFileTypeDocx,
@@ -15,16 +16,18 @@ import {
 } from "@tabler/icons-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
+import { cn } from "@/lib/utils"
+import { WithTooltip } from "@/components/ui/with-tooltip"
 
 interface RetrieverMessageFileHeaderProps {
   fileName: string
   fileId: string
+  duplicateReference?: boolean | null
 }
 
-// TODO: add global state about relevant/irrelevant/not reviewed files
 export const RetrieverMessageFileHeader: FC<
   RetrieverMessageFileHeaderProps
-> = ({ fileName, fileId }) => {
+> = ({ fileName, fileId, duplicateReference }) => {
   const { chatFiles } = useContext(ChatbotUIContext)
 
   const params = useParams()
@@ -40,14 +43,27 @@ export const RetrieverMessageFileHeader: FC<
   return (
     <div>
       <Link
-        href={`${params.chatid as string}/document/${fileId}`}
+        id={!duplicateReference ? fileId : undefined}
+        href={
+          !duplicateReference
+            ? `${params.chatid as string}/document/${fileId}`
+            : ""
+        }
+        onClick={e => {
+          if (duplicateReference) {
+            document
+              .getElementById(fileId)
+              ?.scrollIntoView({ behavior: "smooth", block: "center" })
+            e.preventDefault()
+          }
+        }}
         className={`relative flex h-[64px] cursor-pointer items-center space-x-4 rounded-xl px-4 py-3 no-underline ${
           fileInfo.relevant === true
             ? "bg-green-600 text-white"
             : fileInfo.relevant === false
               ? "bg-red-600 text-white"
               : "border-2"
-        } hover:opacity-50`}
+        } hover:bg-opacity-50`}
       >
         <div className="rounded bg-blue-500 p-2">
           {(() => {
@@ -72,8 +88,24 @@ export const RetrieverMessageFileHeader: FC<
         </div>
 
         <div className="truncate text-sm">
-          <div className="truncate">{fileName}</div>
-          <div className="text-xs">{`${fileExtension.toUpperCase()} · ${fileInfo.fileDate} · Author: ${fileInfo.authorName}`}</div>
+          <div className="truncate">
+            {duplicateReference && (
+              <WithTooltip
+                delayDuration={0}
+                side="top"
+                display={<div>This file is linked from a previous query</div>}
+                trigger={
+                  <span className="mb-1 mr-1.5 inline-block rounded-full bg-yellow-200 px-2 py-0.5 text-xs font-medium text-yellow-800">
+                    Referenced
+                  </span>
+                }
+              />
+            )}
+            {fileName}
+          </div>
+          {
+            <div className="text-xs">{`${fileExtension.toUpperCase()} · ${fileInfo.fileDate} · Author: ${fileInfo.authorName}`}</div>
+          }
         </div>
       </Link>
       <div />

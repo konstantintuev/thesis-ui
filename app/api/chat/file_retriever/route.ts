@@ -136,6 +136,8 @@ export async function POST(request: Request) {
       }) ?? []
     filesFound.sort((a, b) => b.score - a.score)
 
+    // TODO: Already queries files are to be marked
+
     try {
       const profile = await getServerProfile()
 

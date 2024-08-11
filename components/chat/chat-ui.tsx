@@ -134,7 +134,6 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
 
     setChatFiles(createChatFilesState(chatFiles))
 
-    setUseRetrieval(true)
     setShowFilesDisplay(true)
 
     const fetchedChatMessages = fetchedMessages.map(message => {
@@ -180,6 +179,7 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
       includeWorkspaceInstructions: chat.include_workspace_instructions,
       embeddingsProvider: chat.embeddings_provider as "openai" | "local"
     })
+    setUseRetrieval(chat.model !== "file_retriever")
   }
 
   if (loading) {

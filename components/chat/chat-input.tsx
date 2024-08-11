@@ -165,7 +165,9 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
   return (
     <>
       <div className="flex flex-col flex-wrap justify-center gap-2">
-        <ChatFilesDisplay />
+        {chatSettings?.model !== "file_retriever" ? (
+          <ChatFilesDisplay />
+        ) : undefined}
 
         {selectedTools &&
           selectedTools.map((tool, index) => (
