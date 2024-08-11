@@ -41,7 +41,7 @@ export const RetrieverMessageFileHeader: FC<
     <div>
       <Link
         href={`${params.chatid as string}/document/${fileId}`}
-        className={`relative flex h-[64px] cursor-pointer items-center space-x-4 rounded-xl px-4 py-3 ${
+        className={`relative flex h-[64px] cursor-pointer items-center space-x-4 rounded-xl px-4 py-3 no-underline ${
           fileInfo.relevant === true
             ? "bg-green-600 text-white"
             : fileInfo.relevant === false

@@ -1,4 +1,4 @@
-import React, { FC, useContext } from "react"
+import React, { FC, useContext, useEffect } from "react"
 import type { IHighlight } from "./react-pdf-highlighter"
 import { useParams } from "next/navigation"
 import { ChatbotUIContext } from "@/context/context"
@@ -33,7 +33,37 @@ export const DocumentSidebar: FC<Props> = ({
   const chatid = params.chatid as string
   const workspaceid = params.workspaceid as string
 
-  const { chatFileHighlights, setChatFiles } = useContext(ChatbotUIContext)
+  const { chatFileHighlights, setChatFiles, chatFiles } =
+    useContext(ChatbotUIContext)
+
+  useEffect(() => {
+    ;(async function () {
+      if (chatFiles.length === 0) {
+        const chatFiles = await getChatFilesByChatId(chatid)
+        setChatFiles(createChatFilesState(chatFiles))
+      }
+    })()
+  }, [chatid, setChatFiles])
+
+  const isRelevant = chatFiles.find(f => f.id === documentid)?.relevant
+
+  const handleRelevantClick = async () => {
+    const ok = await markRelevant(chatid, documentid, isRelevant ?? false)
+    if (ok) {
+      const chatFiles = await getChatFilesByChatId(chatid)
+      setChatFiles(createChatFilesState(chatFiles))
+    }
+  }
+
+  const handleIrrelevantClick = async () => {
+    // Irrelevant if not (relevant or true) -> not relevant or false
+    const ok = await markIrrelevant(chatid, documentid, !(isRelevant ?? true))
+    if (ok) {
+      const chatFiles = await getChatFilesByChatId(chatid)
+      setChatFiles(createChatFilesState(chatFiles))
+    }
+  }
+
   return (
     <div className="document_sidebar" style={{ width: "25vw" }}>
       <div className="description px-4 pt-4">
@@ -63,32 +93,43 @@ export const DocumentSidebar: FC<Props> = ({
         </p>
         <div className="flex space-x-2">
           <button
-            className="flex h-[36px] items-center justify-center rounded-md bg-blue-500 px-4 text-white transition-colors duration-150 hover:bg-blue-600"
-            onClick={async () => {
-              const ok = await markRelevant(chatid, documentid)
-              if (ok) {
-                const chatFiles = await getChatFilesByChatId(chatid)
-
-                setChatFiles(createChatFilesState(chatFiles))
-              }
-            }}
+            className={`flex items-center justify-center rounded-md transition-all duration-300 ${
+              isRelevant === null
+                ? "h-[36px] w-1/2 bg-blue-500 px-4 text-white hover:bg-blue-300"
+                : isRelevant === true
+                  ? "h-[36px] w-2/3 bg-blue-500 px-4 text-white hover:bg-blue-300"
+                  : "h-[36px] w-1/3 bg-blue-500 text-white hover:bg-blue-300"
+            }`}
+            onClick={handleRelevantClick}
           >
-            <IconCheck className="mr-1" size={20} />
-            Relevant
+            {isRelevant === null || isRelevant === true ? (
+              <>
+                <IconCheck className="mr-2" size={20} />
+                {isRelevant === null ? "Relevant" : "Marked Relevant"}
+              </>
+            ) : (
+              <IconCheck size={20} />
+            )}
           </button>
-          <button
-            className="flex h-[36px] items-center justify-center rounded-md bg-red-500 px-4 text-white transition-colors duration-150 hover:bg-red-600"
-            onClick={async () => {
-              const ok = await markIrrelevant(chatid, documentid)
-              if (ok) {
-                const chatFiles = await getChatFilesByChatId(chatid)
 
-                setChatFiles(createChatFilesState(chatFiles))
-              }
-            }}
+          <button
+            className={`flex items-center justify-center rounded-md transition-all duration-300 ${
+              isRelevant === null
+                ? "h-[36px] w-1/2 bg-red-500 px-4 text-white hover:bg-red-300"
+                : isRelevant === false
+                  ? "h-[36px] w-2/3 bg-red-500 px-4 text-white hover:bg-red-300"
+                  : "h-[36px] w-1/3 bg-red-500 text-white hover:bg-red-300"
+            }`}
+            onClick={handleIrrelevantClick}
           >
-            <IconX className="mr-1" size={20} />
-            Irrelevant
+            {isRelevant === null || isRelevant === false ? (
+              <>
+                <IconX className="mr-2" size={20} />
+                {isRelevant === null ? "Irrelevant" : "Marked Irrelevant"}
+              </>
+            ) : (
+              <IconX size={20} />
+            )}
           </button>
         </div>
       </div>

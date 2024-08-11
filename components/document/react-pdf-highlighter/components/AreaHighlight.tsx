@@ -38,6 +38,17 @@ export class AreaHighlight extends Component<Props> {
           }
         }}
       >
+        {highlight.comment ? (
+          <div
+            className="Highlight__emoji"
+            style={{
+              left: 20,
+              top: highlight.position.boundingRect.top
+            }}
+          >
+            {highlight.comment.emoji}
+          </div>
+        ) : null}
         <Rnd
           className="AreaHighlight__part"
           onDragStop={(_, data) => {
