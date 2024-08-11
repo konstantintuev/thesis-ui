@@ -9,7 +9,7 @@ import { generateBgeLocalEmbedding } from "@/lib/generate-local-embedding"
 import { NextResponse } from "next/server"
 import { searchFilesMLServer } from "@/lib/retrieval/processing/multiple"
 import { FileItemSearchResult } from "@/types/ml-server-communication"
-import { supabase } from "@/lib/supabase/browser-client"
+import { BasicRuleComparisonResults } from "@/types/retriever"
 
 export const runtime = "edge"
 
@@ -67,6 +67,8 @@ export async function POST(request: Request) {
      * Rewrite the latest user message based on the theme of the corpus + previous user messages.
      * Use the last user message to retrieve filesRaw
      * */
+
+    // Use local embeddings for file retrieval
     /* const localEmbedding = await generateBgeLocalEmbedding(fileQuery)
 
     const { data: localFileItems, error: localFileItemsError } =
@@ -88,13 +90,15 @@ export async function POST(request: Request) {
 
     type ExtendedFile = Tables<"files"> & {
       chunks: FileItemSearchResult[]
-      avgChunkRelevance: number
-      basicRuleRelevance?: number
-      basicRuleInfo?: Json
+      avg_chunk_relevance_score: number
+      basic_rule_relevance_score?: number
+      basic_rule_info?: BasicRuleComparisonResults
       score: number
+      already_queried?: boolean
+      query_related_metadata?: Record<string, unknown>
     }
     let filesFound: ExtendedFile[]
-    // map chunks to filesRaw
+    // Map chunks to filesRaw
     const { data: filesRaw, error: filesError } = await supabaseAdmin
       .from("files")
       .select("*")
@@ -103,40 +107,66 @@ export async function POST(request: Request) {
         mostSimilarChunks?.map(chunk => chunk.file_id)
       )
 
-    const { data: basicRulesRes, error: basicRulesError } =
+    const { data: basicRulesData, error: basicRulesError } =
       await supabaseAdmin.rpc("rank_files", {
         file_ids: filesRaw?.map(file => file.id)
       })
-    // add the first 10 chunks of a file to filesRaw
     filesFound =
       filesRaw?.map((file, index) => {
         let relevantFile = file as ExtendedFile
-        if (!basicRulesError) {
-          let basicRulesFile = basicRulesRes.find(item => item.id === file.id)
+        if (!basicRulesError && basicRulesData) {
+          // Add basic rules info
+          let basicRulesFile = basicRulesData.find(item => item.id === file.id)
           if (basicRulesFile) {
-            relevantFile.basicRuleInfo = basicRulesFile.comparison_results
-            relevantFile.basicRuleRelevance = basicRulesFile.total_score // format: 0.343523
+            relevantFile.basic_rule_info =
+              basicRulesFile.comparison_results as any
+            relevantFile.basic_rule_relevance_score = basicRulesFile.total_score // format: 0.343523
           }
         }
-        // reverse sort
+        // TODO: Add advanced filters
+        // Reverse sort file chunks
         const fileChunks = mostSimilarChunks
           ?.filter(chunk => chunk.file_id === file.id)
           .sort((a, b) => b.score - a.score)
-        relevantFile.chunks = fileChunks?.slice(0, 10) ?? []
-        relevantFile.avgChunkRelevance =
+        // Add the first 5 chunks of a file to filesRaw
+        relevantFile.chunks = fileChunks?.slice(0, 5) ?? []
+        relevantFile.avg_chunk_relevance_score =
           relevantFile.chunks.length > 0
             ? relevantFile.chunks.reduce((acc, cur) => acc + cur.score, 0) /
               relevantFile.chunks.length
             : 0 // format: 0.343523
-        relevantFile.score = relevantFile.avgChunkRelevance
-        if (relevantFile.basicRuleRelevance) {
-          //relevantFile.score = relevantFile.score * 0.5 + relevantFile.basicRuleRelevance * 0.5
+        relevantFile.score = relevantFile.avg_chunk_relevance_score
+        if (relevantFile.basic_rule_relevance_score) {
+          //relevantFile.score = relevantFile.score * 0.5 + relevantFile.basic_rule_relevance_score * 0.5
         }
         return relevantFile
       }) ?? []
+    // Reverse sort whole file relevance score
     filesFound.sort((a, b) => b.score - a.score)
 
-    // TODO: Already queries files are to be marked
+    const { data: currentChatFiles } = await supabaseAdmin
+      .from("chat_files")
+      .select("*")
+      .eq("chat_id", chatId!)
+      .eq("user_id", profile.user_id)
+
+    if (currentChatFiles) {
+      filesFound.forEach(retrievedFile => {
+        let existingChatFile = currentChatFiles.find(
+          currentFile => currentFile.file_id === retrievedFile.id
+        )
+        // not undefined -> defined
+        retrievedFile.already_queried = !!existingChatFile
+        retrievedFile.query_related_metadata =
+          existingChatFile?.query_related_metadata as any
+      })
+    }
+
+    /* The idea is to save:
+     * 1. Rule compliance for the file - basic and advanced
+     * 2. Highlights given the search in jsonObject[]
+     * 3. Query related metadata - { "User Query": { chunkRelevance, chunkList, LLM_Summary } }
+     */
 
     try {
       const profile = await getServerProfile()
@@ -169,29 +199,34 @@ export async function POST(request: Request) {
             "\n</DOCUEMENT SECTIONS>\n" +
             "Start your answers with 'Given your question, the document was found to address the following:'\n" +
             "Using markdown formatting, give me the main topic of the document and if it's relevant to the question.\n" +
-            "Aditionally, with bullet points please tell me what information do the document sections contain about my question."
+            "Aditionally, with bullet points please tell me what relevant for the question information do the document sections contain."
         }
       ])
 
-      let insertChatFiles: TablesInsert<"chat_files">[] = filesFound.map(
+      let updateChatFiles: TablesInsert<"chat_files">[] = filesFound.map(
         file => ({
           chat_id: chatId,
           file_id: file.id,
           user_id: profile.user_id,
-          useful: false,
           score_metadata: {
-            basicRuleInfo: file.basicRuleInfo,
-            basicRuleRelevance: file.basicRuleRelevance,
-            avgChunkRelevance: file.avgChunkRelevance,
-            score: file.score,
-            chunkIds: file.chunks.map(chunk => chunk.id)
-          }
+            basic_rule_info: file.basic_rule_info,
+            basic_rule_relevance: file.basic_rule_relevance_score
+          },
+          query_related_metadata: {
+            ...file.query_related_metadata!,
+            [fileQuery]: {
+              average_chunk_relevance: file.avg_chunk_relevance_score,
+              score: file.score,
+              chunk_ids: file.chunks.map(chunk => chunk.id),
+              summary: ""
+            }
+          } as Json
         })
       )
 
-      const { data, error } = await supabaseAdmin
+      const { error: updateChatFilesError } = await supabaseAdmin
         .from("chat_files")
-        .insert(insertChatFiles)
+        .upsert(updateChatFiles)
 
       const encoder = new TextEncoder()
       let decoder = new TextDecoder("utf-8")
@@ -215,32 +250,25 @@ export async function POST(request: Request) {
             for await (const stream of generator) {
               let relevantFile = filesFound[index]
               let avgChunkRelevance = Math.round(
-                relevantFile.avgChunkRelevance * 10
+                relevantFile.avg_chunk_relevance_score * 10
               ) // format: 3
               let basicRuleRelevance = Math.round(
-                (relevantFile.basicRuleRelevance ?? 0) * 10
+                (relevantFile.basic_rule_relevance_score ?? 0) * 10
               ) // format: 3
               let totalScore = Math.round(relevantFile.score * 10) // format: 3
 
-              let addInfo =
-                ((relevantFile.metadata as any)?.author?.length > 0
-                  ? `Author: ${(relevantFile.metadata as any)?.author}`
-                  : undefined) ??
-                ((relevantFile.metadata as any)?.subject?.length > 0
-                  ? `Subject: ${(relevantFile.metadata as any)?.subject}`
-                  : undefined) ??
-                ((relevantFile.metadata as any)?.title?.length > 0
-                  ? `Title: ${(relevantFile.metadata as any)?.title}`
-                  : undefined) ??
-                `Added on: ${relevantFile.created_at}`
-              // TODO: normalise scores
               controller.enqueue(
                 encoder.encode(
-                  `[${relevantFile.name}](/${workspaceId}/chat/${chatId}/document/${relevantFile.id})` +
-                    ` - ${addInfo}\n\n` +
+                  `\`\`\`chatfilemetadata\n` +
+                    JSON.stringify({
+                      fileName: relevantFile.name,
+                      fileId: relevantFile.id,
+                      duplicateReference: relevantFile.already_queried
+                    }) +
+                    `\n\`\`\`\n\n` +
                     `Relevance: ${totalScore}/10 ` +
                     `(Vector Search: ${avgChunkRelevance}/10; Company Rules: ${basicRuleRelevance}/10)\n\n` +
-                    `Company rule breakdown:\n\`\`\`json\n${JSON.stringify(relevantFile.basicRuleInfo ?? {}, null, 4)}\n\`\`\`\n\n`
+                    `Company rule breakdown:\n\`\`\`json\n${JSON.stringify(relevantFile.basic_rule_info ?? {}, null, 4)}\n\`\`\`\n\n`
                 )
               )
               // @ts-ignore
@@ -250,9 +278,20 @@ export async function POST(request: Request) {
               }
               // Line end
               controller.enqueue(encoder.encode("\n\n******\n\n"))
-              await supabaseAdmin
+              const { data, error } = await supabaseAdmin
                 .from("chat_files")
-                .update({ summary_given_query: generatedText })
+                .update({
+                  query_related_metadata: {
+                    ...relevantFile.query_related_metadata!,
+                    [fileQuery]: {
+                      average_chunk_relevance:
+                        relevantFile.avg_chunk_relevance_score,
+                      score: relevantFile.score,
+                      chunk_ids: relevantFile.chunks.map(chunk => chunk.id),
+                      summary: generatedText
+                    }
+                  } as Json
+                })
                 .eq("chat_id", chatId!)
                 .eq("file_id", relevantFile.id)
               generatedText = ""
