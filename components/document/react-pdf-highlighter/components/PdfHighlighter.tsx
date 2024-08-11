@@ -199,6 +199,36 @@ export class PdfHighlighter<T_HT extends IHighlight> extends PureComponent<
     this.attachRef(eventBus)
   }
 
+  preloadPages = async (pdfDocument: PDFDocumentProxy, viewer: PDFViewer) => {
+    const numPages = pdfDocument.numPages
+    const pagesToPreload = Math.min(5, numPages)
+
+    for (let i = 1; i <= pagesToPreload; i++) {
+      const page = await pdfDocument.getPage(i)
+      const pdfPageView = viewer.getPageView(i - 1)
+
+      if (pdfPageView) {
+        // Ensure that the page is set before rendering
+        pdfPageView.setPdfPage(page)
+
+        // Render the page using PDF.js's internal methods
+        if (!pdfPageView.renderingState || pdfPageView.renderingState === 0) {
+          // Ensure it's not already rendering
+          pdfPageView
+            .draw()
+            .then(() => {
+              console.log(`Page ${i} preloaded`)
+            })
+            .catch((err: any) => {
+              console.error(`Error rendering page ${i}:`, err)
+            })
+        }
+      } else {
+        console.warn(`PDFPageView for page ${i} is not available.`)
+      }
+    }
+  }
+
   componentWillUnmount() {
     this.unsubscribe(true)
   }
@@ -377,7 +407,14 @@ export class PdfHighlighter<T_HT extends IHighlight> extends PureComponent<
     )
   }
 
+  alreadyPreloaded = false
+
   onTextLayerRendered = () => {
+    if (!this.alreadyPreloaded) {
+      this.alreadyPreloaded = true
+      const { pdfDocument } = this.props
+      void this.preloadPages(pdfDocument, this.viewer)
+    }
     this.renderHighlightLayers()
   }
 
