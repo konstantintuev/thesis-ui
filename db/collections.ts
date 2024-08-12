@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase/browser-client"
-import { TablesInsert, TablesUpdate } from "@/supabase/types"
+import { Database, TablesInsert, TablesUpdate } from "@/supabase/types"
+import { SupabaseClient } from "@supabase/supabase-js"
 
 export const getCollectionById = async (collectionId: string) => {
   const { data: collection, error } = await supabase
@@ -61,9 +62,12 @@ export const getCollectionWorkspacesByCollectionId = async (
 
 export const createCollection = async (
   collection: TablesInsert<"collections">,
-  workspace_id: string
+  workspace_id: string,
+  supabaseInstance?: SupabaseClient<Database>
 ) => {
-  const { data: createdCollection, error } = await supabase
+  const { data: createdCollection, error } = await (
+    supabaseInstance ?? supabase
+  )
     .from("collections")
     .insert([collection])
     .select("*")
@@ -73,13 +77,56 @@ export const createCollection = async (
     throw new Error(error.message)
   }
 
-  await createCollectionWorkspace({
-    user_id: createdCollection.user_id,
-    collection_id: createdCollection.id,
-    workspace_id
-  })
+  await createCollectionWorkspace(
+    {
+      user_id: createdCollection.user_id,
+      collection_id: createdCollection.id,
+      workspace_id
+    },
+    supabaseInstance
+  )
 
   return createdCollection
+}
+
+// A chat is a creator of a file collection if it can supply it with files (e.g. file retriever chat)
+export const createChatCollectionCreator = async (
+  collection: TablesInsert<"chat_collection_creator">,
+  supabaseInstance?: SupabaseClient<Database>
+) => {
+  const { data: createdChatCollectionCreator, error } = await (
+    supabaseInstance ?? supabase
+  )
+    .from("chat_collection_creator")
+    .insert([collection])
+    .select("*")
+    .single()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return createdChatCollectionCreator
+}
+
+// A chat is a consumer of a file collection if it can use its files dynamically to RAG them
+export const createChatCollectionConsumer = async (
+  collection: TablesInsert<"chat_collection_consumer">,
+  supabaseInstance?: SupabaseClient<Database>
+) => {
+  const { data: createdChatCollectionConsumer, error } = await (
+    supabaseInstance ?? supabase
+  )
+    .from("chat_collection_consumer")
+    .insert([collection])
+    .select("*")
+    .single()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return createdChatCollectionConsumer
 }
 
 export const createCollections = async (
@@ -106,12 +153,17 @@ export const createCollections = async (
   return createdCollections
 }
 
-export const createCollectionWorkspace = async (item: {
-  user_id: string
-  collection_id: string
-  workspace_id: string
-}) => {
-  const { data: createdCollectionWorkspace, error } = await supabase
+export const createCollectionWorkspace = async (
+  item: {
+    user_id: string
+    collection_id: string
+    workspace_id: string
+  },
+  supabaseInstance?: SupabaseClient<Database>
+) => {
+  const { data: createdCollectionWorkspace, error } = await (
+    supabaseInstance ?? supabase
+  )
     .from("collection_workspaces")
     .insert([item])
     .select("*")

@@ -37,6 +37,7 @@ export const RetrieverMessageFileHeader: FC<
   if (!fileInfo) return undefined
 
   fileName = fileInfo.name
+  const chatId = params.chatid as string
 
   let fileExtension = fileName.substring(fileName.lastIndexOf(".") + 1)
 
@@ -46,10 +47,11 @@ export const RetrieverMessageFileHeader: FC<
         id={!duplicateReference ? fileId : undefined}
         href={
           !duplicateReference && !isGenerating
-            ? `${params.chatid as string}/document/${fileId}`
+            ? `${chatId}/document/${fileId}`
             : ""
         }
         onClick={e => {
+          console.log("RetrieverMessageFileHeaderProps params:", params)
           if (isGenerating) {
             e.preventDefault()
           }

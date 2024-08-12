@@ -13,6 +13,7 @@ import {
   BasicRuleComparisonResults,
   QueryRelatedMetadata
 } from "@/types/retriever"
+import { createChatCollectionCreator, createCollection } from "@/db/collections"
 
 export const runtime = "edge"
 
@@ -65,6 +66,7 @@ export async function POST(request: Request) {
         status: 500
       })
     }
+    // The whole message history is passed every time
     const fileQuery = messages[messages.length - 1].content
     /* What is the plan:
      * Rewrite the latest user message based on the theme of the corpus + previous user messages.
@@ -229,6 +231,28 @@ export async function POST(request: Request) {
           ] as QueryRelatedMetadata[]
         })
       )
+
+      const firstUserMessage = messages.find(msg => msg.role === "user")
+
+      const createdCollection = await createCollection(
+        {
+          description: `The verified relevant files collection for '${firstUserMessage?.content ?? fileQuery}'`,
+          name: firstUserMessage?.content ?? fileQuery,
+          user_id: profile.user_id
+        },
+        workspaceId,
+        supabaseAdmin
+      )
+      if (createdCollection) {
+        await createChatCollectionCreator(
+          {
+            chat_id: chatId,
+            collection_id: createdCollection.id,
+            user_id: profile.user_id
+          },
+          supabaseAdmin
+        )
+      }
 
       const { error: updateChatFilesError } = await supabaseAdmin
         .from("chat_files")

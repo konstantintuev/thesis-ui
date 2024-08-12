@@ -69,6 +69,10 @@ module.exports = {
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out'
+      },
+      backgroundImage: {
+        'document-sidebar': 'linear-gradient(rgb(249, 248, 247), rgb(251, 250, 248) 46px, rgb(251, 251, 249) 120px, rgb(248, 247, 245) 35%, rgb(249, 248, 246))',
+        'document-sidebar-dark': 'linear-gradient(rgb(40, 40, 40), rgb(45, 45, 45) 46px, rgb(50, 50, 50) 120px, rgb(35, 35, 35) 35%, rgb(40, 40, 40))',
       }
     }
   },

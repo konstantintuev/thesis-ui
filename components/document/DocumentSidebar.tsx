@@ -16,16 +16,22 @@ import {
   markRelevant
 } from "@/db/chat-files"
 import { Spinner } from "@/components/document/Spinner"
+import Image from "next/image"
+import "./style/PDFHighlighter.css"
 
 interface Props {
   documentName: string
+  scrollViewerTo?: { scrollTo: (highlight: IHighlight) => void }
 }
 
 const updateHash = (highlight: IHighlight) => {
   document.location.hash = `highlight-${highlight.id}`
 }
 
-export const DocumentSidebar: FC<Props> = ({ documentName }) => {
+export const DocumentSidebar: FC<Props> = ({
+  documentName,
+  scrollViewerTo
+}) => {
   const params = useParams()
   const documentid = params.documentid as string
   const chatid = params.chatid as string
@@ -70,8 +76,7 @@ export const DocumentSidebar: FC<Props> = ({ documentName }) => {
   return (
     <div
       className={
-        "overflow-auto text-gray-500 bg-gradient-to-b from-gray-100 via-gray-50 to-gray-100 " +
-        "dark:text-gray-50 dark:bg-gradient-to-b dark:from-gray-800 dark:via-gray-700 dark:to-gray-800"
+        "document-sidebar dark:document-sidebar-dark overflow-auto text-gray-500 dark:text-gray-50"
       }
       style={{ width: "25vw" }}
     >
@@ -174,7 +179,10 @@ export const DocumentSidebar: FC<Props> = ({ documentName }) => {
               key={index}
               className="duration-140 cursor-pointer space-x-3 border-b border-gray-500 p-4 transition ease-in hover:bg-gray-600/10 rtl:space-x-reverse"
               onClick={() => {
-                updateHash(highlight)
+                // updateHash(highlight)
+                if (highlight) {
+                  scrollViewerTo?.scrollTo(highlight)
+                }
               }}
             >
               <div>
@@ -189,7 +197,7 @@ export const DocumentSidebar: FC<Props> = ({ documentName }) => {
                     className="highlight__image"
                     style={{ marginTop: "0.5rem" }}
                   >
-                    <img src={highlight.content.image} alt={"Screenshot"} />
+                    <Image src={highlight.content.image} alt={"Screenshot"} />
                   </div>
                 ) : null}
               </div>

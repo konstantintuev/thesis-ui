@@ -290,6 +290,98 @@ export type Database = {
           },
         ]
       }
+      chat_collection_consumer: {
+        Row: {
+          chat_id: string
+          collection_id: string
+          created_at: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          chat_id: string
+          collection_id: string
+          created_at?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          chat_id?: string
+          collection_id?: string
+          created_at?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_collection_consumer_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "chats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_collection_consumer_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_collection_consumer_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_collection_creator: {
+        Row: {
+          chat_id: string
+          collection_id: string
+          created_at: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          chat_id: string
+          collection_id: string
+          created_at?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          chat_id?: string
+          collection_id?: string
+          created_at?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_collection_creator_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "chats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_collection_creator_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_collection_creator_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_files: {
         Row: {
           chat_id: string
