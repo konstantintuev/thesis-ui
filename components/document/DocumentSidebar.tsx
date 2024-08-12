@@ -2,8 +2,13 @@ import React, { FC, useContext, useEffect } from "react"
 import type { IHighlight } from "./react-pdf-highlighter"
 import { useParams } from "next/navigation"
 import { ChatbotUIContext } from "@/context/context"
-import { IconCheck, IconPlus, IconX } from "@tabler/icons-react"
-import { Button } from "@/components/ui/button"
+import {
+  IconCheck,
+  IconPlus,
+  IconX,
+  IconStar,
+  IconStarFilled
+} from "@tabler/icons-react"
 import {
   createChatFilesState,
   getChatFilesByChatId,
@@ -14,19 +19,13 @@ import { Spinner } from "@/components/document/Spinner"
 
 interface Props {
   documentName: string
-  resetHighlights: () => void
-  toggleDocument: () => void
 }
 
 const updateHash = (highlight: IHighlight) => {
   document.location.hash = `highlight-${highlight.id}`
 }
 
-export const DocumentSidebar: FC<Props> = ({
-  documentName,
-  toggleDocument,
-  resetHighlights
-}) => {
+export const DocumentSidebar: FC<Props> = ({ documentName }) => {
   const params = useParams()
   const documentid = params.documentid as string
   const chatid = params.chatid as string
@@ -81,109 +80,118 @@ export const DocumentSidebar: FC<Props> = ({
         </p>
       </div>
 
-      <div className="p-4">
+      <div className="px-4 pt-4">
         <p className="mb-4 text-sm text-gray-700">
-          Given the following general theme of the file retrieval task:
+          Given the general theme of the file retrieval task:
           <br />
           <span className="font-bold text-gray-900">
             NONE_SO_FAR_PART_OF_QUERY_REWRITING
           </span>
           <br />
-          And given the retrieval query for this file:
-          <br />
-          <span className="font-semibold text-gray-800">
-            {documentIsInQueries[0].file_query}
-          </span>
-          <br />
-          Do you find it relevant?
+          The file was retrieved based on the following queries, each with an
+          associated relevance score:
         </p>
-        <div className="flex space-x-2">
-          <button
-            className={`flex items-center justify-center rounded-md transition-all duration-300 ${
-              isRelevant === null
-                ? "h-[36px] w-1/2 bg-blue-500 px-4 text-white hover:bg-blue-300"
-                : isRelevant === true
-                  ? "h-[36px] w-2/3 bg-blue-500 px-4 text-white hover:bg-blue-300"
-                  : "h-[36px] w-1/3 bg-blue-500 text-white hover:bg-blue-300"
-            }`}
-            onClick={handleRelevantClick}
-          >
-            {isRelevant === null || isRelevant === true ? (
-              <>
-                <IconCheck className="mr-2" size={20} />
-                {isRelevant === null ? "Relevant" : "Marked Relevant"}
-              </>
-            ) : (
-              <IconCheck size={20} />
-            )}
-          </button>
 
-          <button
-            className={`flex items-center justify-center rounded-md transition-all duration-300 ${
-              isRelevant === null
-                ? "h-[36px] w-1/2 bg-red-500 px-4 text-white hover:bg-red-300"
-                : isRelevant === false
-                  ? "h-[36px] w-2/3 bg-red-500 px-4 text-white hover:bg-red-300"
-                  : "h-[36px] w-1/3 bg-red-500 text-white hover:bg-red-300"
-            }`}
-            onClick={handleIrrelevantClick}
-          >
-            {isRelevant === null || isRelevant === false ? (
-              <>
-                <IconX className="mr-2" size={20} />
-                {isRelevant === null ? "Irrelevant" : "Marked Irrelevant"}
-              </>
-            ) : (
-              <IconX size={20} />
-            )}
-          </button>
-        </div>
-      </div>
-
-      <ul className="document_sidebar__highlights">
-        {chatFileHighlights[documentid]?.map((highlight, index) => (
-          <li
-            // biome-ignore lint/suspicious/noArrayIndexKey: This is an example app
-            key={index}
-            className="document_sidebar__highlight"
-            onClick={() => {
-              updateHash(highlight)
-            }}
-          >
-            <div>
-              <strong>{highlight.comment.text}</strong>
-              {highlight.content.text ? (
-                <blockquote style={{ marginTop: "0.5rem" }}>
-                  {`${highlight.content.text.slice(0, 90).trim()}…`}
-                </blockquote>
-              ) : null}
-              {highlight.content.image ? (
-                <div
-                  className="highlight__image"
-                  style={{ marginTop: "0.5rem" }}
-                >
-                  <img src={highlight.content.image} alt={"Screenshot"} />
+        <div className="mb-4">
+          {documentIsInQueries.map((query, index) => (
+            <div
+              key={index}
+              className={`mb-3 border border-gray-300 p-3 ${index === 0 ? "border-l-4 border-blue-600 bg-gray-50" : "bg-white"}`}
+            >
+              {index === 0 && (
+                <div className="mb-2 flex items-center">
+                  <span className="pr-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
+                    Primary Query
+                  </span>
+                  <IconStarFilled className="-mt-1 size-4 text-blue-700" />
                 </div>
-              ) : null}
+              )}
+              <p className="mb-1 text-sm font-medium text-gray-900">
+                <strong>Query {index + 1}:</strong> {query.file_query}
+              </p>
+              <p className="mb-1 text-sm text-gray-800">
+                <strong>Relevance Score:</strong>{" "}
+                {(query.metadata.score * 100).toFixed(1)}%
+              </p>
             </div>
-            <div className="highlight__location">
-              Page {highlight.position.pageNumber}
-            </div>
-          </li>
-        ))}
-      </ul>
-      <div style={{ padding: "1rem" }}>
-        <button type="button" onClick={toggleDocument}>
-          Toggle PDF document
-        </button>
-      </div>
-      {chatFileHighlights[documentid]?.length > 0 ? (
-        <div style={{ padding: "1rem" }}>
-          <button type="button" onClick={resetHighlights}>
-            Reset highlights
-          </button>
+          ))}
+
+          <div className="flex space-x-2">
+            <button
+              className={`flex items-center justify-center rounded-md transition-all duration-300 ${
+                isRelevant === null
+                  ? "h-[36px] w-1/2 bg-blue-500 px-4 text-white hover:bg-blue-300"
+                  : isRelevant === true
+                    ? "h-[36px] w-2/3 bg-blue-500 px-4 text-white hover:bg-blue-300"
+                    : "h-[36px] w-1/3 bg-blue-500 text-white hover:bg-blue-300"
+              }`}
+              onClick={handleRelevantClick}
+            >
+              {isRelevant === null || isRelevant === true ? (
+                <>
+                  <IconCheck className="mr-2" size={20} />
+                  {isRelevant === null ? "Relevant" : "Marked Relevant"}
+                </>
+              ) : (
+                <IconCheck size={20} />
+              )}
+            </button>
+
+            <button
+              className={`flex items-center justify-center rounded-md transition-all duration-300 ${
+                isRelevant === null
+                  ? "h-[36px] w-1/2 bg-red-500 px-4 text-white hover:bg-red-300"
+                  : isRelevant === false
+                    ? "h-[36px] w-2/3 bg-red-500 px-4 text-white hover:bg-red-300"
+                    : "h-[36px] w-1/3 bg-red-500 text-white hover:bg-red-300"
+              }`}
+              onClick={handleIrrelevantClick}
+            >
+              {isRelevant === null || isRelevant === false ? (
+                <>
+                  <IconX className="mr-2" size={20} />
+                  {isRelevant === null ? "Irrelevant" : "Marked Irrelevant"}
+                </>
+              ) : (
+                <IconX size={20} />
+              )}
+            </button>
+          </div>
         </div>
-      ) : null}
+
+        <ul className="max-w-md list-inside list-none space-y-1 text-gray-500 dark:text-gray-400">
+          {chatFileHighlights[documentid]?.map((highlight, index) => (
+            <li
+              // biome-ignore lint/suspicious/noArrayIndexKey: This is an example app
+              key={index}
+              className="duration-140 cursor-pointer space-x-3 border-b border-gray-500 p-4 transition ease-in hover:bg-gray-600/10 rtl:space-x-reverse"
+              onClick={() => {
+                updateHash(highlight)
+              }}
+            >
+              <div>
+                <strong>{highlight.comment.text}</strong>
+                {highlight.content.text ? (
+                  <blockquote style={{ marginTop: "0.5rem" }}>
+                    {`${highlight.content.text.slice(0, 90).trim()}…`}
+                  </blockquote>
+                ) : null}
+                {highlight.content.image ? (
+                  <div
+                    className="highlight__image"
+                    style={{ marginTop: "0.5rem" }}
+                  >
+                    <img src={highlight.content.image} alt={"Screenshot"} />
+                  </div>
+                ) : null}
+              </div>
+              <div className="highlight__location">
+                Page {highlight.position.pageNumber}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   )
 }

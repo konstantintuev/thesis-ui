@@ -222,11 +222,7 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
 
   return (
     <div style={{ display: "flex", height: "100vh" }}>
-      <DocumentSidebar
-        documentName={documentName}
-        resetHighlights={resetHighlights}
-        toggleDocument={() => {}}
-      />
+      <DocumentSidebar documentName={documentName} />
       <div
         style={{
           height: "100vh",
