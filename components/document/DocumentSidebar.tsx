@@ -68,8 +68,14 @@ export const DocumentSidebar: FC<Props> = ({ documentName }) => {
   const documentIsInQueries = chatFile?.queryRelatedMetadata ?? []
 
   return (
-    <div className="document_sidebar" style={{ width: "25vw" }}>
-      <div className="description px-4 pt-4">
+    <div
+      className={
+        "overflow-auto text-gray-500 bg-gradient-to-b from-gray-100 via-gray-50 to-gray-100 " +
+        "dark:text-gray-50 dark:bg-gradient-to-b dark:from-gray-800 dark:via-gray-700 dark:to-gray-800"
+      }
+      style={{ width: "25vw" }}
+    >
+      <div className="px-4 pt-4">
         <h2 className="mb-4">{documentName}</h2>
 
         <p>
@@ -81,12 +87,10 @@ export const DocumentSidebar: FC<Props> = ({ documentName }) => {
       </div>
 
       <div className="px-4 pt-4">
-        <p className="mb-4 text-sm text-gray-700">
+        <p className="mb-4 text-sm">
           Given the general theme of the file retrieval task:
           <br />
-          <span className="font-bold text-gray-900">
-            NONE_SO_FAR_PART_OF_QUERY_REWRITING
-          </span>
+          <span className="font-bold">NONE_SO_FAR_PART_OF_QUERY_REWRITING</span>
           <br />
           The file was retrieved based on the following queries, each with an
           associated relevance score:
@@ -96,20 +100,24 @@ export const DocumentSidebar: FC<Props> = ({ documentName }) => {
           {documentIsInQueries.map((query, index) => (
             <div
               key={index}
-              className={`mb-3 border border-gray-300 p-3 ${index === 0 ? "border-l-4 border-blue-600 bg-gray-50" : "bg-white"}`}
+              className={`mb-3 border border-gray-300 p-3 dark:border-gray-600 ${
+                index === 0
+                  ? "border-l-4 border-blue-600 bg-gray-50 dark:border-blue-400 dark:bg-gray-800"
+                  : "bg-white dark:bg-gray-900"
+              }`}
             >
               {index === 0 && (
                 <div className="mb-2 flex items-center">
-                  <span className="pr-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
+                  <span className="pr-1 text-xs font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-400">
                     Primary Query
                   </span>
-                  <IconStarFilled className="-mt-1 size-4 text-blue-700" />
+                  <IconStarFilled className="-mt-1 size-4 text-blue-700 dark:text-blue-400" />
                 </div>
               )}
-              <p className="mb-1 text-sm font-medium text-gray-900">
+              <p className="mb-1 text-sm font-medium text-gray-900 dark:text-gray-100">
                 <strong>Query {index + 1}:</strong> {query.file_query}
               </p>
-              <p className="mb-1 text-sm text-gray-800">
+              <p className="mb-1 text-sm text-gray-800 dark:text-gray-300">
                 <strong>Relevance Score:</strong>{" "}
                 {(query.metadata.score * 100).toFixed(1)}%
               </p>
@@ -120,10 +128,10 @@ export const DocumentSidebar: FC<Props> = ({ documentName }) => {
             <button
               className={`flex items-center justify-center rounded-md transition-all duration-300 ${
                 isRelevant === null
-                  ? "h-[36px] w-1/2 bg-blue-500 px-4 text-white hover:bg-blue-300"
+                  ? "h-[36px] w-1/2 bg-green-500 px-4 text-white hover:bg-green-300"
                   : isRelevant === true
-                    ? "h-[36px] w-2/3 bg-blue-500 px-4 text-white hover:bg-blue-300"
-                    : "h-[36px] w-1/3 bg-blue-500 text-white hover:bg-blue-300"
+                    ? "h-[36px] w-2/3 bg-green-500 px-4 text-white hover:bg-green-300"
+                    : "h-[36px] w-1/3 bg-green-500 text-white hover:bg-green-300"
               }`}
               onClick={handleRelevantClick}
             >
@@ -159,7 +167,7 @@ export const DocumentSidebar: FC<Props> = ({ documentName }) => {
           </div>
         </div>
 
-        <ul className="max-w-md list-inside list-none space-y-1 text-gray-500 dark:text-gray-400">
+        <ul className="max-w-md list-inside list-none space-y-1">
           {chatFileHighlights[documentid]?.map((highlight, index) => (
             <li
               // biome-ignore lint/suspicious/noArrayIndexKey: This is an example app

@@ -65,7 +65,8 @@ export const RetrieverMessageFileHeader: FC<
             ? "bg-green-600 text-white"
             : fileInfo.relevant === false
               ? "bg-red-600 text-white"
-              : "border-2"
+              : "border-2 hover:border-opacity-50 border-gray-200 " +
+                "hover:dark:border-opacity-50 dark:border-gray-500"
         } hover:bg-opacity-50`}
       >
         <div className="rounded bg-blue-500 p-2">
