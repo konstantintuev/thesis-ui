@@ -83,7 +83,6 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
 
   const [documentUrl, setDocumentUrl] = useState<string>("")
   const [documentName, setDocumentName] = useState<string>("")
-  const [fileQuery, setFileQuery] = useState<string>("")
 
   // Prevent closing the highlight comment input by other hint tooltips
   const editingCommentTooltipOpen = useMemo(() => {
@@ -121,33 +120,6 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
       const highlights = await getHighlights(chatid, documentid)
 
       const link = await getFileFromStorage(fileRecord.file_path)
-
-      /* Finding the relevant query for the file is very important.
-       * 1. Get file retriever chat messages
-       * 2. Find where our file is linked (only once)
-       * 3. Find the user query before that message
-       */
-
-      const documentMsgIndex = chatMsges.findIndex(msg =>
-        msg.content.includes(
-          `(/${workspaceid}` + `/chat/${chatid}` + `/document/${documentid})`
-        )
-      )
-
-      // At least 1 for userQueryForDocument to be 0
-      if (documentMsgIndex < 1) return
-
-      let userQueryForDocument: string | null = null
-
-      // Find first user message before documentMsgIndex
-      for (let i = documentMsgIndex - 1; i >= 0; i--) {
-        if (chatMsges[i].role === "user") {
-          userQueryForDocument = chatMsges[i].content
-          break
-        }
-      }
-
-      setFileQuery(userQueryForDocument ?? "Unknown query")
 
       setDocumentUrl(link)
 
@@ -251,7 +223,6 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
   return (
     <div style={{ display: "flex", height: "100vh" }}>
       <DocumentSidebar
-        fileQuery={fileQuery}
         documentName={documentName}
         resetHighlights={resetHighlights}
         toggleDocument={() => {}}

@@ -10,12 +10,12 @@ import {
   markIrrelevant,
   markRelevant
 } from "@/db/chat-files"
+import { Spinner } from "@/components/document/Spinner"
 
 interface Props {
   documentName: string
   resetHighlights: () => void
   toggleDocument: () => void
-  fileQuery: string
 }
 
 const updateHash = (highlight: IHighlight) => {
@@ -25,8 +25,7 @@ const updateHash = (highlight: IHighlight) => {
 export const DocumentSidebar: FC<Props> = ({
   documentName,
   toggleDocument,
-  resetHighlights,
-  fileQuery
+  resetHighlights
 }) => {
   const params = useParams()
   const documentid = params.documentid as string
@@ -45,7 +44,10 @@ export const DocumentSidebar: FC<Props> = ({
     })()
   }, [chatid, setChatFiles])
 
-  const isRelevant = chatFiles.find(f => f.id === documentid)?.relevant
+  const chatFile = chatFiles.find(f => f.id === documentid)
+  if (!chatFile) return <Spinner />
+
+  const isRelevant = chatFile.relevant
 
   const handleRelevantClick = async () => {
     const ok = await markRelevant(chatid, documentid, isRelevant ?? false)
@@ -63,6 +65,8 @@ export const DocumentSidebar: FC<Props> = ({
       setChatFiles(createChatFilesState(chatFiles))
     }
   }
+
+  const documentIsInQueries = chatFile?.queryRelatedMetadata ?? []
 
   return (
     <div className="document_sidebar" style={{ width: "25vw" }}>
@@ -87,7 +91,9 @@ export const DocumentSidebar: FC<Props> = ({
           <br />
           And given the retrieval query for this file:
           <br />
-          <span className="font-semibold text-gray-800">{fileQuery}</span>
+          <span className="font-semibold text-gray-800">
+            {documentIsInQueries[0].file_query}
+          </span>
           <br />
           Do you find it relevant?
         </p>

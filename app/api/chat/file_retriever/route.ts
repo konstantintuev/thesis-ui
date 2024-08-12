@@ -9,7 +9,10 @@ import { generateBgeLocalEmbedding } from "@/lib/generate-local-embedding"
 import { NextResponse } from "next/server"
 import { searchFilesMLServer } from "@/lib/retrieval/processing/multiple"
 import { FileItemSearchResult } from "@/types/ml-server-communication"
-import { BasicRuleComparisonResults } from "@/types/retriever"
+import {
+  BasicRuleComparisonResults,
+  QueryRelatedMetadata
+} from "@/types/retriever"
 
 export const runtime = "edge"
 
@@ -95,7 +98,7 @@ export async function POST(request: Request) {
       basic_rule_info?: BasicRuleComparisonResults
       score: number
       already_queried?: boolean
-      query_related_metadata?: Record<string, unknown>
+      query_related_metadata?: Json[]
     }
     let filesFound: ExtendedFile[]
     // Map chunks to filesRaw
@@ -212,15 +215,18 @@ export async function POST(request: Request) {
             basic_rule_info: file.basic_rule_info,
             basic_rule_relevance: file.basic_rule_relevance_score
           },
-          query_related_metadata: {
-            ...file.query_related_metadata!,
-            [fileQuery]: {
-              average_chunk_relevance: file.avg_chunk_relevance_score,
-              score: file.score,
-              chunk_ids: file.chunks.map(chunk => chunk.id),
-              summary: ""
+          query_related_metadata: [
+            ...(file.query_related_metadata ?? []),
+            {
+              file_query: fileQuery,
+              metadata: {
+                average_chunk_relevance: file.avg_chunk_relevance_score,
+                score: file.score,
+                chunk_ids: file.chunks.map(chunk => chunk.id),
+                summary: ""
+              }
             }
-          } as Json
+          ] as QueryRelatedMetadata[]
         })
       )
 
@@ -281,16 +287,19 @@ export async function POST(request: Request) {
               const { data, error } = await supabaseAdmin
                 .from("chat_files")
                 .update({
-                  query_related_metadata: {
-                    ...relevantFile.query_related_metadata!,
-                    [fileQuery]: {
-                      average_chunk_relevance:
-                        relevantFile.avg_chunk_relevance_score,
-                      score: relevantFile.score,
-                      chunk_ids: relevantFile.chunks.map(chunk => chunk.id),
-                      summary: generatedText
+                  query_related_metadata: [
+                    ...(relevantFile.query_related_metadata ?? []),
+                    {
+                      file_query: fileQuery,
+                      metadata: {
+                        average_chunk_relevance:
+                          relevantFile.avg_chunk_relevance_score,
+                        score: relevantFile.score,
+                        chunk_ids: relevantFile.chunks.map(chunk => chunk.id),
+                        summary: generatedText
+                      }
                     }
-                  } as Json
+                  ] as QueryRelatedMetadata[]
                 })
                 .eq("chat_id", chatId!)
                 .eq("file_id", relevantFile.id)

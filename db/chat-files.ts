@@ -1,8 +1,9 @@
 import { supabase } from "@/lib/supabase/browser-client"
-import { Tables, TablesInsert } from "@/supabase/types"
+import { Json, Tables, TablesInsert } from "@/supabase/types"
 import { IHighlight } from "@/components/document/react-pdf-highlighter"
 import { ChatFile } from "@/types"
 import { format } from "date-fns"
+import { QueryRelatedMetadata } from "@/types/retriever"
 
 type ChatFileWithFile = Tables<"chat_files"> & {
   file: Tables<"files"> | null
@@ -123,16 +124,31 @@ export const markIrrelevant = async (
 export const createChatFilesState = (
   chatAndFiles: ChatAndFiles
 ): ChatFile[] => {
-  return chatAndFiles.chat_files.map((chat_file, index) => ({
-    id: chat_file.file?.id ?? "",
-    name: chat_file.file?.name ?? "",
-    type: chat_file.file?.type ?? "",
-    file: null,
-    relevant: chat_file.relevant,
-    fileDate: chat_file.file?.created_at
-      ? format(new Date(chat_file.file?.created_at), "dd.MM.yy")
-      : undefined,
-    // @ts-ignore
-    authorName: chat_file.file?.metadata?.["author"]
-  }))
+  return chatAndFiles.chat_files.map((chat_file, index) => {
+    const new_query_related_metadata = (
+      chat_file.query_related_metadata as QueryRelatedMetadata[]
+    )?.map(fileQueryMetadata => {
+      const { summary, ...rest } = fileQueryMetadata.metadata
+      return {
+        file_query: fileQueryMetadata.file_query,
+        metadata: {
+          ...rest,
+          summary: ""
+        }
+      } as QueryRelatedMetadata
+    })
+    return {
+      id: chat_file.file?.id ?? "",
+      name: chat_file.file?.name ?? "",
+      type: chat_file.file?.type ?? "",
+      file: null,
+      relevant: chat_file.relevant,
+      fileDate: chat_file.file?.created_at
+        ? format(new Date(chat_file.file?.created_at), "dd.MM.yy")
+        : undefined,
+      // @ts-ignore
+      authorName: chat_file.file?.metadata?.["author"],
+      queryRelatedMetadata: new_query_related_metadata
+    }
+  })
 }
