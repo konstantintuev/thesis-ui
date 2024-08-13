@@ -57,8 +57,10 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
     scrollToTop
   } = useScroll()
 
+  const chatID = selectedChat?.id ?? (params.chatid as string)
+
   const noNeedToUpdateData =
-    chatMessages.length > 0 && chatMessages[0].message.chat_id === params.chatid
+    chatMessages.length > 0 && chatMessages[0].message.chat_id === chatID
   const [loading, setLoading] = useState(!noNeedToUpdateData)
 
   useEffect(() => {
@@ -74,7 +76,7 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
       setIsAtBottom(true)
     }
 
-    if (params.chatid) {
+    if (chatID) {
       fetchData().then(() => {
         handleFocusChatInput()
         setLoading(false)
@@ -85,7 +87,7 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
   }, [])
 
   const fetchMessages = async () => {
-    const fetchedMessages = await getMessagesByChatId(params.chatid as string)
+    const fetchedMessages = await getMessagesByChatId(chatID as string)
 
     const imagePromises: Promise<MessageImage>[] = fetchedMessages.flatMap(
       message =>
@@ -130,7 +132,7 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
     const uniqueFileItems = messageFileItems.flatMap(item => item.file_items)
     setChatFileItems(uniqueFileItems)
 
-    const chatFiles = await getChatFilesByChatId(params.chatid as string)
+    const chatFiles = await getChatFilesByChatId(chatID as string)
 
     setChatFiles(createChatFilesState(chatFiles))
 
@@ -151,7 +153,7 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
   }
 
   const fetchChat = async () => {
-    const chat = await getChatById(params.chatid as string)
+    const chat = await getChatById(chatID as string)
     if (!chat) return
 
     if (chat.assistant_id) {

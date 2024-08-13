@@ -28,7 +28,7 @@ interface RetrieverMessageFileHeaderProps {
 export const RetrieverMessageFileHeader: FC<
   RetrieverMessageFileHeaderProps
 > = ({ fileName, fileId, duplicateReference }) => {
-  const { isGenerating, chatFiles } = useContext(ChatbotUIContext)
+  const { isGenerating, chatFiles, selectedChat } = useContext(ChatbotUIContext)
 
   const params = useParams()
 
@@ -37,7 +37,7 @@ export const RetrieverMessageFileHeader: FC<
   if (!fileInfo) return undefined
 
   fileName = fileInfo.name
-  const chatId = params.chatid as string
+  const chatId = selectedChat?.id ?? (params.chatid as string)
 
   let fileExtension = fileName.substring(fileName.lastIndexOf(".") + 1)
 
