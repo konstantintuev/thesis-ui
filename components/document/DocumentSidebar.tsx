@@ -18,6 +18,7 @@ import {
 import { Spinner } from "@/components/document/Spinner"
 import Image from "next/image"
 import "./style/PDFHighlighter.css"
+import { getCollectionWorkspacesByWorkspaceId } from "@/db/collections"
 
 interface Props {
   documentName: string
@@ -37,7 +38,7 @@ export const DocumentSidebar: FC<Props> = ({
   const chatid = params.chatid as string
   const workspaceid = params.workspaceid as string
 
-  const { chatFileHighlights, setChatFiles, chatFiles } =
+  const { chatFileHighlights, setChatFiles, chatFiles, setCollections } =
     useContext(ChatbotUIContext)
 
   useEffect(() => {
@@ -59,6 +60,10 @@ export const DocumentSidebar: FC<Props> = ({
     if (ok) {
       const chatFiles = await getChatFilesByChatId(chatid)
       setChatFiles(createChatFilesState(chatFiles))
+      // Marking file relevant/irrelevant changes the corresponding retrieval chat collection
+      const collectionData =
+        await getCollectionWorkspacesByWorkspaceId(workspaceid)
+      setCollections(collectionData.collections)
     }
   }
 
@@ -68,6 +73,10 @@ export const DocumentSidebar: FC<Props> = ({
     if (ok) {
       const chatFiles = await getChatFilesByChatId(chatid)
       setChatFiles(createChatFilesState(chatFiles))
+      // Marking file relevant/irrelevant changes the corresponding retrieval chat collection
+      const collectionData =
+        await getCollectionWorkspacesByWorkspaceId(workspaceid)
+      setCollections(collectionData.collections)
     }
   }
 

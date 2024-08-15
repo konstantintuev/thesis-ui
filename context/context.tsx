@@ -82,10 +82,10 @@ interface ChatbotUIContext {
   // <ID,json>
   chatFileHighlights: Record<string, IHighlight[]>
   setChatFileHighlights: Dispatch<SetStateAction<Record<string, IHighlight[]>>>
-  scrollHeight: {
-    pageId: string
-    scrollTop: number
-  }
+  selectedCollectionCreatorChat: Tables<"chats"> | null
+  setSelectedCollectionCreatorChat: Dispatch<
+    SetStateAction<Tables<"chats"> | null>
+  >
 
   // ACTIVE CHAT STORE
   abortController: AbortController | null
@@ -94,6 +94,10 @@ interface ChatbotUIContext {
   setFirstTokenReceived: Dispatch<SetStateAction<boolean>>
   isGenerating: boolean
   setIsGenerating: Dispatch<SetStateAction<boolean>>
+  scrollHeight: {
+    pageId: string
+    scrollTop: number
+  }
 
   // CHAT INPUT COMMAND STORE
   isPromptPickerOpen: boolean
@@ -214,10 +218,8 @@ export const ChatbotUIContext = createContext<ChatbotUIContext>({
   setChatFileItems: () => {},
   chatFileHighlights: {},
   setChatFileHighlights: () => {},
-  scrollHeight: {
-    pageId: "",
-    scrollTop: 0
-  },
+  selectedCollectionCreatorChat: null,
+  setSelectedCollectionCreatorChat: () => {},
 
   // ACTIVE CHAT STORE
   isGenerating: false,
@@ -226,6 +228,10 @@ export const ChatbotUIContext = createContext<ChatbotUIContext>({
   setFirstTokenReceived: () => {},
   abortController: null,
   setAbortController: () => {},
+  scrollHeight: {
+    pageId: "",
+    scrollTop: 0
+  },
 
   // CHAT INPUT COMMAND STORE
   isPromptPickerOpen: false,

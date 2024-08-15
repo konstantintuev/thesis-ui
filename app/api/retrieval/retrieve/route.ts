@@ -9,11 +9,18 @@ import OpenAI from "openai"
 
 export async function POST(request: Request) {
   const json = await request.json()
-  const { userInput, fileIds, embeddingsProvider, sourceCount } = json as {
+  const {
+    userInput,
+    fileIds,
+    embeddingsProvider,
+    sourceCount,
+    chatId: string
+  } = json as {
     userInput: string
     fileIds: string[]
     embeddingsProvider: "openai" | "local"
     sourceCount: number
+    chatId: string
   }
 
   const uniqueFileIds = [...new Set(fileIds)]

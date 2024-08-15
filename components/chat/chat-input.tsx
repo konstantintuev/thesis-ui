@@ -6,7 +6,8 @@ import {
   IconBolt,
   IconCirclePlus,
   IconPlayerStopFilled,
-  IconSend
+  IconSend,
+  IconX
 } from "@tabler/icons-react"
 import Image from "next/image"
 import { FC, useContext, useEffect, useRef, useState } from "react"
@@ -20,6 +21,7 @@ import { useChatHandler } from "./chat-hooks/use-chat-handler"
 import { useChatHistoryHandler } from "./chat-hooks/use-chat-history"
 import { usePromptAndCommand } from "./chat-hooks/use-prompt-and-command"
 import { useSelectFileHandler } from "./chat-hooks/use-select-file-handler"
+import { ChatCollectionConsumerButton } from "@/components/chat/chat-collection-consumer-button"
 
 interface ChatInputProps {}
 
@@ -54,7 +56,9 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
     chatSettings,
     selectedTools,
     setSelectedTools,
-    assistantImages
+    assistantImages,
+    selectedCollectionCreatorChat,
+    setSelectedCollectionCreatorChat
   } = useContext(ChatbotUIContext)
 
   const {
@@ -190,6 +194,22 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
             </div>
           ))}
 
+        {selectedCollectionCreatorChat && (
+          <div className="relative mx-auto flex w-fit cursor-pointer items-center space-x-2 rounded-lg border p-1.5 hover:opacity-50">
+            <div className="text-sm font-bold">
+              Talking with the approved files from{" "}
+              {`"${selectedCollectionCreatorChat.name}"`}
+            </div>
+
+            <IconX
+              className="bg-muted-foreground border-primary absolute right-[-6px] top-[-6px] flex size-5 cursor-pointer items-center justify-center rounded-full border-DEFAULT text-[10px] hover:border-red-500 hover:bg-white hover:text-red-500"
+              onClick={e => {
+                e.stopPropagation()
+                setSelectedCollectionCreatorChat(null)
+              }}
+            />
+          </div>
+        )}
         {selectedAssistant && (
           <div className="border-primary mx-auto flex w-fit items-center space-x-2 rounded-lg border p-1.5">
             {selectedAssistant.image_path && (
@@ -259,27 +279,32 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
           onCompositionEnd={() => setIsTyping(false)}
         />
 
-        <div className="absolute bottom-[14px] right-3 cursor-pointer hover:opacity-50">
-          {isGenerating ? (
-            <IconPlayerStopFilled
-              className="hover:bg-background animate-pulse rounded bg-transparent p-1"
-              onClick={handleStopMessage}
-              size={30}
-            />
-          ) : (
-            <IconSend
-              className={cn(
-                "bg-primary text-secondary rounded p-1",
-                !userInput && "cursor-not-allowed opacity-50"
-              )}
-              onClick={() => {
-                if (!userInput) return
+        <div className="absolute right-3 flex flex-row items-center align-middle">
+          {/* Activate creating file chats with the approved retrieved files */}
+          <ChatCollectionConsumerButton />
+          <div className="w-1" />
+          <div className="cursor-pointer hover:opacity-50">
+            {isGenerating ? (
+              <IconPlayerStopFilled
+                className="hover:bg-background animate-pulse rounded bg-transparent p-1"
+                onClick={handleStopMessage}
+                size={30}
+              />
+            ) : (
+              <IconSend
+                className={cn(
+                  "bg-primary text-secondary rounded p-1",
+                  !userInput && "cursor-not-allowed opacity-50"
+                )}
+                onClick={() => {
+                  if (!userInput) return
 
-                handleSendMessage(userInput, chatMessages, false)
-              }}
-              size={30}
-            />
-          )}
+                  handleSendMessage(userInput, chatMessages, false)
+                }}
+                size={30}
+              />
+            )}
+          </div>
         </div>
       </div>
     </>

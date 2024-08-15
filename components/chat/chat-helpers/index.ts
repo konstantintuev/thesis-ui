@@ -27,6 +27,10 @@ import React, { SetStateAction, useContext } from "react"
 import { toast } from "sonner"
 import { v4 as uuidv4 } from "uuid"
 import { ChatbotUIContext } from "@/context/context"
+import {
+  createChatCollectionConsumer,
+  getCollectionWorkspacesByWorkspaceId
+} from "@/db/collections"
 
 export const validateChatSettings = (
   chatSettings: ChatSettings | null,
@@ -205,7 +209,8 @@ export const handleHostedChat = async (
   setFirstTokenReceived: React.Dispatch<React.SetStateAction<boolean>>,
   setChatMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>,
   setToolInUse: React.Dispatch<React.SetStateAction<string>>,
-  setChatFiles: React.Dispatch<SetStateAction<ChatFile[]>>
+  setChatFiles: React.Dispatch<SetStateAction<ChatFile[]>>,
+  setCollections: React.Dispatch<SetStateAction<Tables<"collections">[]>>
 ) => {
   const provider =
     modelData.provider === "openai" && profile.use_azure_openai
@@ -246,9 +251,15 @@ export const handleHostedChat = async (
     setChatMessages
   )
 
+  // Update chat files and collection as soon as text is being received
+  //   as we have already added them to the database
+  // Only internally handled hosted chats can do such operations
   const chatFiles = await getChatFilesByChatId(payload.chatId as string)
-
   setChatFiles(createChatFilesState(chatFiles))
+  const collectionData = await getCollectionWorkspacesByWorkspaceId(
+    payload.workspaceId
+  )
+  setCollections(collectionData.collections)
 
   return await processResponse(
     response,
@@ -399,6 +410,45 @@ export const handleCreateChat = async (
   )
 
   setChatFiles(prev => [...prev, ...newMessageFiles])
+
+  return createdChat
+}
+
+export const handleCreateCollectionConsumerChat = async (
+  chatSettings: ChatSettings,
+  profile: Tables<"profiles">,
+  selectedWorkspace: Tables<"workspaces">,
+  messageContent: string,
+  collectionId: string,
+  setSelectedChat: React.Dispatch<React.SetStateAction<Tables<"chats"> | null>>,
+  setChats: React.Dispatch<React.SetStateAction<Tables<"chats">[]>>,
+  setChatFiles: React.Dispatch<React.SetStateAction<ChatFile[]>>
+) => {
+  const createdChat = await createChat({
+    user_id: profile.user_id,
+    workspace_id: selectedWorkspace.id,
+    assistant_id: null,
+    context_length: chatSettings.contextLength,
+    include_profile_context: chatSettings.includeProfileContext,
+    include_workspace_instructions: chatSettings.includeWorkspaceInstructions,
+    model: chatSettings.model,
+    name: messageContent.substring(0, 100),
+    prompt: chatSettings.prompt,
+    temperature: chatSettings.temperature,
+    embeddings_provider: chatSettings.embeddingsProvider
+  })
+  if (!createdChat) {
+    return null
+  }
+  await createChatCollectionConsumer({
+    chat_id: createdChat.id,
+    collection_id: collectionId,
+    user_id: profile.user_id
+  })
+
+  setSelectedChat(createdChat)
+  setChats(chats => [createdChat, ...chats])
+  setChatFiles([])
 
   return createdChat
 }

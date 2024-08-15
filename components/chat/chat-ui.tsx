@@ -57,7 +57,9 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
     scrollToTop
   } = useScroll()
 
-  const chatID = selectedChat?.id ?? (params.chatid as string)
+  // First check the url and then the selected chat, as otherwise chats never get updated
+  //   as noNeedToUpdateData is activated!
+  const chatID = (params.chatid as string) ?? selectedChat?.id
 
   const noNeedToUpdateData =
     chatMessages.length > 0 && chatMessages[0].message.chat_id === chatID

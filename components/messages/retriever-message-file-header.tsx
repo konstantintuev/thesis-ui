@@ -51,7 +51,6 @@ export const RetrieverMessageFileHeader: FC<
             : ""
         }
         onClick={e => {
-          console.log("RetrieverMessageFileHeaderProps params:", params)
           if (isGenerating) {
             e.preventDefault()
           }

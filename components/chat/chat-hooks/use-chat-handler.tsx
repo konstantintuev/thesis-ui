@@ -50,6 +50,7 @@ export const useChatHandler = () => {
     chatImages,
     setChatImages,
     setChatFiles,
+    setCollections,
     setNewMessageFiles,
     setShowFilesDisplay,
     newMessageFiles,
@@ -273,11 +274,6 @@ export const useChatHandler = () => {
           setChats,
           setChatFiles
         )
-        window.history.pushState(
-          null,
-          "",
-          `/${selectedWorkspace!.id}/chat/${currentChat.id}`
-        )
       } else {
         const updatedChat = await updateChat(currentChat.id, {
           updated_at: new Date().toISOString()
@@ -370,7 +366,8 @@ export const useChatHandler = () => {
             setFirstTokenReceived,
             setChatMessages,
             setToolInUse,
-            setChatFiles
+            setChatFiles,
+            setCollections
           )
         }
       }

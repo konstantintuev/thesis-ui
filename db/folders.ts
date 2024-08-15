@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase/browser-client"
-import { TablesInsert, TablesUpdate } from "@/supabase/types"
+import { Database, TablesInsert, TablesUpdate } from "@/supabase/types"
+import { SupabaseClient } from "@supabase/supabase-js"
 
 export const getFoldersByWorkspaceId = async (workspaceId: string) => {
   const { data: folders, error } = await supabase
@@ -14,8 +15,11 @@ export const getFoldersByWorkspaceId = async (workspaceId: string) => {
   return folders
 }
 
-export const createFolder = async (folder: TablesInsert<"folders">) => {
-  const { data: createdFolder, error } = await supabase
+export const createFolder = async (
+  folder: TablesInsert<"folders">,
+  supabaseInstance?: SupabaseClient<Database>
+) => {
+  const { data: createdFolder, error } = await (supabaseInstance ?? supabase)
     .from("folders")
     .insert([folder])
     .select("*")

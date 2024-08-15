@@ -78,32 +78,33 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
   const [userInput, setUserInput] = useState<string>("")
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [chatSettings, setChatSettings] = useState<ChatSettings>({
-    model: "gpt-4-turbo-preview",
+    model: "file_retriever",
     prompt: "You are a helpful AI assistant.",
     temperature: 0.5,
     contextLength: 4000,
     includeProfileContext: true,
     includeWorkspaceInstructions: true,
-    embeddingsProvider: "openai"
+    embeddingsProvider: "local"
   })
   const [selectedChat, setSelectedChat] = useState<Tables<"chats"> | null>(null)
   const [chatFileItems, setChatFileItems] = useState<Tables<"file_items">[]>([])
   const [chatFileHighlights, setChatFileHighlights] = useState<
     Record<string, IHighlight[]>
   >({})
-
-  const scrollHeight = useMemo(() => {
-    return {
-      pageId: "",
-      scrollTop: 0
-    }
-  }, [])
+  const [selectedCollectionCreatorChat, setSelectedCollectionCreatorChat] =
+    useState<Tables<"chats"> | null>(null)
 
   // ACTIVE CHAT STORE
   const [isGenerating, setIsGenerating] = useState<boolean>(false)
   const [firstTokenReceived, setFirstTokenReceived] = useState<boolean>(false)
   const [abortController, setAbortController] =
     useState<AbortController | null>(null)
+  const scrollHeight = useMemo(() => {
+    return {
+      pageId: "",
+      scrollTop: 0
+    }
+  }, [])
 
   // CHAT INPUT COMMAND STORE
   const [isPromptPickerOpen, setIsPromptPickerOpen] = useState(false)
@@ -278,7 +279,8 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
         setChatFileItems,
         chatFileHighlights,
         setChatFileHighlights,
-        scrollHeight,
+        selectedCollectionCreatorChat,
+        setSelectedCollectionCreatorChat,
 
         // ACTIVE CHAT STORE
         isGenerating,
@@ -287,6 +289,7 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
         setFirstTokenReceived,
         abortController,
         setAbortController,
+        scrollHeight,
 
         // CHAT INPUT COMMAND STORE
         isPromptPickerOpen,
