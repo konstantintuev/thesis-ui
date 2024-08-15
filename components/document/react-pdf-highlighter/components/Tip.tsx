@@ -71,7 +71,7 @@ export class Tip extends Component<Props, State> {
           </div>
         ) : (
           <form
-            className="Tip__card"
+            className="Tip__card dark:bg-white dark:text-black"
             onSubmit={event => {
               event.preventDefault()
               onConfirm({ text, emoji })
@@ -85,7 +85,7 @@ export class Tip extends Component<Props, State> {
               Enter comment for the highlight:
             </h2>
             <TextareaAutosize
-              className="w-full"
+              className="w-full dark:border-gray-200 dark:bg-white dark:text-black"
               placeholder="Your comment"
               value={text}
               onValueChange={event => this.setState({ text: event })}
@@ -94,7 +94,7 @@ export class Tip extends Component<Props, State> {
               textareaRef={this.textRef}
             />
             {/* Inspired from https://flowbite.com/docs/forms/radio */}
-            <ul className="w-full items-center rounded-md pt-3 font-medium text-gray-900 sm:flex dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+            <ul className="w-full items-center rounded-md pt-3 font-medium text-gray-900 sm:flex">
               {this.emojiList.map((_emoji, index) => (
                 <li
                   key={_emoji}
