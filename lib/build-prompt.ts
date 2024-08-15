@@ -174,12 +174,24 @@ export async function buildFinalMessages(
   return finalMessages
 }
 
+const retrievalTextIntro =
+  "You may use the following sources if needed to answer the user's question. If you don't know the answer, say \"I don't know."
+
 function buildRetrievalText(fileItems: Tables<"file_items">[]) {
   const retrievalText = fileItems
     .map(item => `<BEGIN SOURCE>\n${item.content}\n</END SOURCE>`)
     .join("\n\n")
 
-  return `You may use the following sources if needed to answer the user's question. If you don't know the answer, say "I don't know."\n\n${retrievalText}`
+  return `${retrievalTextIntro}"\n\n${retrievalText}`
+}
+
+export function removeRetrievalText(content: string) {
+  const startIndex = content.indexOf(retrievalTextIntro)
+  // No RAG text
+  if (startIndex === -1) {
+    return content
+  }
+  return content.substring(0, startIndex)
 }
 
 export async function buildGoogleGeminiFinalMessages(

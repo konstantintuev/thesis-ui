@@ -3,13 +3,17 @@ import { checkApiKey, getServerProfile } from "@/lib/server/server-chat-helpers"
 import { ChatSettings } from "@/types"
 import { OpenAIStream, StreamingTextResponse } from "ai"
 import OpenAI from "openai"
+import { removeRetrievalText } from "@/lib/build-prompt"
 
 export const runtime = "edge"
 export async function POST(request: Request) {
   const json = await request.json()
-  const { chatSettings, messages } = json as {
+  let { chatSettings, messages } = json as {
     chatSettings: ChatSettings
-    messages: any[]
+    messages: Array<{
+      content: string
+      role: string
+    }>
   }
 
   try {
@@ -23,9 +27,17 @@ export async function POST(request: Request) {
       baseURL: "https://api.groq.com/openai/v1"
     })
 
+    messages = messages.map((message, index) => {
+      if (index === messages.length - 1) {
+        return message
+      }
+      message.content = removeRetrievalText(message.content)
+      return message
+    })
+
     const response = await groq.chat.completions.create({
       model: chatSettings.model,
-      messages,
+      messages: messages as any,
       max_tokens:
         CHAT_SETTING_LIMITS[chatSettings.model].MAX_TOKEN_OUTPUT_LENGTH,
       stream: true

@@ -58,6 +58,7 @@ export const useChatHandler = () => {
     setNewMessageFiles,
     setShowFilesDisplay,
     setCollectionRetrievalActive,
+    setUseRetrieval,
     newMessageFiles,
     chatFileItems,
     setChatFileItems,
@@ -278,6 +279,8 @@ export const useChatHandler = () => {
             user_id: profile!.user_id
           })
           setChatFiles([])
+          setCollectionRetrievalActive(true)
+          setUseRetrieval(true)
         }
       } else {
         const updatedChat = await updateChat(currentChat.id, {
