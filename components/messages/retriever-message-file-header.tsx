@@ -28,7 +28,8 @@ interface RetrieverMessageFileHeaderProps {
 export const RetrieverMessageFileHeader: FC<
   RetrieverMessageFileHeaderProps
 > = ({ fileName, fileId, duplicateReference }) => {
-  const { isGenerating, chatFiles, selectedChat } = useContext(ChatbotUIContext)
+  const { isGenerating, chatFiles, selectedChat, selectedWorkspace } =
+    useContext(ChatbotUIContext)
 
   const params = useParams()
 
@@ -46,18 +47,12 @@ export const RetrieverMessageFileHeader: FC<
       <Link
         id={!duplicateReference ? fileId : undefined}
         href={
-          !duplicateReference && !isGenerating
-            ? `${chatId}/document/${fileId}`
+          !isGenerating
+            ? `/${selectedWorkspace!.id}/chat/${chatId}/document/${fileId}`
             : ""
         }
         onClick={e => {
           if (isGenerating) {
-            e.preventDefault()
-          }
-          if (duplicateReference) {
-            document
-              .getElementById(fileId)
-              ?.scrollIntoView({ behavior: "smooth", block: "center" })
             e.preventDefault()
           }
         }}

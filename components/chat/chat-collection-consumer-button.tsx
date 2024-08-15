@@ -49,12 +49,12 @@ export const ChatCollectionConsumerButton: FC<
         side="top"
         display={
           <div>
-            <strong className="font-semibold">Feature:</strong> The new chat
-            will be{" "}
+            <strong className="font-semibold">Feature:</strong> Create a new
+            chat{" "}
             <span className="font-semibold text-blue-900 underline dark:text-blue-300">
               consistently updated
             </span>{" "}
-            with all{" "}
+            with all of the{" "}
             <span className="font-semibold text-blue-900 dark:text-blue-300">
               approved files
             </span>{" "}

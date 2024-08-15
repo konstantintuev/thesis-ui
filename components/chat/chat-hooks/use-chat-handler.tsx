@@ -305,11 +305,12 @@ export const useChatHandler = () => {
        *     AND want to use retrieval
        */
       if (
-        ((newMessageFiles.length > 0 ||
+        (((newMessageFiles.length > 0 ||
           chatFiles.length > 0 ||
           collectionRetrievalActive) &&
           useRetrieval) ||
-        selectedCollectionCreatorChat
+          selectedCollectionCreatorChat) &&
+        currentChat?.model !== "file_retriever"
       ) {
         setToolInUse("retrieval")
 

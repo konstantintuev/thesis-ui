@@ -1,6 +1,6 @@
 import { CHAT_SETTING_LIMITS } from "@/lib/chat-setting-limits"
 import { checkApiKey, getServerProfile } from "@/lib/server/server-chat-helpers"
-import { ChatSettings } from "@/types"
+import { ChatSettings, LLMID } from "@/types"
 import { OpenAIStream, StreamingTextResponse } from "ai"
 import OpenAI from "openai"
 import { createClient } from "@supabase/supabase-js"
@@ -23,6 +23,7 @@ export const runtime = "edge"
 
 async function* getStreamingResponses(
   openai: OpenAI,
+  model: LLMID,
   chatSettings: ChatSettings,
   messagesArray: Array<
     Array<{
@@ -33,10 +34,9 @@ async function* getStreamingResponses(
 ) {
   for (const messages of messagesArray) {
     const response = await openai.chat.completions.create({
-      model: "llama3-70b-8192",
+      model: model,
       messages: messages as any,
-      max_tokens:
-        CHAT_SETTING_LIMITS["llama3-70b-8192"].MAX_TOKEN_OUTPUT_LENGTH,
+      max_tokens: CHAT_SETTING_LIMITS[model].MAX_TOKEN_OUTPUT_LENGTH,
       stream: true
     })
 
@@ -180,12 +180,27 @@ export async function POST(request: Request) {
     try {
       const profile = await getServerProfile()
 
-      checkApiKey(profile.groq_api_key, "G")
+      checkApiKey(profile.azure_openai_api_key, "Azure OpenAI")
 
-      // Groq is compatible with the OpenAI SDK
-      const groq = new OpenAI({
-        apiKey: profile.groq_api_key || "",
-        baseURL: "https://api.groq.com/openai/v1"
+      const ENDPOINT = profile.azure_openai_endpoint
+      const KEY = profile.azure_openai_api_key
+      const DEPLOYMENT_ID = profile.azure_openai_45_vision_id || ""
+      const model: LLMID = "gpt-4o"
+
+      if (!ENDPOINT || !KEY || !DEPLOYMENT_ID) {
+        return new Response(
+          JSON.stringify({ message: "Azure resources not found" }),
+          {
+            status: 400
+          }
+        )
+      }
+
+      const azureOpenai = new OpenAI({
+        apiKey: KEY,
+        baseURL: `${ENDPOINT}/openai/deployments/${DEPLOYMENT_ID}`,
+        defaultQuery: { "api-version": "2023-12-01-preview" },
+        defaultHeaders: { "api-key": KEY }
       })
 
       // for each file run summary and return streaming text response
@@ -280,7 +295,8 @@ export async function POST(request: Request) {
           )
 
           const generator = getStreamingResponses(
-            groq,
+            azureOpenai,
+            model,
             chatSettings,
             messagesArray
           )
