@@ -45,7 +45,8 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
     setUseRetrieval,
     setSelectedTools,
     setCollectionRetrievalActive,
-    setCollectionCreatorChat
+    setCollectionCreatorChat,
+    setSelectedCollectionCreatorChat
   } = useContext(ChatbotUIContext)
 
   const { handleNewChat, handleFocusChatInput } = useChatHandler()
@@ -190,6 +191,7 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
       embeddingsProvider: chat.embeddings_provider as "openai" | "local"
     })
     setUseRetrieval(chat.model !== "file_retriever")
+    setSelectedCollectionCreatorChat(null)
     let chatCollectionConsumer = await getChatCollectionConsumer(chat.id)
     if (chatCollectionConsumer) {
       setCollectionRetrievalActive(true)
