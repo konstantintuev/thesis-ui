@@ -10,7 +10,7 @@ import { Tables } from "@/supabase/types"
 import { ChatMessage, ChatPayload, LLMID, ModelProvider } from "@/types"
 import { useRouter } from "next/navigation"
 import { useContext, useEffect, useRef } from "react"
-import { LLM_LIST } from "../../../lib/models/llm/llm-list"
+import { LLM_LIST } from "@/lib/models/llm/llm-list"
 import {
   createTempMessages,
   handleCreateChat,
@@ -21,6 +21,10 @@ import {
   processResponse,
   validateChatSettings
 } from "../chat-helpers"
+import {
+  createChatCollectionConsumer,
+  getChatCollectionCreator
+} from "@/db/collections"
 
 export const useChatHandler = () => {
   const router = useRouter()
@@ -53,6 +57,7 @@ export const useChatHandler = () => {
     setCollections,
     setNewMessageFiles,
     setShowFilesDisplay,
+    setCollectionRetrievalActive,
     newMessageFiles,
     chatFileItems,
     setChatFileItems,
@@ -67,7 +72,10 @@ export const useChatHandler = () => {
     models,
     isPromptPickerOpen,
     isFilePickerOpen,
-    isToolPickerOpen
+    isToolPickerOpen,
+    selectedCollectionCreatorChat,
+    collectionRetrievalActive,
+    setSelectedCollectionCreatorChat
   } = useContext(ChatbotUIContext)
 
   const chatInputRef = useRef<HTMLTextAreaElement>(null)
@@ -96,6 +104,7 @@ export const useChatHandler = () => {
     setShowFilesDisplay(false)
     setIsPromptPickerOpen(false)
     setIsFilePickerOpen(false)
+    setCollectionRetrievalActive(false)
 
     setSelectedTools([])
     setToolInUse("none")
@@ -232,23 +241,6 @@ export const useChatHandler = () => {
 
       const b64Images = newMessageImages.map(image => image.base64)
 
-      let retrievedFileItems: Tables<"file_items">[] = []
-
-      if (
-        (newMessageFiles.length > 0 || chatFiles.length > 0) &&
-        useRetrieval
-      ) {
-        setToolInUse("retrieval")
-
-        retrievedFileItems = await handleRetrieval(
-          userInput,
-          newMessageFiles,
-          chatFiles,
-          chatSettings!.embeddingsProvider,
-          sourceCount
-        )
-      }
-
       const { tempUserChatMessage, tempAssistantChatMessage } =
         createTempMessages(
           messageContent,
@@ -269,11 +261,24 @@ export const useChatHandler = () => {
           selectedWorkspace!,
           messageContent,
           selectedAssistant!,
-          newMessageFiles,
+          // Collection bound chats for retrieval can't have own chat files
+          !selectedCollectionCreatorChat ? newMessageFiles : [],
           setSelectedChat,
           setChats,
           setChatFiles
         )
+        // We are going to be chatting with a single collection
+        if (selectedCollectionCreatorChat) {
+          let chatCollectionCreator = await getChatCollectionCreator(
+            selectedCollectionCreatorChat.id
+          )
+          await createChatCollectionConsumer({
+            chat_id: currentChat.id,
+            collection_id: chatCollectionCreator!.collection_id,
+            user_id: profile!.user_id
+          })
+          setChatFiles([])
+        }
       } else {
         const updatedChat = await updateChat(currentChat.id, {
           updated_at: new Date().toISOString()
@@ -287,6 +292,35 @@ export const useChatHandler = () => {
           return updatedChats
         })
       }
+
+      let retrievedFileItems: Tables<"file_items">[] = []
+
+      /* We either have:
+       * 1. Local old or new chat files AND want to use retrieval
+       * 2. New chat with given collection to use (collection created by a file_retriever chat)
+       * 3. The current chat is bound to use a collection's contents dynamically (old chat given a collection)
+       *     AND want to use retrieval
+       */
+      if (
+        ((newMessageFiles.length > 0 ||
+          chatFiles.length > 0 ||
+          collectionRetrievalActive) &&
+          useRetrieval) ||
+        selectedCollectionCreatorChat
+      ) {
+        setToolInUse("retrieval")
+
+        retrievedFileItems = await handleRetrieval(
+          userInput,
+          newMessageFiles,
+          chatFiles,
+          chatSettings!.embeddingsProvider,
+          sourceCount,
+          currentChat?.id
+        )
+      }
+
+      setSelectedCollectionCreatorChat(null)
 
       // TODO: don't pass chatId, workspaceId on external providers
       let payload: ChatPayload = {

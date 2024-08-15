@@ -109,6 +109,44 @@ export const createChatCollectionCreator = async (
   return createdChatCollectionCreator
 }
 
+export const getChatCollectionCreator = async (
+  chatId: string,
+  supabaseInstance?: SupabaseClient<Database>
+) => {
+  const { data: chatCollectionCreator, error } = await (
+    supabaseInstance ?? supabase
+  )
+    .from("chat_collection_creator")
+    .select("*")
+    .eq("chat_id", chatId)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return chatCollectionCreator
+}
+
+export const getChatCollectionCreatorByCollection = async (
+  collectionId: string,
+  supabaseInstance?: SupabaseClient<Database>
+) => {
+  const { data: chatCollectionCreator, error } = await (
+    supabaseInstance ?? supabase
+  )
+    .from("chat_collection_creator")
+    .select("*")
+    .eq("collection_id", collectionId)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return chatCollectionCreator
+}
+
 // A chat is a consumer of a file collection if it can use its files dynamically to RAG them
 export const createChatCollectionConsumer = async (
   collection: TablesInsert<"chat_collection_consumer">,
@@ -127,6 +165,25 @@ export const createChatCollectionConsumer = async (
   }
 
   return createdChatCollectionConsumer
+}
+
+export const getChatCollectionConsumer = async (
+  chatId: string,
+  supabaseInstance?: SupabaseClient<Database>
+) => {
+  const { data: chatCollectionConsumer, error } = await (
+    supabaseInstance ?? supabase
+  )
+    .from("chat_collection_consumer")
+    .select("*")
+    .eq("chat_id", chatId)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return chatCollectionConsumer
 }
 
 export const createCollections = async (

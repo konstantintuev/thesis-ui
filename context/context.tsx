@@ -136,6 +136,10 @@ interface ChatbotUIContext {
   setNewMessageImages: Dispatch<SetStateAction<MessageImage[]>>
   showFilesDisplay: boolean
   setShowFilesDisplay: Dispatch<SetStateAction<boolean>>
+  collectionRetrievalActive: boolean
+  setCollectionRetrievalActive: Dispatch<SetStateAction<boolean>>
+  collectionCreatorChat: Tables<"chats"> | null
+  setCollectionCreatorChat: Dispatch<SetStateAction<Tables<"chats"> | null>>
 
   // RETRIEVAL STORE
   useRetrieval: boolean
@@ -270,6 +274,10 @@ export const ChatbotUIContext = createContext<ChatbotUIContext>({
   setNewMessageImages: () => {},
   showFilesDisplay: false,
   setShowFilesDisplay: () => {},
+  collectionRetrievalActive: false,
+  setCollectionRetrievalActive: () => {},
+  collectionCreatorChat: null,
+  setCollectionCreatorChat: () => {},
 
   // RETRIEVAL STORE
   useRetrieval: false,

@@ -1,10 +1,12 @@
 import { supabase } from "@/lib/supabase/browser-client"
-import { TablesInsert } from "@/supabase/types"
+import { Database, TablesInsert } from "@/supabase/types"
+import { SupabaseClient } from "@supabase/supabase-js"
 
 export const getCollectionFilesByCollectionId = async (
-  collectionId: string
+  collectionId: string,
+  supabaseInstance?: SupabaseClient<Database>
 ) => {
-  const { data: collectionFiles, error } = await supabase
+  const { data: collectionFiles, error } = await (supabaseInstance ?? supabase)
     .from("collections")
     .select(
       `

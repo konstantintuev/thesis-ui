@@ -18,6 +18,10 @@ import { ChatInput } from "./chat-input"
 import { ChatMessages } from "./chat-messages"
 import { ChatScrollButtons } from "./chat-scroll-buttons"
 import { ChatSecondaryButtons } from "./chat-secondary-buttons"
+import {
+  getChatCollectionConsumer,
+  getChatCollectionCreatorByCollection
+} from "@/db/collections"
 
 interface ChatUIProps {}
 
@@ -39,7 +43,9 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
     chatMessages,
     setShowFilesDisplay,
     setUseRetrieval,
-    setSelectedTools
+    setSelectedTools,
+    setCollectionRetrievalActive,
+    setCollectionCreatorChat
   } = useContext(ChatbotUIContext)
 
   const { handleNewChat, handleFocusChatInput } = useChatHandler()
@@ -184,6 +190,18 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
       embeddingsProvider: chat.embeddings_provider as "openai" | "local"
     })
     setUseRetrieval(chat.model !== "file_retriever")
+    let chatCollectionConsumer = await getChatCollectionConsumer(chat.id)
+    if (chatCollectionConsumer) {
+      setCollectionRetrievalActive(true)
+      let chatCollectionCreator = await getChatCollectionCreatorByCollection(
+        chatCollectionConsumer.collection_id
+      )
+      if (chatCollectionCreator) {
+        setCollectionCreatorChat(
+          await getChatById(chatCollectionCreator.chat_id)
+        )
+      }
+    }
   }
 
   if (loading) {

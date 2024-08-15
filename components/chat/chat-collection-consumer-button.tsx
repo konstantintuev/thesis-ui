@@ -1,25 +1,46 @@
 import { FC, useContext } from "react"
 import { Button } from "@/components/ui/button"
 import { ChatbotUIContext } from "@/context/context"
-import { useRouter } from "next/navigation"
 import { IconFileImport } from "@tabler/icons-react"
 import { WithTooltip } from "@/components/ui/with-tooltip"
 import { useChatHandler } from "@/components/chat/chat-hooks/use-chat-handler"
+import { LLMID, ModelProvider } from "@/types"
 
 interface ChatCollectionConsumerButtonProps {}
 export const ChatCollectionConsumerButton: FC<
   ChatCollectionConsumerButtonProps
 > = ({}) => {
-  const router = useRouter()
-
   const chatHandler = useChatHandler()
 
-  const { selectedChat, isGenerating, setSelectedCollectionCreatorChat } =
-    useContext(ChatbotUIContext)
+  const {
+    setChatSettings,
+    setSelectedCollectionCreatorChat,
+    selectedWorkspace,
+    selectedChat,
+    isGenerating,
+    models,
+    availableHostedModels,
+    availableLocalModels,
+    availableOpenRouterModels
+  } = useContext(ChatbotUIContext)
 
   if (selectedChat?.model !== "file_retriever") {
     return undefined
   }
+
+  const allModels = [
+    ...models.map(model => ({
+      modelId: model.model_id as LLMID,
+      modelName: model.name,
+      provider: "custom" as ModelProvider,
+      hostedId: model.id,
+      platformLink: "",
+      imageInput: false
+    })),
+    ...availableHostedModels,
+    ...availableLocalModels,
+    ...availableOpenRouterModels
+  ]
 
   return (
     <div className="flex h-[36px]">
@@ -48,6 +69,25 @@ export const ChatCollectionConsumerButton: FC<
             }
             onClick={async () => {
               setSelectedCollectionCreatorChat(selectedChat)
+              setChatSettings({
+                model: (allModels.find(
+                  model => model.provider !== "file_retriever"
+                )?.modelId || "gpt-4-1106-preview") as LLMID,
+                prompt:
+                  selectedWorkspace?.default_prompt ||
+                  "You are a friendly, helpful AI assistant.",
+                temperature: selectedWorkspace?.default_temperature || 0.5,
+                contextLength:
+                  selectedWorkspace?.default_context_length || 4096,
+                includeProfileContext:
+                  selectedWorkspace?.include_profile_context || true,
+                includeWorkspaceInstructions:
+                  selectedWorkspace?.include_workspace_instructions || true,
+                embeddingsProvider:
+                  (selectedWorkspace?.embeddings_provider as
+                    | "openai"
+                    | "local") || "openai"
+              })
               void chatHandler.handleNewChat()
             }}
           >

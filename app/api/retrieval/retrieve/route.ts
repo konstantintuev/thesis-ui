@@ -6,24 +6,21 @@ import { checkApiKey, getServerProfile } from "@/lib/server/server-chat-helpers"
 import { Database } from "@/supabase/types"
 import { createClient } from "@supabase/supabase-js"
 import OpenAI from "openai"
+import { getChatCollectionConsumer } from "@/db/collections"
+import { getCollectionFilesByCollectionId } from "@/db/collection-files"
 
 export async function POST(request: Request) {
   const json = await request.json()
-  const {
-    userInput,
-    fileIds,
-    embeddingsProvider,
-    sourceCount,
-    chatId: string
-  } = json as {
-    userInput: string
-    fileIds: string[]
-    embeddingsProvider: "openai" | "local"
-    sourceCount: number
-    chatId: string
-  }
+  let { userInput, fileIds, embeddingsProvider, sourceCount, chatId } =
+    json as {
+      userInput: string
+      fileIds: string[]
+      embeddingsProvider: "openai" | "local"
+      sourceCount: number
+      chatId: string
+    }
 
-  const uniqueFileIds = [...new Set(fileIds)]
+  let uniqueFileIds = [...new Set(fileIds)]
 
   try {
     const supabaseAdmin = createClient<Database>(
@@ -32,6 +29,20 @@ export async function POST(request: Request) {
     )
 
     const profile = await getServerProfile()
+
+    let chatCollectionConsumer = await getChatCollectionConsumer(
+      chatId,
+      supabaseAdmin
+    )
+
+    if (chatCollectionConsumer) {
+      let collectionFiles = await getCollectionFilesByCollectionId(
+        chatCollectionConsumer.collection_id,
+        supabaseAdmin
+      )
+      fileIds = collectionFiles.files.map(file => file.id)
+      uniqueFileIds = [...new Set(fileIds)]
+    }
 
     if (embeddingsProvider === "openai") {
       if (profile.use_azure_openai) {
@@ -85,7 +96,7 @@ export async function POST(request: Request) {
         await supabaseAdmin.rpc("match_file_items_bge", {
           query_embedding: localEmbedding as any,
           match_count: sourceCount,
-          file_ids: uniqueFileIds
+          file_ids: uniqueFileIds.length > 0 ? uniqueFileIds : undefined
         })
 
       if (localFileItemsError) {

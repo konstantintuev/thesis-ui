@@ -21,6 +21,7 @@ import { Button } from "../ui/button"
 import { FilePreview } from "../ui/file-preview"
 import { WithTooltip } from "../ui/with-tooltip"
 import { ChatRetrievalSettings } from "./chat-retrieval-settings"
+import { useRouter } from "next/navigation"
 
 interface ChatFilesDisplayProps {}
 
@@ -28,8 +29,11 @@ export const ChatFilesDisplay: FC<ChatFilesDisplayProps> = ({}) => {
   useHotkey("f", () => setShowFilesDisplay(prev => !prev))
   useHotkey("e", () => setUseRetrieval(prev => !prev))
 
+  const router = useRouter()
+
   const {
     files,
+    selectedWorkspace,
     newMessageImages,
     setNewMessageImages,
     newMessageFiles,
@@ -40,7 +44,10 @@ export const ChatFilesDisplay: FC<ChatFilesDisplayProps> = ({}) => {
     chatImages,
     setChatImages,
     setChatFiles,
-    setUseRetrieval
+    setUseRetrieval,
+    collectionRetrievalActive,
+    collectionCreatorChat,
+    isGenerating
   } = useContext(ChatbotUIContext)
 
   const [selectedFile, setSelectedFile] = useState<ChatFile | null>(null)
@@ -70,6 +77,37 @@ export const ChatFilesDisplay: FC<ChatFilesDisplayProps> = ({}) => {
 
     const link = await getFileFromStorage(fileRecord.file_path)
     window.open(link, "_blank")
+  }
+
+  if (collectionRetrievalActive) {
+    return (
+      <>
+        <div className="flex w-full items-center justify-center space-x-2">
+          <Button
+            className="flex h-[32px] space-x-2"
+            onClick={e => {
+              if (isGenerating) return
+              e.preventDefault()
+              router.push(
+                `/${selectedWorkspace!.id}/chat/${collectionCreatorChat?.id}`
+              )
+            }}
+          >
+            <RetrievalToggle />
+
+            <div>
+              {" "}
+              Verified files from &quot;
+              {collectionCreatorChat?.name.substring(0, 10)}...&quot;
+            </div>
+
+            <div onClick={e => e.stopPropagation()}>
+              <ChatRetrievalSettings />
+            </div>
+          </Button>
+        </div>
+      </>
+    )
   }
 
   return showFilesDisplay && combinedMessageFiles.length > 0 ? (
