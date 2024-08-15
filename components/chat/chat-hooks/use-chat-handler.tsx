@@ -2,7 +2,7 @@ import { ChatbotUIContext } from "@/context/context"
 import { getAssistantCollectionsByAssistantId } from "@/db/assistant-collections"
 import { getAssistantFilesByAssistantId } from "@/db/assistant-files"
 import { getAssistantToolsByAssistantId } from "@/db/assistant-tools"
-import { updateChat } from "@/db/chats"
+import { getChatById, updateChat } from "@/db/chats"
 import { getCollectionFilesByCollectionId } from "@/db/collection-files"
 import { deleteMessagesIncludingAndAfter } from "@/db/messages"
 import { buildFinalMessages } from "@/lib/build-prompt"
@@ -76,7 +76,8 @@ export const useChatHandler = () => {
     isToolPickerOpen,
     selectedCollectionCreatorChat,
     collectionRetrievalActive,
-    setSelectedCollectionCreatorChat
+    setSelectedCollectionCreatorChat,
+    setCollectionCreatorChat
   } = useContext(ChatbotUIContext)
 
   const chatInputRef = useRef<HTMLTextAreaElement>(null)
@@ -106,6 +107,7 @@ export const useChatHandler = () => {
     setIsPromptPickerOpen(false)
     setIsFilePickerOpen(false)
     setCollectionRetrievalActive(false)
+    setCollectionCreatorChat(null)
 
     setSelectedTools([])
     setToolInUse("none")
@@ -281,6 +283,10 @@ export const useChatHandler = () => {
           setChatFiles([])
           setCollectionRetrievalActive(true)
           setUseRetrieval(true)
+          // Information about which file_retriever chat we use to RAG verified files from
+          setCollectionCreatorChat(
+            await getChatById(chatCollectionCreator!.chat_id)
+          )
         }
       } else {
         const updatedChat = await updateChat(currentChat.id, {
