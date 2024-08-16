@@ -124,6 +124,7 @@ export const useChatHandler = () => {
         embeddingsProvider: selectedAssistant.embeddings_provider as
           | "openai"
           | "local"
+          | "colbert"
       })
 
       let allFiles = []
@@ -168,6 +169,7 @@ export const useChatHandler = () => {
         embeddingsProvider: selectedPreset.embeddings_provider as
           | "openai"
           | "local"
+          | "colbert"
       })
     } else if (selectedWorkspace) {
       // setChatSettings({

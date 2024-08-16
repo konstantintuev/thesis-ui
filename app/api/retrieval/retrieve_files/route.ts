@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   const { userInput, fileIds, embeddingsProvider, sourceCount } = json as {
     userInput: string
     fileIds: string[]
-    embeddingsProvider: "openai" | "local"
+    embeddingsProvider: "openai" | "local" | "colbert"
     sourceCount: number
   }
 

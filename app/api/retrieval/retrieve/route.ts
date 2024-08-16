@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     json as {
       userInput: string
       fileIds: string[]
-      embeddingsProvider: "openai" | "local"
+      embeddingsProvider: "openai" | "local" | "colbert"
       sourceCount: number
       chatId: string
     }
@@ -89,7 +89,7 @@ export async function POST(request: Request) {
       }
 
       chunks = openaiFileItems
-    } else if (embeddingsProvider === "local") {
+    } else {
       const localEmbedding = await generateBgeLocalEmbedding(userInput)
 
       const { data: localFileItems, error: localFileItemsError } =

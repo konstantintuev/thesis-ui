@@ -16,11 +16,15 @@ import { ModelOption } from "./model-option"
 interface ModelSelectProps {
   selectedModelId: string
   onSelectModel: (modelId: LLMID) => void
+  limitToProvider?: ModelProvider
+  excludeProvider?: ModelProvider
 }
 
 export const ModelSelect: FC<ModelSelectProps> = ({
   selectedModelId,
-  onSelectModel
+  onSelectModel,
+  limitToProvider,
+  excludeProvider
 }) => {
   const {
     profile,
@@ -50,7 +54,7 @@ export const ModelSelect: FC<ModelSelectProps> = ({
     setIsOpen(false)
   }
 
-  const allModels = [
+  let allModels = [
     ...models.map(model => ({
       modelId: model.model_id as LLMID,
       modelName: model.name,
@@ -63,6 +67,13 @@ export const ModelSelect: FC<ModelSelectProps> = ({
     ...availableLocalModels,
     ...availableOpenRouterModels
   ]
+
+  if (limitToProvider) {
+    allModels = allModels.filter(model => model.provider === limitToProvider)
+  }
+  if (excludeProvider) {
+    allModels = allModels.filter(model => model.provider !== excludeProvider)
+  }
 
   const groupedModels = allModels.reduce<Record<string, LLM[]>>(
     (groups, model) => {

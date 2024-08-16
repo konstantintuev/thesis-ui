@@ -62,7 +62,7 @@ export const createFileBasedOnExtension = async (
   file: File,
   fileRecord: TablesInsert<"files">,
   workspace_id: string,
-  embeddingsProvider: "openai" | "local"
+  embeddingsProvider: "openai" | "local" | "colbert"
 ) => {
   const fileExtension = file.name.split(".").pop()
 
@@ -89,7 +89,7 @@ export const createFile = async (
   file: File,
   fileRecord: TablesInsert<"files">,
   workspace_id: string,
-  embeddingsProvider: "openai" | "local"
+  embeddingsProvider: "openai" | "local" | "colbert"
 ) => {
   let validFilename = fileRecord.name.replace(/[^a-z0-9.]/gi, "_").toLowerCase()
   const extension = file.name.split(".").pop()
@@ -156,7 +156,7 @@ export const createMultipleFiles = async (
   files: [File, TablesInsert<"files">][],
   targetCollectionID: string,
   workspace_id: string,
-  embeddingsProvider: "openai" | "local"
+  embeddingsProvider: "openai" | "local" | "colbert"
 ): Promise<string | undefined> => {
   let uploadedFileIDs = await Promise.all(
     files.map(async fileInfo => {
@@ -240,7 +240,7 @@ export const createDocXFile = async (
   file: File,
   fileRecord: TablesInsert<"files">,
   workspace_id: string,
-  embeddingsProvider: "openai" | "local"
+  embeddingsProvider: "openai" | "local" | "colbert"
 ) => {
   const { data: createdFile, error } = await supabase
     .from("files")

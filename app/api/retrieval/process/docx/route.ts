@@ -12,7 +12,7 @@ export async function POST(req: Request) {
   const { text, fileId, embeddingsProvider, fileExtension } = json as {
     text: string
     fileId: string
-    embeddingsProvider: "openai" | "local"
+    embeddingsProvider: "openai" | "local" | "colbert"
     fileExtension: string
   }
 

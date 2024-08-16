@@ -9,7 +9,7 @@ import {
   UUIDExtractedItemDict
 } from "@/types/file-processing"
 
-import { SupabaseClient } from "@supabase/supabase-js/src"
+import { SupabaseClient } from "@supabase/supabase-js"
 import { Database, Tables, TablesInsert } from "@/supabase/types"
 import {
   FileItemSearchResult,
@@ -168,7 +168,7 @@ export const processMultipleResult = async (
 }
 
 export const searchFilesMLServer = async (
-  supabaseAdmin: SupabaseClient<Database, "public", Database["public"]>,
+  supabaseAdmin: SupabaseClient<Database>,
   query: string
 ): Promise<FileItemSearchResult[]> => {
   const response = await fetch(

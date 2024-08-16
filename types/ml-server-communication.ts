@@ -43,5 +43,5 @@ export type SearchResults = [
 
 export type FileItemSearchResult = Tables<"file_items"> & {
   score: number
-  rank: number
+  rank?: number
 }

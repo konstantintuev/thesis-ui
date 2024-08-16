@@ -16,7 +16,6 @@ import {
   markRelevant
 } from "@/db/chat-files"
 import { Spinner } from "@/components/document/Spinner"
-import Image from "next/image"
 import "./style/PDFHighlighter.css"
 import { getCollectionWorkspacesByWorkspaceId } from "@/db/collections"
 
@@ -206,7 +205,7 @@ export const DocumentSidebar: FC<Props> = ({
                     className="highlight__image"
                     style={{ marginTop: "0.5rem" }}
                   >
-                    <Image src={highlight.content.image} alt={"Screenshot"} />
+                    <img src={highlight.content.image} alt={"Screenshot"} />
                   </div>
                 ) : null}
               </div>

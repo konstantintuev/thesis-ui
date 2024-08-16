@@ -37,16 +37,28 @@ export const ChatSettingsForm: FC<ChatSettingsFormProps> = ({
 
   if (!profile) return null
 
+  // TODO: add different chat and retrieval models
   return (
     <div className="space-y-3">
       <div className="space-y-1">
-        <Label>Model</Label>
+        <Label>File Retrieval Model</Label>
 
         <ModelSelect
           selectedModelId={chatSettings.model}
           onSelectModel={model => {
             onChangeChatSettings({ ...chatSettings, model })
           }}
+          limitToProvider={"file_retriever"}
+        />
+      </div>
+
+      <div className="space-y-1">
+        <Label>Chat Model</Label>
+
+        <ModelSelect
+          selectedModelId={chatSettings.model}
+          onSelectModel={model => {}}
+          excludeProvider={"file_retriever"}
         />
       </div>
 
@@ -226,7 +238,9 @@ const AdvancedContent: FC<AdvancedContentProps> = ({
 
         <Select
           value={chatSettings.embeddingsProvider}
-          onValueChange={(embeddingsProvider: "openai" | "local") => {
+          onValueChange={(
+            embeddingsProvider: "openai" | "local" | "colbert"
+          ) => {
             onChangeChatSettings({
               ...chatSettings,
               embeddingsProvider
@@ -245,6 +259,8 @@ const AdvancedContent: FC<AdvancedContentProps> = ({
             {window.location.hostname === "localhost" && (
               <SelectItem value="local">Local</SelectItem>
             )}
+
+            <SelectItem value="colbert">Colbert</SelectItem>
           </SelectContent>
         </Select>
       </div>

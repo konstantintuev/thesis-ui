@@ -86,7 +86,8 @@ export const ChatCollectionConsumerButton: FC<
                 embeddingsProvider:
                   (selectedWorkspace?.embeddings_provider as
                     | "openai"
-                    | "local") || "openai"
+                    | "local"
+                    | "colbert") || "openai"
               })
               void chatHandler.handleNewChat()
             }}

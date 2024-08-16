@@ -199,7 +199,15 @@ export class PdfHighlighter<T_HT extends IHighlight> extends PureComponent<
     this.attachRef(eventBus)
   }
 
+  /* Notice:
+     1. Preload just the first page as otherwise other pages have wrong sized canvas
+        and broken area highlights
+     2. Preloading pages also sometimes breaks things on resize
+     3. Preloading makes the pdf active for selection without delay on start.
+    Currently, disabled consider your use case.
+  */
   preloadPages = async (pdfDocument: PDFDocumentProxy, viewer: PDFViewer) => {
+    return
     const numPages = pdfDocument.numPages
     const pagesToPreload = Math.min(5, numPages)
 

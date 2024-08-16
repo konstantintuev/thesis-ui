@@ -64,7 +64,7 @@ export const handleRetrieval = async (
   userInput: string,
   newMessageFiles: ChatFile[],
   chatFiles: ChatFile[],
-  embeddingsProvider: "openai" | "local",
+  embeddingsProvider: "openai" | "local" | "colbert",
   sourceCount: number,
   chatId: string
 ) => {

@@ -11,6 +11,7 @@ import { searchFilesMLServer } from "@/lib/retrieval/processing/multiple"
 import { FileItemSearchResult } from "@/types/ml-server-communication"
 import {
   BasicRuleComparisonResults,
+  ExtendedFileForSearch,
   QueryRelatedMetadata
 } from "@/types/retriever"
 import {
@@ -78,35 +79,36 @@ export async function POST(request: Request) {
      * */
 
     // Use local embeddings for file retrieval
-    /* const localEmbedding = await generateBgeLocalEmbedding(fileQuery)
 
-    const { data: localFileItems, error: localFileItemsError } =
-      await supabaseAdmin.rpc("match_file_items_any_bge", {
-        query_embedding: localEmbedding as any,
-        min_layer_number: 1
+    let localFileItems: FileItemSearchResult[]
+
+    if (chatSettings.embeddingsProvider === "local") {
+      const localEmbedding = await generateBgeLocalEmbedding(fileQuery)
+
+      const { data: embeddingsFileItems, error: localFileItemsError } =
+        await supabaseAdmin.rpc("match_file_items_any_bge", {
+          query_embedding: localEmbedding as any,
+          // TODO: maybe make dynamic?
+          min_layer_number: 1
+        })
+
+      if (localFileItemsError) {
+        throw localFileItemsError
+      }
+      localFileItems = embeddingsFileItems.map(it => {
+        let ret = it as any as FileItemSearchResult
+        ret.score = it.similarity
+        return ret
       })
-
-    if (localFileItemsError) {
-      throw localFileItemsError
-    }*/
-
-    let localFileItems = await searchFilesMLServer(
-      supabaseAdmin as any,
-      fileQuery
-    )
+    } else if (chatSettings.embeddingsProvider === "colbert") {
+      localFileItems = await searchFilesMLServer(supabaseAdmin, fileQuery)
+    } else {
+      throw Error("OpenAI not supported for file retriever!")
+    }
 
     const mostSimilarChunks = localFileItems?.sort((a, b) => b.score - a.score)
 
-    type ExtendedFile = Tables<"files"> & {
-      chunks: FileItemSearchResult[]
-      avg_chunk_relevance_score: number
-      basic_rule_relevance_score?: number
-      basic_rule_info?: BasicRuleComparisonResults
-      score: number
-      already_queried?: boolean
-      query_related_metadata?: Json[]
-    }
-    let filesFound: ExtendedFile[]
+    let filesFound: ExtendedFileForSearch[]
     // Map chunks to filesRaw
     const { data: filesRaw, error: filesError } = await supabaseAdmin
       .from("files")
@@ -122,7 +124,7 @@ export async function POST(request: Request) {
       })
     filesFound =
       filesRaw?.map((file, index) => {
-        let relevantFile = file as ExtendedFile
+        let relevantFile = file as ExtendedFileForSearch
         if (!basicRulesError && basicRulesData) {
           // Add basic rules info
           let basicRulesFile = basicRulesData.find(item => item.id === file.id)
