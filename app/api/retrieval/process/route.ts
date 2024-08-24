@@ -11,8 +11,7 @@ import { Database, Json } from "@/supabase/types"
 import { FileItemChunk } from "@/types"
 import { createClient } from "@supabase/supabase-js"
 import { NextResponse } from "next/server"
-import OpenAI from "openai"
-import { ExtractedItemHtml } from "@/types/file-processing"
+import { AttachableContent } from "@/types/retriever"
 
 export async function POST(req: Request) {
   try {
@@ -117,9 +116,7 @@ export async function POST(req: Request) {
         }
         let uuidsInChunk = chunk.uuidsInChunk
         if (uuidsInChunk && uuidsInChunk.length > 0) {
-          let attachableContent: {
-            [key: string]: ExtractedItemHtml
-          } = {}
+          let attachableContent: AttachableContent = {}
           for (let uuidWeUseInText of uuidsInChunk) {
             attachableContent[uuidWeUseInText] = uuid_items[uuidWeUseInText]
           }

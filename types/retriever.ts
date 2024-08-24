@@ -1,5 +1,6 @@
 import { Json, Tables } from "@/supabase/types"
 import { FileItemSearchResult } from "@/types/ml-server-communication"
+import { ExtractedItemHtml } from "@/types/file-processing"
 
 export type BasicRuleComparisonResults = {
   [comparisonName: string]: boolean
@@ -23,4 +24,8 @@ export type ExtendedFileForSearch = Tables<"files"> & {
   score: number
   already_queried?: boolean
   query_related_metadata?: Json[]
+}
+
+export type AttachableContent = {
+  [key: string]: ExtractedItemHtml
 }

@@ -8,6 +8,7 @@ import { createClient } from "@supabase/supabase-js"
 import OpenAI from "openai"
 import { getChatCollectionConsumer } from "@/db/collections"
 import { getCollectionFilesByCollectionId } from "@/db/collection-files"
+import { addUuidObjectToString } from "@/lib/retrieval/attachable-content"
 
 export async function POST(request: Request) {
   const json = await request.json()
@@ -52,7 +53,8 @@ export async function POST(request: Request) {
       }
     }
 
-    let chunks: any[] = []
+    let chunks: Database["public"]["Functions"]["match_file_items_bge"]["Returns"] =
+      []
 
     let openai
     if (profile.use_azure_openai) {
@@ -106,8 +108,34 @@ export async function POST(request: Request) {
       chunks = localFileItems
     }
 
-    const mostSimilarChunks = chunks?.sort(
-      (a, b) => b.similarity - a.similarity
+    let mostSimilarChunks = chunks?.sort((a, b) => b.similarity - a.similarity)
+
+    // Add the attachable content back to each chunk
+    /* Strat:
+     * 1. Find attachable content by chunk
+     * 2. Find uuids in chunk and replace with corresponding item in attachable content
+     * 3. Done
+     */
+
+    const uuidPattern =
+      /\b[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[1-5][0-9a-fA-F]{3}\b-[89abAB][0-9a-fA-F]{3}\b-[0-9a-fA-F]{12}\b/g
+    mostSimilarChunks = await Promise.all(
+      mostSimilarChunks?.map(async chunk => {
+        if (chunk.chunk_attachable_content) {
+          let { data } = await supabaseAdmin
+            .from("file_items_attachable_content")
+            .select("*")
+            .eq("id", chunk.chunk_attachable_content)
+            .single()
+
+          if (data?.content) {
+            chunk.content = chunk.content.replace(uuidPattern, match =>
+              addUuidObjectToString(match, data.content as any)
+            )
+          }
+        }
+        return chunk
+      })
     )
 
     return new Response(JSON.stringify({ results: mostSimilarChunks }), {

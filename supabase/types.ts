@@ -1768,6 +1768,7 @@ export type Database = {
           file_id: string
           content: string
           tokens: number
+          chunk_attachable_content: string
           similarity: number
         }[]
       }
@@ -1796,6 +1797,7 @@ export type Database = {
           file_id: string
           content: string
           tokens: number
+          chunk_attachable_content: string
           similarity: number
         }[]
       }

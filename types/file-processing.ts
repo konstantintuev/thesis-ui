@@ -42,7 +42,7 @@ export interface ListItem extends ExtractedItemHtml {
   children: string[]
 }
 
-export interface TableItem extends ExtractedItemHtml {
+export interface ContentItem extends ExtractedItemHtml {
   content: string
 }
 

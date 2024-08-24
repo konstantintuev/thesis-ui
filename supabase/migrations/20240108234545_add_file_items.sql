@@ -95,6 +95,7 @@ create function match_file_items_openai (
   file_id UUID,
   content TEXT,
   tokens INT,
+  chunk_attachable_content uuid,
   similarity float
 )
 language plpgsql
@@ -107,6 +108,7 @@ begin
     file_id,
     content,
     tokens,
+    chunk_attachable_content,
     1 - (file_items.openai_embedding <=> query_embedding) as similarity
   from file_items
   where (file_id = ANY(file_ids))
