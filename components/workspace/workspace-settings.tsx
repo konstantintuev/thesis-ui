@@ -55,8 +55,13 @@ export const WorkspaceSettings: FC<WorkspaceSettingsProps> = ({}) => {
     selectedWorkspace?.instructions || ""
   )
 
-  const [defaultChatSettings, setDefaultChatSettings] = useState({
+  const [defaultRetrieverSettings, setDefaultRetrieverSettings] = useState({
     model: selectedWorkspace?.default_model,
+    embeddingsProvider: selectedWorkspace?.embeddings_provider
+  })
+
+  const [defaultChatSettings, setDefaultChatSettings] = useState({
+    model: selectedWorkspace?.default_chat_model,
     prompt: selectedWorkspace?.default_prompt,
     temperature: selectedWorkspace?.default_temperature,
     contextLength: selectedWorkspace?.default_context_length,
@@ -108,7 +113,8 @@ export const WorkspaceSettings: FC<WorkspaceSettingsProps> = ({}) => {
       description,
       image_path: imagePath,
       instructions,
-      default_model: defaultChatSettings.model,
+      default_model: defaultRetrieverSettings.model,
+      default_chat_model: defaultChatSettings.model,
       default_prompt: defaultChatSettings.prompt,
       default_temperature: defaultChatSettings.temperature,
       default_context_length: defaultChatSettings.contextLength,
@@ -268,6 +274,8 @@ export const WorkspaceSettings: FC<WorkspaceSettingsProps> = ({}) => {
               </div>
 
               <ChatSettingsForm
+                retrieverSettings={defaultRetrieverSettings as any}
+                onChangeRetrieverSettings={setDefaultRetrieverSettings}
                 chatSettings={defaultChatSettings as any}
                 onChangeChatSettings={setDefaultChatSettings}
               />

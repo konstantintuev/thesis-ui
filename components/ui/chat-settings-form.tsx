@@ -21,6 +21,8 @@ import { TextareaAutosize } from "./textarea-autosize"
 import { WithTooltip } from "./with-tooltip"
 
 interface ChatSettingsFormProps {
+  retrieverSettings?: ChatSettings
+  onChangeRetrieverSettings?: (value: ChatSettings) => void
   chatSettings: ChatSettings
   onChangeChatSettings: (value: ChatSettings) => void
   useAdvancedDropdown?: boolean
@@ -28,6 +30,8 @@ interface ChatSettingsFormProps {
 }
 
 export const ChatSettingsForm: FC<ChatSettingsFormProps> = ({
+  retrieverSettings,
+  onChangeRetrieverSettings,
   chatSettings,
   onChangeChatSettings,
   useAdvancedDropdown = true,
@@ -40,24 +44,28 @@ export const ChatSettingsForm: FC<ChatSettingsFormProps> = ({
   // TODO: add different chat and retrieval models
   return (
     <div className="space-y-3">
-      <div className="space-y-1">
-        <Label>File Retrieval Model</Label>
+      {retrieverSettings && onChangeRetrieverSettings && (
+        <div className="space-y-1">
+          <Label>File Retrieval Model</Label>
 
-        <ModelSelect
-          selectedModelId={chatSettings.model}
-          onSelectModel={model => {
-            onChangeChatSettings({ ...chatSettings, model })
-          }}
-          limitToProvider={"file_retriever"}
-        />
-      </div>
+          <ModelSelect
+            selectedModelId={retrieverSettings.model}
+            onSelectModel={model => {
+              onChangeRetrieverSettings({ ...retrieverSettings, model })
+            }}
+            limitToProvider={"file_retriever"}
+          />
+        </div>
+      )}
 
       <div className="space-y-1">
         <Label>Chat Model</Label>
 
         <ModelSelect
           selectedModelId={chatSettings.model}
-          onSelectModel={model => {}}
+          onSelectModel={model => {
+            onChangeChatSettings({ ...chatSettings, model })
+          }}
           excludeProvider={"file_retriever"}
         />
       </div>

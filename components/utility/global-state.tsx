@@ -77,8 +77,17 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
   // PASSIVE CHAT STORE
   const [userInput, setUserInput] = useState<string>("")
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
-  const [chatSettings, setChatSettings] = useState<ChatSettings>({
+  const [retrieverSettings, setRetrieverSettings] = useState<ChatSettings>({
     model: "file_retriever",
+    prompt: "You are a helpful AI assistant.",
+    temperature: 0.5,
+    contextLength: 4000,
+    includeProfileContext: true,
+    includeWorkspaceInstructions: true,
+    embeddingsProvider: "local"
+  })
+  const [chatSettings, setChatSettings] = useState<ChatSettings>({
+    model: "gpt-4-vision-preview",
     prompt: "You are a helpful AI assistant.",
     temperature: 0.5,
     contextLength: 4000,
@@ -275,6 +284,8 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
         setUserInput,
         chatMessages,
         setChatMessages,
+        retrieverSettings,
+        setRetrieverSettings,
         chatSettings,
         setChatSettings,
         selectedChat,

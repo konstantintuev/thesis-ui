@@ -70,9 +70,8 @@ export const ChatCollectionConsumerButton: FC<
             onClick={async () => {
               setSelectedCollectionCreatorChat(selectedChat)
               setChatSettings({
-                model: (allModels.find(
-                  model => model.provider !== "file_retriever"
-                )?.modelId || "gpt-4-1106-preview") as LLMID,
+                model: (selectedWorkspace?.default_chat_model ||
+                  "gpt-4-vision-preview") as LLMID,
                 prompt:
                   selectedWorkspace?.default_prompt ||
                   "You are a friendly, helpful AI assistant.",
@@ -87,7 +86,7 @@ export const ChatCollectionConsumerButton: FC<
                   (selectedWorkspace?.embeddings_provider as
                     | "openai"
                     | "local"
-                    | "colbert") || "openai"
+                    | "colbert") || "local"
               })
               void chatHandler.handleNewChat()
             }}

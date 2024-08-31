@@ -172,22 +172,26 @@ export const useChatHandler = () => {
           | "colbert"
       })
     } else if (selectedWorkspace) {
-      // setChatSettings({
-      //   model: (selectedWorkspace.default_model ||
-      //     "gpt-4-1106-preview") as LLMID,
-      //   prompt:
-      //     selectedWorkspace.default_prompt ||
-      //     "You are a friendly, helpful AI assistant.",
-      //   temperature: selectedWorkspace.default_temperature || 0.5,
-      //   contextLength: selectedWorkspace.default_context_length || 4096,
-      //   includeProfileContext:
-      //     selectedWorkspace.include_profile_context || true,
-      //   includeWorkspaceInstructions:
-      //     selectedWorkspace.include_workspace_instructions || true,
-      //   embeddingsProvider:
-      //     (selectedWorkspace.embeddings_provider as "openai" | "local") ||
-      //     "openai"
-      // })
+      // We reset the chat settings to file retriever as this is the default usage
+      //    ...otherwise the last chat settings will be used again
+      setChatSettings({
+        model: (selectedWorkspace?.default_chat_model ||
+          "gpt-4-vision-preview") as LLMID,
+        prompt:
+          selectedWorkspace?.default_prompt ||
+          "You are a friendly, helpful AI assistant.",
+        temperature: selectedWorkspace?.default_temperature || 0.5,
+        contextLength: selectedWorkspace?.default_context_length || 4096,
+        includeProfileContext:
+          selectedWorkspace?.include_profile_context || true,
+        includeWorkspaceInstructions:
+          selectedWorkspace?.include_workspace_instructions || true,
+        embeddingsProvider:
+          (selectedWorkspace?.embeddings_provider as
+            | "openai"
+            | "local"
+            | "colbert") || "local"
+      })
     }
 
     return router.push(`/${selectedWorkspace.id}/chat`)

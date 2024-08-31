@@ -1611,6 +1611,7 @@ export type Database = {
       workspaces: {
         Row: {
           created_at: string
+          default_chat_model: string
           default_context_length: number
           default_model: string
           default_prompt: string
@@ -1630,6 +1631,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          default_chat_model?: string
           default_context_length: number
           default_model: string
           default_prompt: string
@@ -1649,6 +1651,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          default_chat_model?: string
           default_context_length?: number
           default_model?: string
           default_prompt?: string
