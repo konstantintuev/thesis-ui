@@ -175,8 +175,7 @@ export const useChatHandler = () => {
       // We reset the chat settings to file retriever as this is the default usage
       //    ...otherwise the last chat settings will be used again
       setChatSettings({
-        model: (selectedWorkspace?.default_chat_model ||
-          "gpt-4-vision-preview") as LLMID,
+        model: (selectedWorkspace?.default_model || "file_retriever") as LLMID,
         prompt:
           selectedWorkspace?.default_prompt ||
           "You are a friendly, helpful AI assistant.",

@@ -6,7 +6,7 @@ import {
 } from "@/db/storage/workspace-images"
 import { updateWorkspace } from "@/db/workspaces"
 import { convertBlobToBase64 } from "@/lib/blob-to-b64"
-import { LLMID } from "@/types"
+import { isModelIdFileRetriever, LLMID } from "@/types"
 import { IconHome, IconSettings } from "@tabler/icons-react"
 import { FC, useContext, useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
@@ -27,6 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs"
 import { TextareaAutosize } from "../ui/textarea-autosize"
 import { WithTooltip } from "../ui/with-tooltip"
 import { DeleteWorkspace } from "./delete-workspace"
+import { FileProcessor } from "@/types/file-processing"
 
 interface WorkspaceSettingsProps {}
 
@@ -36,9 +37,11 @@ export const WorkspaceSettings: FC<WorkspaceSettingsProps> = ({}) => {
     selectedWorkspace,
     setSelectedWorkspace,
     setWorkspaces,
+    chatSettings,
     setChatSettings,
     workspaceImages,
-    setWorkspaceImages
+    setWorkspaceImages,
+    availableFileProcessors
   } = useContext(ChatbotUIContext)
 
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -71,6 +74,9 @@ export const WorkspaceSettings: FC<WorkspaceSettingsProps> = ({}) => {
     embeddingsProvider: selectedWorkspace?.embeddings_provider
   })
 
+  const [defaultFileProcessor, setDefaultFileProcessor] =
+    useState<FileProcessor | null>(null)
+
   useEffect(() => {
     const workspaceImage =
       workspaceImages.find(
@@ -79,6 +85,14 @@ export const WorkspaceSettings: FC<WorkspaceSettingsProps> = ({}) => {
 
     setImageLink(workspaceImage)
   }, [workspaceImages])
+
+  useEffect(() => {
+    setDefaultFileProcessor(
+      availableFileProcessors.find(
+        processor => processor.processorId === selectedWorkspace?.file_processor
+      ) || null
+    )
+  }, [availableFileProcessors])
 
   const handleSave = async () => {
     if (!selectedWorkspace) return
@@ -121,11 +135,11 @@ export const WorkspaceSettings: FC<WorkspaceSettingsProps> = ({}) => {
       embeddings_provider: defaultChatSettings.embeddingsProvider,
       include_profile_context: defaultChatSettings.includeProfileContext,
       include_workspace_instructions:
-        defaultChatSettings.includeWorkspaceInstructions
+        defaultChatSettings.includeWorkspaceInstructions,
+      file_processor: defaultFileProcessor?.processorId
     })
 
     if (
-      defaultChatSettings.model &&
       defaultChatSettings.prompt &&
       defaultChatSettings.temperature &&
       defaultChatSettings.contextLength &&
@@ -134,7 +148,9 @@ export const WorkspaceSettings: FC<WorkspaceSettingsProps> = ({}) => {
       defaultChatSettings.embeddingsProvider
     ) {
       setChatSettings({
-        model: defaultChatSettings.model as LLMID,
+        model: isModelIdFileRetriever(chatSettings?.model ?? "file_retriever")
+          ? (defaultRetrieverSettings.model as LLMID)
+          : (defaultChatSettings.model as LLMID),
         prompt: defaultChatSettings.prompt,
         temperature: defaultChatSettings.temperature,
         contextLength: defaultChatSettings.contextLength,
@@ -278,6 +294,8 @@ export const WorkspaceSettings: FC<WorkspaceSettingsProps> = ({}) => {
                 onChangeRetrieverSettings={setDefaultRetrieverSettings}
                 chatSettings={defaultChatSettings as any}
                 onChangeChatSettings={setDefaultChatSettings}
+                selectedProcessorId={defaultFileProcessor?.processorId}
+                onSelectProcessor={setDefaultFileProcessor}
               />
             </TabsContent>
           </Tabs>

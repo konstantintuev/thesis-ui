@@ -5,7 +5,7 @@ import {Database, Tables} from "@/supabase/types";
 import {createClient} from "@supabase/supabase-js";
 import {MultipleFilesQueueResult} from "@/types/ml-server-communication";
 import {processMultipleResult} from "@/lib/retrieval/processing/multiple";
-import {SupabaseClient} from "@supabase/supabase-js/src";
+import {SupabaseClient} from "@supabase/supabase-js";
 
 export function register() {
     if (process.env.NEXT_RUNTIME !== "nodejs") {

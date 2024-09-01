@@ -58,7 +58,15 @@ export type PerplexityLLMID =
   | "sonar-medium-chat" // Sonar Medium Chat
   | "sonar-medium-online" // Sonar Medium Online
 
-export type FileRetriever = "file_retriever"
+// Thanks to https://stackoverflow.com/a/57065680/5239059
+const file_retriever_models = ["file_retriever"] as const
+export type FileRetriever = (typeof file_retriever_models)[number]
+
+export function isModelIdFileRetriever(
+  modelId: string
+): modelId is FileRetriever {
+  return (file_retriever_models as readonly string[]).includes(modelId)
+}
 export interface LLM {
   modelId: LLMID
   modelName: string

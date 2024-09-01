@@ -47,3 +47,10 @@ export interface ContentItem extends ExtractedItemHtml {
 }
 
 export type UUIDExtractedItemDict = { [key: string]: ExtractedItemHtml }
+
+export interface FileProcessor {
+  processorId: string
+  processorName: string
+  provider: string
+  fileTypesSupported: string[]
+}

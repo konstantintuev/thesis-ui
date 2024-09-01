@@ -28,6 +28,8 @@ import { VALID_ENV_KEYS } from "@/types/valid-keys"
 import { useRouter } from "next/navigation"
 import { FC, useEffect, useMemo, useState } from "react"
 import { IHighlight } from "@/components/document/react-pdf-highlighter"
+import { FileProcessor } from "@/types/file-processing"
+import { fetchFileProcessors } from "@/lib/retrieval/fetch-file-processors"
 
 interface GlobalStateProps {
   children: React.ReactNode
@@ -59,6 +61,11 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
     OpenRouterLLM[]
   >([])
 
+  // FILE PROCESSING STORE
+  const [availableFileProcessors, setAvailableFileProcessors] = useState<
+    FileProcessor[]
+  >([])
+
   // WORKSPACE STORE
   const [selectedWorkspace, setSelectedWorkspace] =
     useState<Tables<"workspaces"> | null>(null)
@@ -77,17 +84,8 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
   // PASSIVE CHAT STORE
   const [userInput, setUserInput] = useState<string>("")
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
-  const [retrieverSettings, setRetrieverSettings] = useState<ChatSettings>({
-    model: "file_retriever",
-    prompt: "You are a helpful AI assistant.",
-    temperature: 0.5,
-    contextLength: 4000,
-    includeProfileContext: true,
-    includeWorkspaceInstructions: true,
-    embeddingsProvider: "local"
-  })
   const [chatSettings, setChatSettings] = useState<ChatSettings>({
-    model: "gpt-4-vision-preview",
+    model: "file_retriever",
     prompt: "You are a helpful AI assistant.",
     temperature: 0.5,
     contextLength: 4000,
@@ -167,6 +165,11 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
           if (!openRouterModels) return
           setAvailableOpenRouterModels(openRouterModels)
         }
+      }
+
+      const fileProcessorsRes = await fetchFileProcessors()
+      if (fileProcessorsRes) {
+        setAvailableFileProcessors(fileProcessorsRes)
       }
 
       if (process.env.NEXT_PUBLIC_OLLAMA_URL) {
@@ -261,6 +264,10 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
         availableOpenRouterModels,
         setAvailableOpenRouterModels,
 
+        // FILE PROCESSING STORE
+        availableFileProcessors: availableFileProcessors,
+        setAvailableFileProcessors: setAvailableFileProcessors,
+
         // WORKSPACE STORE
         selectedWorkspace,
         setSelectedWorkspace,
@@ -284,8 +291,6 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
         setUserInput,
         chatMessages,
         setChatMessages,
-        retrieverSettings,
-        setRetrieverSettings,
         chatSettings,
         setChatSettings,
         selectedChat,

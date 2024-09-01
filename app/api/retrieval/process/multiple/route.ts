@@ -1,19 +1,7 @@
-import { generateLocalEmbedding } from "@/lib/generate-local-embedding"
-import {
-  processCSV,
-  processJSON,
-  processMarkdown,
-  processPdf,
-  processTxt
-} from "@/lib/retrieval/processing"
 import { checkApiKey, getServerProfile } from "@/lib/server/server-chat-helpers"
 import { Database, Json } from "@/supabase/types"
-import { FileItemChunk } from "@/types"
 import { createClient } from "@supabase/supabase-js"
 import { NextResponse } from "next/server"
-import OpenAI from "openai"
-import { ExtractedItemHtml } from "@/types/file-processing"
-import { fi } from "date-fns/locale"
 import { processMultiple } from "@/lib/retrieval/processing/multiple"
 
 export async function POST(req: Request) {
@@ -30,6 +18,7 @@ export async function POST(req: Request) {
     const file_ids = formData.getAll("file_ids") as string[]
     const targetCollectionID = formData.get("targetCollectionID") as string
     const embeddingsProvider = formData.get("embeddingsProvider") as string
+    const fileProcessor = formData.get("fileProcessor") as string
 
     const { data: filesMetadata, error: metadataError } = await supabaseAdmin
       .from("files")
@@ -77,7 +66,8 @@ export async function POST(req: Request) {
 
     let upload_queue_id = await processMultiple(
       files?.map(it => it.signedUrl) ?? [],
-      filesMetadata.map(it => it.id)
+      filesMetadata.map(it => it.id),
+      fileProcessor
     )
 
     let result = await supabaseAdmin

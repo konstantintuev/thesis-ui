@@ -81,6 +81,8 @@ export class PdfLoader extends Component<Props, State> {
       workerSrc ??
       new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString()
 
+    console.log("workerSrc", GlobalWorkerOptions.workerSrc)
+
     Promise.resolve()
       .then(() => discardedDocument?.destroy())
       .then(() => {

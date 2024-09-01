@@ -10,7 +10,6 @@ import { ContentType } from "@/types"
 import { IconChevronCompactRight } from "@tabler/icons-react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { FC, useState } from "react"
-import { useSelectFileHandler } from "../chat/chat-hooks/use-select-file-handler"
 import { CommandK } from "../utility/command-k"
 
 export const SIDEBAR_WIDTH = 350
@@ -27,8 +26,6 @@ export const Dashboard: FC<DashboardProps> = ({ children }) => {
   const searchParams = useSearchParams()
   const tabValue = searchParams.get("tab") || "chats"
 
-  const { handleSelectDeviceFile } = useSelectFileHandler()
-
   const [contentType, setContentType] = useState<ContentType>(
     tabValue as ContentType
   )
@@ -43,7 +40,8 @@ export const Dashboard: FC<DashboardProps> = ({ children }) => {
     const files = event.dataTransfer.files
     const file = files[0]
 
-    handleSelectDeviceFile(file)
+    //TODO: support uploading files in chat
+    //handleSelectDeviceFile(file)
 
     setIsDragging(false)
   }

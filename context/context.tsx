@@ -12,6 +12,7 @@ import { AssistantImage } from "@/types/images/assistant-image"
 import { VALID_ENV_KEYS } from "@/types/valid-keys"
 import { Dispatch, SetStateAction, createContext } from "react"
 import { IHighlight } from "@/components/document/react-pdf-highlighter"
+import { FileProcessor } from "@/types/file-processing"
 
 interface ChatbotUIContext {
   // PROFILE STORE
@@ -50,6 +51,10 @@ interface ChatbotUIContext {
   availableOpenRouterModels: OpenRouterLLM[]
   setAvailableOpenRouterModels: Dispatch<SetStateAction<OpenRouterLLM[]>>
 
+  // FILE PROCESSING STORE
+  availableFileProcessors: FileProcessor[]
+  setAvailableFileProcessors: Dispatch<SetStateAction<FileProcessor[]>>
+
   // WORKSPACE STORE
   selectedWorkspace: Tables<"workspaces"> | null
   setSelectedWorkspace: Dispatch<SetStateAction<Tables<"workspaces"> | null>>
@@ -73,8 +78,6 @@ interface ChatbotUIContext {
   setUserInput: Dispatch<SetStateAction<string>>
   chatMessages: ChatMessage[]
   setChatMessages: Dispatch<SetStateAction<ChatMessage[]>>
-  retrieverSettings: ChatSettings | null
-  setRetrieverSettings: Dispatch<SetStateAction<ChatSettings>>
   chatSettings: ChatSettings | null
   setChatSettings: Dispatch<SetStateAction<ChatSettings>>
   selectedChat: Tables<"chats"> | null
@@ -193,6 +196,10 @@ export const ChatbotUIContext = createContext<ChatbotUIContext>({
   availableOpenRouterModels: [],
   setAvailableOpenRouterModels: () => {},
 
+  // FILE PROCESSING STORE
+  availableFileProcessors: [],
+  setAvailableFileProcessors: () => {},
+
   // WORKSPACE STORE
   selectedWorkspace: null,
   setSelectedWorkspace: () => {},
@@ -218,8 +225,6 @@ export const ChatbotUIContext = createContext<ChatbotUIContext>({
   setSelectedChat: () => {},
   chatMessages: [],
   setChatMessages: () => {},
-  retrieverSettings: null,
-  setRetrieverSettings: () => {},
   chatSettings: null,
   setChatSettings: () => {},
   chatFileItems: [],

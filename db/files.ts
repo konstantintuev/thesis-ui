@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase/browser-client"
-import { TablesInsert, TablesUpdate } from "@/supabase/types"
+import { Tables, TablesInsert, TablesUpdate } from "@/supabase/types"
 import mammoth from "mammoth"
 import { toast } from "sonner"
 import { uploadFile } from "./storage/files"
@@ -56,32 +56,6 @@ export const getFileWorkspacesByFileId = async (fileId: string) => {
   }
 
   return file
-}
-
-export const createFileBasedOnExtension = async (
-  file: File,
-  fileRecord: TablesInsert<"files">,
-  workspace_id: string,
-  embeddingsProvider: "openai" | "local" | "colbert"
-) => {
-  const fileExtension = file.name.split(".").pop()
-
-  if (fileExtension === "docx") {
-    const arrayBuffer = await file.arrayBuffer()
-    const result = await mammoth.extractRawText({
-      arrayBuffer
-    })
-
-    return createDocXFile(
-      result.value,
-      file,
-      fileRecord,
-      workspace_id,
-      embeddingsProvider
-    )
-  } else {
-    return createFile(file, fileRecord, workspace_id, embeddingsProvider)
-  }
 }
 
 // For non-docx files
@@ -155,7 +129,7 @@ export const createFile = async (
 export const createMultipleFiles = async (
   files: [File, TablesInsert<"files">][],
   targetCollectionID: string,
-  workspace_id: string,
+  workspace: Tables<"workspaces">,
   embeddingsProvider: "openai" | "local" | "colbert"
 ): Promise<string | undefined> => {
   let uploadedFileIDs = await Promise.all(
@@ -189,7 +163,7 @@ export const createMultipleFiles = async (
       await createFileWorkspace({
         user_id: createdFile.user_id,
         file_id: createdFile.id,
-        workspace_id
+        workspace_id: workspace.id
       })
 
       const filePath = await uploadFile(file, {
@@ -212,6 +186,7 @@ export const createMultipleFiles = async (
   }
   formData.append("embeddingsProvider", embeddingsProvider)
   formData.append("targetCollectionID", targetCollectionID)
+  formData.append("fileProcessor", workspace.file_processor)
 
   const response = await fetch("/api/retrieval/process/multiple", {
     method: "POST",
@@ -232,70 +207,6 @@ export const createMultipleFiles = async (
   }
 
   return json["multiple_file_queue_id"]
-}
-
-// // Handle docx files
-export const createDocXFile = async (
-  text: string,
-  file: File,
-  fileRecord: TablesInsert<"files">,
-  workspace_id: string,
-  embeddingsProvider: "openai" | "local" | "colbert"
-) => {
-  const { data: createdFile, error } = await supabase
-    .from("files")
-    .insert([fileRecord])
-    .select("*")
-    .single()
-
-  if (error) {
-    throw new Error(error.message)
-  }
-
-  await createFileWorkspace({
-    user_id: createdFile.user_id,
-    file_id: createdFile.id,
-    workspace_id
-  })
-
-  const filePath = await uploadFile(file, {
-    name: createdFile.name,
-    user_id: createdFile.user_id,
-    file_id: createdFile.name
-  })
-
-  await updateFile(createdFile.id, {
-    file_path: filePath
-  })
-
-  const response = await fetch("/api/retrieval/process/docx", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      text: text,
-      fileId: createdFile.id,
-      embeddingsProvider,
-      fileExtension: "docx"
-    })
-  })
-
-  if (!response.ok) {
-    const jsonText = await response.text()
-    const json = JSON.parse(jsonText)
-    console.error(
-      `Error processing file:${createdFile.id}, status:${response.status}, response:${json.message}`
-    )
-    toast.error("Failed to process file. Reason:" + json.message, {
-      duration: 10000
-    })
-    await deleteFile(createdFile.id)
-  }
-
-  const fetchedFile = await getFileById(createdFile.id)
-
-  return fetchedFile
 }
 
 export const createFiles = async (

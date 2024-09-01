@@ -19,12 +19,16 @@ import {
 import { Slider } from "./slider"
 import { TextareaAutosize } from "./textarea-autosize"
 import { WithTooltip } from "./with-tooltip"
+import { FileProcessingSelect } from "@/components/document/file-processing-select"
+import { FileProcessor } from "@/types/file-processing"
 
 interface ChatSettingsFormProps {
   retrieverSettings?: ChatSettings
   onChangeRetrieverSettings?: (value: ChatSettings) => void
   chatSettings: ChatSettings
   onChangeChatSettings: (value: ChatSettings) => void
+  selectedProcessorId?: string
+  onSelectProcessor?: (processorId: FileProcessor) => void
   useAdvancedDropdown?: boolean
   showTooltip?: boolean
 }
@@ -34,6 +38,8 @@ export const ChatSettingsForm: FC<ChatSettingsFormProps> = ({
   onChangeRetrieverSettings,
   chatSettings,
   onChangeChatSettings,
+  selectedProcessorId,
+  onSelectProcessor,
   useAdvancedDropdown = true,
   showTooltip = true
 }) => {
@@ -66,7 +72,7 @@ export const ChatSettingsForm: FC<ChatSettingsFormProps> = ({
           onSelectModel={model => {
             onChangeChatSettings({ ...chatSettings, model })
           }}
-          excludeProvider={"file_retriever"}
+          excludeProvider={retrieverSettings && "file_retriever"}
         />
       </div>
 
@@ -84,6 +90,17 @@ export const ChatSettingsForm: FC<ChatSettingsFormProps> = ({
           maxRows={6}
         />
       </div>
+
+      {selectedProcessorId && onSelectProcessor && (
+        <div className="space-y-1">
+          <Label>File Processor</Label>
+
+          <FileProcessingSelect
+            selectedProcessorId={selectedProcessorId}
+            onSelectProcessor={onSelectProcessor}
+          />
+        </div>
+      )}
 
       {useAdvancedDropdown ? (
         <AdvancedSettings>

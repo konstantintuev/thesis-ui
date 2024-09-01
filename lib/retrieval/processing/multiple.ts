@@ -19,7 +19,8 @@ import {
 
 export const processMultiple = async (
   fileURLs: string[],
-  fileIDs: string[]
+  fileIDs: string[],
+  fileProcessor: string
 ): Promise<string> => {
   const formData = new FormData()
   for (let fileURL of fileURLs) {
@@ -28,6 +29,7 @@ export const processMultiple = async (
   for (let fileID of fileIDs) {
     formData.append("fileIDs", fileID)
   }
+  formData.append("fileProcessor", fileProcessor)
 
   const response = await fetch(
     "http://127.0.0.1:8000/file_processing/files_to_chunks",

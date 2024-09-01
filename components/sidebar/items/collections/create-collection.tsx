@@ -7,7 +7,7 @@ import { TablesInsert } from "@/supabase/types"
 import { CollectionFile } from "@/types"
 import { FC, useContext, useState } from "react"
 import { CollectionFileSelect } from "./collection-file-select"
-import { ACCEPTED_FILE_TYPES } from "@/components/chat/chat-hooks/use-select-file-handler"
+import { ACCEPTED_FILE_TYPES } from "@/components/chat/chat-hooks/use-select-multiple-files-handler"
 
 interface CreateCollectionProps {
   isOpen: boolean

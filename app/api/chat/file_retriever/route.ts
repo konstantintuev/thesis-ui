@@ -152,8 +152,11 @@ export async function POST(request: Request) {
         }
         return relevantFile
       }) ?? []
-    // Reverse sort whole file relevance score
-    filesFound.sort((a, b) => b.score - a.score)
+    filesFound = filesFound
+      // At least 9% relevance
+      .filter(file => file.score > 0.09)
+      // Reverse sort whole file relevance score
+      .sort((a, b) => b.score - a.score)
 
     const { data: currentChatFiles } = await supabaseAdmin
       .from("chat_files")
@@ -307,13 +310,13 @@ export async function POST(request: Request) {
             let generatedText = ""
             for await (const stream of generator) {
               let relevantFile = filesFound[index]
-              let avgChunkRelevance = Math.round(
-                relevantFile.avg_chunk_relevance_score * 10
-              ) // format: 3
-              let basicRuleRelevance = Math.round(
-                (relevantFile.basic_rule_relevance_score ?? 0) * 10
-              ) // format: 3
-              let totalScore = Math.round(relevantFile.score * 10) // format: 3
+              let avgChunkRelevance = (
+                relevantFile.avg_chunk_relevance_score * 100
+              ).toFixed(1) // format: 13.5%
+              let basicRuleRelevance = (
+                (relevantFile.basic_rule_relevance_score ?? 0) * 100
+              ).toFixed(1) // format: 13.5%
+              let totalScore = (relevantFile.score * 100).toFixed(1) // format: 13.5%
 
               controller.enqueue(
                 encoder.encode(
@@ -324,8 +327,8 @@ export async function POST(request: Request) {
                       duplicateReference: relevantFile.already_queried
                     }) +
                     `\n\`\`\`\n\n` +
-                    `Relevance: ${totalScore}/10 ` +
-                    `(Vector Search: ${avgChunkRelevance}/10; Company Rules: ${basicRuleRelevance}/10)\n\n` +
+                    `Relevance Score: ${totalScore}% ` +
+                    `(Vector Search Score: ${avgChunkRelevance}%; Company Rules Score: ${basicRuleRelevance}%)\n\n` +
                     `Company rule breakdown:\n\`\`\`json\n${JSON.stringify(relevantFile.basic_rule_info ?? {}, null, 4)}\n\`\`\`\n\n`
                 )
               )

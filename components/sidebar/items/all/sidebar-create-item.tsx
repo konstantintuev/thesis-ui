@@ -14,7 +14,6 @@ import { createAssistant, updateAssistant } from "@/db/assistants"
 import { createChat } from "@/db/chats"
 import { createCollectionFiles } from "@/db/collection-files"
 import { createCollection } from "@/db/collections"
-import { createFileBasedOnExtension } from "@/db/files"
 import { createModel } from "@/db/models"
 import { createPreset } from "@/db/presets"
 import { createPrompt } from "@/db/prompts"
@@ -78,14 +77,15 @@ export const SidebarCreateItem: FC<SidebarCreateItemProps> = ({
 
       const { file, ...rest } = createState
 
-      const createdFile = await createFileBasedOnExtension(
+      // TODO: create single file
+      /*const createdFile = await createFileBasedOnExtension(
         file,
         rest,
         workspaceId,
         selectedWorkspace.embeddings_provider as "openai" | "local" | "colbert"
       )
 
-      return createdFile
+      return createdFile*/
     },
     collections: async (
       createState: {

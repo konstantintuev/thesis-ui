@@ -206,6 +206,9 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
           await getChatById(chatCollectionCreator.chat_id)
         )
       }
+    } else {
+      setCollectionRetrievalActive(false)
+      setCollectionCreatorChat(null)
     }
   }
 

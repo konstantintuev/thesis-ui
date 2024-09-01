@@ -25,7 +25,7 @@ import type {
   ScaledPosition
 } from "./react-pdf-highlighter"
 
-import { DocumentSidebar } from "./DocumentSidebar"
+import { DocumentSidebar } from "./document-sidebar"
 import { Spinner } from "./Spinner"
 import { testHighlights as _testHighlights } from "./test-highlights"
 

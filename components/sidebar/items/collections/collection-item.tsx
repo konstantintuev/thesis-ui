@@ -7,7 +7,7 @@ import { IconBooks } from "@tabler/icons-react"
 import { FC, useState } from "react"
 import { SidebarItem } from "../all/sidebar-display-item"
 import { CollectionFileSelect } from "./collection-file-select"
-import { ACCEPTED_FILE_TYPES } from "@/components/chat/chat-hooks/use-select-file-handler"
+import { ACCEPTED_FILE_TYPES } from "@/components/chat/chat-hooks/use-select-multiple-files-handler"
 
 interface CollectionItemProps {
   collection: Tables<"collections">

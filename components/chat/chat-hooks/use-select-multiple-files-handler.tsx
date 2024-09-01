@@ -1,5 +1,5 @@
 import { ChatbotUIContext } from "@/context/context"
-import { createDocXFile, createFile, createMultipleFiles } from "@/db/files"
+import { createMultipleFiles } from "@/db/files"
 import { LLM_LIST } from "@/lib/models/llm/llm-list"
 import mammoth from "mammoth"
 import { useContext, useEffect, useState } from "react"
@@ -108,7 +108,7 @@ export const useSelectMultipleFilesHandler = () => {
       const createdMultipleFiles = await createMultipleFiles(
         upload_files,
         targetCollection.id!,
-        selectedWorkspace.id,
+        selectedWorkspace,
         chatSettings.embeddingsProvider
       )
 

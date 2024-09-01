@@ -1618,6 +1618,7 @@ export type Database = {
           default_temperature: number
           description: string
           embeddings_provider: string
+          file_processor: string
           id: string
           image_path: string
           include_profile_context: boolean
@@ -1638,6 +1639,7 @@ export type Database = {
           default_temperature: number
           description: string
           embeddings_provider: string
+          file_processor?: string
           id?: string
           image_path?: string
           include_profile_context: boolean
@@ -1658,6 +1660,7 @@ export type Database = {
           default_temperature?: number
           description?: string
           embeddings_provider?: string
+          file_processor?: string
           id?: string
           image_path?: string
           include_profile_context?: boolean

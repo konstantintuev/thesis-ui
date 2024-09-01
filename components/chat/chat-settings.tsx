@@ -16,8 +16,6 @@ export const ChatSettings: FC<ChatSettingsProps> = ({}) => {
   const {
     chatSettings,
     setChatSettings,
-    retrieverSettings,
-    setRetrieverSettings,
     models,
     availableHostedModels,
     availableLocalModels,
@@ -33,7 +31,7 @@ export const ChatSettings: FC<ChatSettingsProps> = ({}) => {
   }
 
   useEffect(() => {
-    if (!chatSettings || !retrieverSettings) return
+    if (!chatSettings) return
 
     setChatSettings({
       ...chatSettings,
@@ -48,7 +46,7 @@ export const ChatSettings: FC<ChatSettingsProps> = ({}) => {
     })
   }, [chatSettings?.model])
 
-  if (!chatSettings || !retrieverSettings) return null
+  if (!chatSettings) return null
 
   const allModels = [
     ...models.map(model => ({
@@ -89,8 +87,6 @@ export const ChatSettings: FC<ChatSettingsProps> = ({}) => {
         <ChatSettingsForm
           chatSettings={chatSettings}
           onChangeChatSettings={setChatSettings}
-          retrieverSettings={retrieverSettings}
-          onChangeRetrieverSettings={setRetrieverSettings}
         />
       </PopoverContent>
     </Popover>
