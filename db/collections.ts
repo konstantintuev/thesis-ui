@@ -25,10 +25,13 @@ export const getCollectionWorkspacesByWorkspaceId = async (
       `
       id,
       name,
-      collections (*)
+      collections!inner (
+       *
+      )
     `
     )
     .eq("id", workspaceId)
+    .eq("collections.hidden", false)
     .single()
 
   if (!workspace) {

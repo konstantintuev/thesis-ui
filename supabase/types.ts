@@ -623,6 +623,7 @@ export type Database = {
           created_at: string
           description: string
           folder_id: string | null
+          hidden: boolean
           id: string
           name: string
           sharing: string
@@ -633,6 +634,7 @@ export type Database = {
           created_at?: string
           description: string
           folder_id?: string | null
+          hidden?: boolean
           id?: string
           name: string
           sharing?: string
@@ -643,6 +645,7 @@ export type Database = {
           created_at?: string
           description?: string
           folder_id?: string | null
+          hidden?: boolean
           id?: string
           name?: string
           sharing?: string
@@ -775,30 +778,6 @@ export type Database = {
           content?: Json | null
           created_at?: string
           id?: string
-        }
-        Relationships: []
-      }
-      file_quality_rules: {
-        Row: {
-          attribute_rules: Json | null
-          content_rules: Json | null
-          created_at: string
-          id: number
-          topic: string | null
-        }
-        Insert: {
-          attribute_rules?: Json | null
-          content_rules?: Json | null
-          created_at?: string
-          id?: number
-          topic?: string | null
-        }
-        Update: {
-          attribute_rules?: Json | null
-          content_rules?: Json | null
-          created_at?: string
-          id?: number
-          topic?: string | null
         }
         Relationships: []
       }

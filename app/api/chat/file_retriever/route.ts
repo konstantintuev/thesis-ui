@@ -19,6 +19,10 @@ import {
   createCollection,
   getChatCollectionCreator
 } from "@/db/collections"
+import {
+  addUuidObjectToString,
+  uuidPattern
+} from "@/lib/retrieval/attachable-content"
 
 export const runtime = "edge"
 
@@ -106,7 +110,25 @@ export async function POST(request: Request) {
       throw Error("OpenAI not supported for file retriever!")
     }
 
-    const mostSimilarChunks = localFileItems?.sort((a, b) => b.score - a.score)
+    let mostSimilarChunks = localFileItems?.sort((a, b) => b.score - a.score)
+    mostSimilarChunks = await Promise.all(
+      mostSimilarChunks?.map(async chunk => {
+        if (chunk.chunk_attachable_content) {
+          let { data } = await supabaseAdmin
+            .from("file_items_attachable_content")
+            .select("*")
+            .eq("id", chunk.chunk_attachable_content)
+            .single()
+
+          if (data?.content) {
+            chunk.content = chunk.content.replace(uuidPattern, match =>
+              addUuidObjectToString(match, data.content as any)
+            )
+          }
+        }
+        return chunk
+      })
+    )
 
     let filesFound: ExtendedFileForSearch[]
     // Map chunks to filesRaw
@@ -263,11 +285,16 @@ export async function POST(request: Request) {
       if (!currentChatCollectionCreator) {
         const firstUserMessage = messages.find(msg => msg.role === "user")
 
+        let shortTitle = (firstUserMessage?.content ?? fileQuery).substring(
+          0,
+          18
+        )
         const createdCollection = await createCollection(
           {
-            description: `The verified relevant files collection for '${firstUserMessage?.content ?? fileQuery}'`,
-            name: firstUserMessage?.content ?? fileQuery,
-            user_id: profile.user_id
+            description: `The verified relevant files collection for ChatID: ${chatSettings} - '${shortTitle}'`,
+            name: `${new Date().toLocaleDateString()}: Verified of ${shortTitle}`,
+            user_id: profile.user_id,
+            hidden: true
           },
           workspaceId,
           supabaseAdmin

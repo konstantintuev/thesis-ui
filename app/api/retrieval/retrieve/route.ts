@@ -8,7 +8,10 @@ import { createClient } from "@supabase/supabase-js"
 import OpenAI from "openai"
 import { getChatCollectionConsumer } from "@/db/collections"
 import { getCollectionFilesByCollectionId } from "@/db/collection-files"
-import { addUuidObjectToString } from "@/lib/retrieval/attachable-content"
+import {
+  addUuidObjectToString,
+  uuidPattern
+} from "@/lib/retrieval/attachable-content"
 
 export async function POST(request: Request) {
   const json = await request.json()
@@ -117,8 +120,6 @@ export async function POST(request: Request) {
      * 3. Done
      */
 
-    const uuidPattern =
-      /\b[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[1-5][0-9a-fA-F]{3}\b-[89abAB][0-9a-fA-F]{3}\b-[0-9a-fA-F]{12}\b/g
     mostSimilarChunks = await Promise.all(
       mostSimilarChunks?.map(async chunk => {
         if (chunk.chunk_attachable_content) {
