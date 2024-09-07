@@ -79,12 +79,18 @@ import {
 } from "@/db/tools"
 import { convertBlobToBase64 } from "@/lib/blob-to-b64"
 import { Tables, TablesUpdate } from "@/supabase/types"
-import { CollectionFile, ContentType, DataItemType } from "@/types"
+import {
+  CollectionFile,
+  ContentType,
+  DataItemType,
+  TeamApiUpdate
+} from "@/types"
 import { FC, useContext, useEffect, useRef, useState } from "react"
 import profile from "react-syntax-highlighter/dist/esm/languages/hljs/profile"
 import { toast } from "sonner"
 import { SidebarDeleteItem } from "./sidebar-delete-item"
 import { useSelectMultipleFilesHandler } from "@/components/chat/chat-hooks/use-select-multiple-files-handler"
+import { getTeam, updateTeam } from "@/lib/team-api-calls"
 
 interface SidebarUpdateItemProps {
   isTyping: boolean
@@ -114,7 +120,9 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
     setAssistants,
     setTools,
     setModels,
-    setAssistantImages
+    setAssistantImages,
+    setTeams,
+    teams
   } = useContext(ChatbotUIContext)
 
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -152,6 +160,11 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
   const [selectedAssistantTools, setSelectedAssistantTools] = useState<
     Tables<"tools">[]
   >([])
+
+  // Teams Render State
+  const [teamApiContent, setTeamApiContent] = useState<TeamApiUpdate | null>(
+    null
+  )
 
   useEffect(() => {
     if (isOpen) {
@@ -199,7 +212,11 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
       setSelectedAssistantTools
     },
     tools: null,
-    models: null
+    models: null,
+    teams: {
+      teamApiContent,
+      setTeamApiContent
+    }
   }
 
   const fetchDataFunctions = {
@@ -229,7 +246,11 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
       setSelectedAssistantTools([])
     },
     tools: null,
-    models: null
+    models: null,
+    teams: async (teamID: string) => {
+      const team = await getTeam(teamID)
+      setTeamApiContent(team)
+    }
   }
 
   const fetchWorkpaceFunctions = {
@@ -265,6 +286,8 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
   }
 
   const fetchSelectedWorkspaces = async () => {
+    if (contentType === "teams") return []
+
     const fetchFunction = fetchWorkpaceFunctions[contentType]
 
     if (!fetchFunction) return []
@@ -397,7 +420,7 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
 
       for (const file of filesToAdd) {
         await createCollectionFile({
-          user_id: item.user_id,
+          user_id: item.user_id!,
           collection_id: collectionId,
           file_id: file.id
         })
@@ -446,7 +469,7 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
 
       for (const file of filesToAdd) {
         await createAssistantFile({
-          user_id: item.user_id,
+          user_id: item.user_id!,
           assistant_id: assistantId,
           file_id: file.id
         })
@@ -474,7 +497,7 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
 
       for (const collection of collectionsToAdd) {
         await createAssistantCollection({
-          user_id: item.user_id,
+          user_id: item.user_id!,
           assistant_id: assistantId,
           collection_id: collection.id
         })
@@ -499,7 +522,7 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
 
       for (const tool of toolsToAdd) {
         await createAssistantTool({
-          user_id: item.user_id,
+          user_id: item.user_id!,
           assistant_id: assistantId,
           tool_id: tool.id
         })
@@ -575,6 +598,11 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
       )
 
       return updatedModel
+    },
+    teams: async (teamId: string, updateState: any) => {
+      if (!teamApiContent) return teams.find(team => team.id == teamId)
+      const updatedTeam = await updateTeam(teamApiContent)
+      return updatedTeam
     }
   }
 
@@ -586,7 +614,8 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
     collections: setCollections,
     assistants: setAssistants,
     tools: setTools,
-    models: setModels
+    models: setModels,
+    teams: setTeams
   }
 
   const handleUpdate = async () => {
@@ -653,7 +682,7 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
           </SheetHeader>
 
           <div className="mt-4 space-y-3">
-            {workspaces.length > 1 && (
+            {workspaces.length > 1 && contentType !== "teams" && (
               <div className="space-y-1">
                 <Label>Assigned Workspaces</Label>
 

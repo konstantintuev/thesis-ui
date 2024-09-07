@@ -21,6 +21,7 @@ import { deleteTool } from "@/db/tools"
 import { Tables } from "@/supabase/types"
 import { ContentType, DataItemType } from "@/types"
 import { FC, useContext, useRef, useState } from "react"
+import { deleteTeam } from "@/db/teams"
 
 interface SidebarDeleteItemProps {
   item: DataItemType
@@ -39,7 +40,8 @@ export const SidebarDeleteItem: FC<SidebarDeleteItemProps> = ({
     setCollections,
     setAssistants,
     setTools,
-    setModels
+    setModels,
+    setTeams
   } = useContext(ChatbotUIContext)
 
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -48,32 +50,38 @@ export const SidebarDeleteItem: FC<SidebarDeleteItemProps> = ({
 
   const deleteFunctions = {
     chats: async (chat: Tables<"chats">) => {
-      await deleteChat(chat.id)
+      return await deleteChat(chat.id)
     },
     presets: async (preset: Tables<"presets">) => {
-      await deletePreset(preset.id)
+      return await deletePreset(preset.id)
     },
     prompts: async (prompt: Tables<"prompts">) => {
-      await deletePrompt(prompt.id)
+      return await deletePrompt(prompt.id)
     },
     files: async (file: Tables<"files">) => {
       await deleteFileFromStorage(file.file_path)
-      await deleteFile(file.id)
+      return await deleteFile(file.id)
     },
     collections: async (collection: Tables<"collections">) => {
-      await deleteCollection(collection.id)
+      return await deleteCollection(collection.id)
     },
     assistants: async (assistant: Tables<"assistants">) => {
-      await deleteAssistant(assistant.id)
-      setChats(prevState =>
-        prevState.filter(chat => chat.assistant_id !== assistant.id)
-      )
+      let res = await deleteAssistant(assistant.id)
+      if (res) {
+        setChats(prevState =>
+          prevState.filter(chat => chat.assistant_id !== assistant.id)
+        )
+      }
+      return res
     },
     tools: async (tool: Tables<"tools">) => {
-      await deleteTool(tool.id)
+      return await deleteTool(tool.id)
     },
     models: async (model: Tables<"models">) => {
-      await deleteModel(model.id)
+      return await deleteModel(model.id)
+    },
+    teams: async (team: Tables<"teams">) => {
+      return await deleteTeam(team.id)
     }
   }
 
@@ -85,7 +93,8 @@ export const SidebarDeleteItem: FC<SidebarDeleteItemProps> = ({
     collections: setCollections,
     assistants: setAssistants,
     tools: setTools,
-    models: setModels
+    models: setModels,
+    teams: setTeams
   }
 
   const handleDelete = async () => {
@@ -94,11 +103,11 @@ export const SidebarDeleteItem: FC<SidebarDeleteItemProps> = ({
 
     if (!deleteFunction || !setStateFunction) return
 
-    await deleteFunction(item as any)
-
-    setStateFunction((prevItems: any) =>
-      prevItems.filter((prevItem: any) => prevItem.id !== item.id)
-    )
+    if (await deleteFunction(item as any)) {
+      setStateFunction((prevItems: any) =>
+        prevItems.filter((prevItem: any) => prevItem.id !== item.id)
+      )
+    }
 
     setShowDialog(false)
   }

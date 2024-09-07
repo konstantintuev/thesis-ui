@@ -9,6 +9,7 @@ export type DataListType =
   | Tables<"assistants">[]
   | Tables<"tools">[]
   | Tables<"models">[]
+  | Tables<"teams">[]
 
 export type DataItemType =
   | Tables<"collections">
@@ -19,3 +20,11 @@ export type DataItemType =
   | Tables<"assistants">
   | Tables<"tools">
   | Tables<"models">
+  | Tables<"teams">
+
+export type TeamApiUpdate = {
+  id: string
+  name: string
+  description: string
+  emails: string
+}

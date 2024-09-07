@@ -3,6 +3,7 @@ import {
   IconAdjustmentsHorizontal,
   IconBolt,
   IconBooks,
+  IconUsersGroup,
   IconFile,
   IconMessage,
   IconPencil,
@@ -72,6 +73,12 @@ export const SidebarSwitcher: FC<SidebarSwitcherProps> = ({
         <SidebarSwitchItem
           icon={<IconBolt size={SIDEBAR_ICON_SIZE} />}
           contentType="tools"
+          onContentTypeChange={onContentTypeChange}
+        />
+
+        <SidebarSwitchItem
+          icon={<IconUsersGroup size={SIDEBAR_ICON_SIZE} />}
+          contentType="teams"
           onContentTypeChange={onContentTypeChange}
         />
       </TabsList>

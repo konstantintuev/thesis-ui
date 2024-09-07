@@ -9,7 +9,7 @@ import { updatePrompt } from "@/db/prompts"
 import { updateTool } from "@/db/tools"
 import { cn } from "@/lib/utils"
 import { Tables } from "@/supabase/types"
-import { ContentType, DataItemType, DataListType } from "@/types"
+import { ContentType, DataItemType, DataListType, TeamApiUpdate } from "@/types"
 import { FC, useContext, useEffect, useRef, useState } from "react"
 import { Separator } from "../ui/separator"
 import { AssistantItem } from "./items/assistants/assistant-item"
@@ -21,6 +21,7 @@ import { ModelItem } from "./items/models/model-item"
 import { PresetItem } from "./items/presets/preset-item"
 import { PromptItem } from "./items/prompts/prompt-item"
 import { ToolItem } from "./items/tools/tool-item"
+import { TeamItem } from "@/components/sidebar/items/teams/team-item"
 
 interface SidebarDataListProps {
   contentType: ContentType
@@ -41,7 +42,8 @@ export const SidebarDataList: FC<SidebarDataListProps> = ({
     setCollections,
     setAssistants,
     setTools,
-    setModels
+    setModels,
+    setTeams
   } = useContext(ChatbotUIContext)
 
   const divRef = useRef<HTMLDivElement>(null)
@@ -87,6 +89,9 @@ export const SidebarDataList: FC<SidebarDataListProps> = ({
 
       case "models":
         return <ModelItem key={item.id} model={item as Tables<"models">} />
+
+      case "teams":
+        return <TeamItem key={item.id} team={item as Tables<"teams">} />
 
       default:
         return null
@@ -140,7 +145,10 @@ export const SidebarDataList: FC<SidebarDataListProps> = ({
     collections: updateCollection,
     assistants: updateAssistant,
     tools: updateTool,
-    models: updateModel
+    models: updateModel,
+    teams: () => ({
+      id: null
+    })
   }
 
   const stateUpdateFunctions = {
@@ -151,7 +159,8 @@ export const SidebarDataList: FC<SidebarDataListProps> = ({
     collections: setCollections,
     assistants: setAssistants,
     tools: setTools,
-    models: setModels
+    models: setModels,
+    teams: () => {}
   }
 
   const updateFolder = async (itemId: string, folderId: string | null) => {
@@ -214,8 +223,10 @@ export const SidebarDataList: FC<SidebarDataListProps> = ({
     }
   }, [data])
 
+  // @ts-ignore
   const dataWithFolders = data.filter(item => item.folder_id)
-  const dataWithoutFolders = data.filter(item => item.folder_id === null)
+  // @ts-ignore
+  const dataWithoutFolders = data.filter(item => !item.folder_id)
 
   return (
     <>
@@ -246,6 +257,7 @@ export const SidebarDataList: FC<SidebarDataListProps> = ({
                 contentType={contentType}
               >
                 {dataWithFolders
+                  // @ts-ignore folders don't exist for teams
                   .filter(item => item.folder_id === folder.id)
                   .map(item => (
                     <div

@@ -12,6 +12,7 @@ import { CreateModel } from "./items/models/create-model"
 import { CreatePreset } from "./items/presets/create-preset"
 import { CreateRulePrompt } from "./items/prompts/create-rule-prompt"
 import { CreateTool } from "./items/tools/create-tool"
+import { CreateTeam } from "@/components/sidebar/items/teams/create-team"
 
 interface SidebarCreateButtonsProps {
   contentType: ContentType
@@ -33,6 +34,7 @@ export const SidebarCreateButtons: FC<SidebarCreateButtonsProps> = ({
   const [isCreatingAssistant, setIsCreatingAssistant] = useState(false)
   const [isCreatingTool, setIsCreatingTool] = useState(false)
   const [isCreatingModel, setIsCreatingModel] = useState(false)
+  const [isCreatingTeam, setIsCreatingTeam] = useState(false)
 
   const handleCreateFolder = async () => {
     if (!profile) return
@@ -88,6 +90,11 @@ export const SidebarCreateButtons: FC<SidebarCreateButtonsProps> = ({
       case "models":
         return async () => {
           setIsCreatingModel(true)
+        }
+
+      case "teams":
+        return async () => {
+          setIsCreatingTeam(true)
         }
 
       default:
@@ -151,6 +158,10 @@ export const SidebarCreateButtons: FC<SidebarCreateButtonsProps> = ({
           isOpen={isCreatingModel}
           onOpenChange={setIsCreatingModel}
         />
+      )}
+
+      {isCreatingTeam && (
+        <CreateTeam isOpen={isCreatingTeam} onOpenChange={setIsCreatingTeam} />
       )}
     </div>
   )

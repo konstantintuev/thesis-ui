@@ -11,6 +11,7 @@ import { useParams, useRouter } from "next/navigation"
 import { FC, useContext, useRef } from "react"
 import { DeleteChat } from "./delete-chat"
 import { UpdateChat } from "./update-chat"
+import { ShareChat } from "./share-chat"
 
 interface ChatItemProps {
   chat: Tables<"chats">
@@ -101,6 +102,8 @@ export const ChatItem: FC<ChatItemProps> = ({ chat }) => {
         }}
         className={`ml-2 flex space-x-2 ${!isActive && "w-11 opacity-0 group-hover:opacity-100"}`}
       >
+        <ShareChat chat={chat} />
+
         <UpdateChat chat={chat} />
 
         <DeleteChat chat={chat} />

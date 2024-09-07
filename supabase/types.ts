@@ -1484,6 +1484,99 @@ export type Database = {
           },
         ]
       }
+      team_chats: {
+        Row: {
+          chat_id: string
+          created_at: string
+          team_id: string
+        }
+        Insert: {
+          chat_id: string
+          created_at?: string
+          team_id: string
+        }
+        Update: {
+          chat_id?: string
+          created_at?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "public_team_chats_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "chats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "public_team_chats_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_members: {
+        Row: {
+          created_at: string
+          team_id: string
+          team_lead: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          team_id: string
+          team_lead?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          team_id?: string
+          team_lead?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "public_team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "public_team_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       tool_workspaces: {
         Row: {
           created_at: string
@@ -1717,6 +1810,28 @@ export type Database = {
           _query: string
         }
         Returns: string
+      }
+      get_emails_by_user_ids: {
+        Args: {
+          user_ids: string[]
+        }
+        Returns: {
+          email: string
+        }[]
+      }
+      get_user_ids_by_emails: {
+        Args: {
+          email: string[]
+        }
+        Returns: {
+          id: string
+        }[]
+      }
+      is_member_in_same_team: {
+        Args: {
+          _member_team_id: string
+        }
+        Returns: boolean
       }
       match_file_items_any_bge: {
         Args: {

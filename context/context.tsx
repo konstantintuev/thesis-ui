@@ -13,6 +13,7 @@ import { VALID_ENV_KEYS } from "@/types/valid-keys"
 import { Dispatch, SetStateAction, createContext } from "react"
 import { IHighlight } from "@/components/document/react-pdf-highlighter"
 import { FileProcessor } from "@/types/file-processing"
+import { TeamAndMe } from "@/components/sidebar/items/teams/teams-select"
 
 interface ChatbotUIContext {
   // PROFILE STORE
@@ -40,6 +41,8 @@ interface ChatbotUIContext {
   setTools: Dispatch<SetStateAction<Tables<"tools">[]>>
   workspaces: Tables<"workspaces">[]
   setWorkspaces: Dispatch<SetStateAction<Tables<"workspaces">[]>>
+  teams: TeamAndMe[]
+  setTeams: Dispatch<SetStateAction<TeamAndMe[]>>
 
   // MODELS STORE
   envKeyMap: Record<string, VALID_ENV_KEYS>
@@ -185,6 +188,8 @@ export const ChatbotUIContext = createContext<ChatbotUIContext>({
   setTools: () => {},
   workspaces: [],
   setWorkspaces: () => {},
+  teams: [],
+  setTeams: () => {},
 
   // MODELS STORE
   envKeyMap: {},

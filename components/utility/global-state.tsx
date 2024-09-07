@@ -30,6 +30,8 @@ import { FC, useEffect, useMemo, useState } from "react"
 import { IHighlight } from "@/components/document/react-pdf-highlighter"
 import { FileProcessor } from "@/types/file-processing"
 import { fetchFileProcessors } from "@/lib/retrieval/fetch-file-processors"
+import { getTeams } from "@/db/teams"
+import { TeamAndMe } from "@/components/sidebar/items/teams/teams-select"
 
 interface GlobalStateProps {
   children: React.ReactNode
@@ -52,6 +54,7 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
   const [prompts, setPrompts] = useState<Tables<"prompts">[]>([])
   const [tools, setTools] = useState<Tables<"tools">[]>([])
   const [workspaces, setWorkspaces] = useState<Tables<"workspaces">[]>([])
+  const [teams, setTeams] = useState<TeamAndMe[]>([])
 
   // MODELS STORE
   const [envKeyMap, setEnvKeyMap] = useState<Record<string, VALID_ENV_KEYS>>({})
@@ -196,6 +199,9 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
       const workspaces = await getWorkspacesByUserId(user.id)
       setWorkspaces(workspaces)
 
+      const teams = await getTeams()
+      setTeams(teams)
+
       for (const workspace of workspaces) {
         let workspaceImageUrl = ""
 
@@ -253,6 +259,8 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
         setTools,
         workspaces,
         setWorkspaces,
+        teams,
+        setTeams,
 
         // MODELS STORE
         envKeyMap,

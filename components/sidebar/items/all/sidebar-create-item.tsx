@@ -28,6 +28,7 @@ import { ContentType } from "@/types"
 import { FC, useContext, useRef, useState } from "react"
 import { toast } from "sonner"
 import { useSelectMultipleFilesHandler } from "@/components/chat/chat-hooks/use-select-multiple-files-handler"
+import { addTeam } from "@/lib/team-api-calls"
 
 interface SidebarCreateItemProps {
   isOpen: boolean
@@ -56,7 +57,8 @@ export const SidebarCreateItem: FC<SidebarCreateItemProps> = ({
     setAssistants,
     setAssistantImages,
     setTools,
-    setModels
+    setModels,
+    setTeams
   } = useContext(ChatbotUIContext)
 
   const { handleSelectDeviceFiles } = useSelectMultipleFilesHandler()
@@ -176,7 +178,8 @@ export const SidebarCreateItem: FC<SidebarCreateItemProps> = ({
       return updatedAssistant
     },
     tools: createTool,
-    models: createModel
+    models: createModel,
+    teams: addTeam
   }
 
   const stateUpdateFunctions = {
@@ -187,7 +190,8 @@ export const SidebarCreateItem: FC<SidebarCreateItemProps> = ({
     collections: setCollections,
     assistants: setAssistants,
     tools: setTools,
-    models: setModels
+    models: setModels,
+    teams: setTeams
   }
 
   const handleCreate = async () => {
