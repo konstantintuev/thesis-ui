@@ -315,3 +315,25 @@ create policy "Enable update for users based on team lead"
                          FROM team_members
                          WHERE ((team_members.team_id = teams.id) AND (team_members.user_id = auth.uid()) AND
                                 (team_members.team_lead = true)))));
+
+create policy "Allow full access to team chat, collection and files folders"
+    on "public"."folders"
+    as permissive
+    for all
+    to public
+    using (((EXISTS (SELECT 1
+                     FROM files
+                     WHERE (files.folder_id = folders.id))) OR (EXISTS (SELECT 1
+                                                                        FROM collections
+                                                                        WHERE (collections.folder_id = folders.id))) OR
+            (EXISTS (SELECT 1
+                     FROM chats
+                     WHERE (chats.folder_id = folders.id)))))
+    with check (((EXISTS (SELECT 1
+                          FROM files
+                          WHERE (files.folder_id = folders.id))) OR (EXISTS (SELECT 1
+                                                                             FROM collections
+                                                                             WHERE (collections.folder_id = folders.id))) OR
+                 (EXISTS (SELECT 1
+                          FROM chats
+                          WHERE (chats.folder_id = folders.id)))));
