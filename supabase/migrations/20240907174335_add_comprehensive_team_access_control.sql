@@ -337,3 +337,12 @@ create policy "Allow full access to team chat, collection and files folders"
                  (EXISTS (SELECT 1
                           FROM chats
                           WHERE (chats.folder_id = folders.id)))));
+
+create policy "Allow read access to files you access - team"
+    on "storage"."objects"
+    as permissive
+    for select
+    to public
+    using ((EXISTS (SELECT 1
+                    FROM files
+                    WHERE (files.file_path = objects.name))));

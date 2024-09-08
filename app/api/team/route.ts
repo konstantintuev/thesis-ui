@@ -45,7 +45,7 @@ export async function GET(request: Request) {
     let userTeams = await getTeams(supabase)
     let team = userTeams.find(team => team.id === teamID)
     if (!teamID || !team) {
-      const errorMessage = "Querying not your team!"
+      const errorMessage = "Querying team you have no access to!"
       const errorCode = 400
       return new Response(JSON.stringify({ message: errorMessage }), {
         status: errorCode
@@ -63,7 +63,9 @@ export async function GET(request: Request) {
         id: teamID,
         name: team.name,
         description: team.description,
-        emails: emailsInTeam.join(", ")
+        emails: emailsInTeam.join(", "),
+        // Can't read members -> doesn't include user
+        has_me: emailsInTeam.length === 0
       } as TeamApiUpdate),
       {
         status: 200
@@ -143,6 +145,8 @@ export async function POST(request: Request) {
       str => !newEmailList.includes(str)
     )
 
+    let has_me = true
+
     // No added emails, deleted just one - yourself -> OK
     if (
       addedEmails.length === 0 &&
@@ -151,6 +155,7 @@ export async function POST(request: Request) {
       deletedEmails.includes(user.email)
     ) {
       await removeTeamMember(teamChangeRequest.id, user.id, supabaseAdmin)
+      has_me = false
       // Other changes requiring team lead role
     } else if (teamLead) {
       let teamMembersToDelete = await supabaseAdmin.rpc(
@@ -188,6 +193,9 @@ export async function POST(request: Request) {
         name: teamChangeRequest.name,
         description: teamChangeRequest.description
       })
+      if (user.email && deletedEmails.includes(user.email)) {
+        has_me = false
+      }
     } else {
       throw {
         message:
@@ -201,7 +209,8 @@ export async function POST(request: Request) {
         id: teamChangeRequest.id,
         name: teamChangeRequest.name,
         description: teamChangeRequest.description,
-        emails: newEmailList.join(", ")
+        emails: newEmailList.join(", "),
+        has_me: has_me
       } as TeamApiUpdate),
       {
         status: 200
@@ -278,7 +287,9 @@ export async function PUT(request: Request) {
         id: team.id,
         name: team.name,
         description: team.description,
-        emails: newEmailList.join(", ")
+        emails: newEmailList.join(", "),
+        // Created a team, obviously the user is in
+        has_me: true
       } as TeamApiUpdate),
       {
         status: 200

@@ -139,7 +139,7 @@ export const DocumentSidebar: FC<Props> = ({
 
           <div className="flex space-x-2">
             <button
-              className={`flex items-center justify-center rounded-md transition-all duration-300 ${
+              className={`flex items-center justify-center truncate rounded-md transition-all duration-300 ${
                 isRelevant === null
                   ? "h-[36px] w-1/2 bg-green-500 px-4 text-white hover:bg-green-300"
                   : isRelevant === true
@@ -159,7 +159,7 @@ export const DocumentSidebar: FC<Props> = ({
             </button>
 
             <button
-              className={`flex items-center justify-center rounded-md transition-all duration-300 ${
+              className={`flex items-center justify-center truncate rounded-md transition-all duration-300 ${
                 isRelevant === null
                   ? "h-[36px] w-1/2 bg-red-500 px-4 text-white hover:bg-red-300"
                   : isRelevant === false
@@ -185,7 +185,7 @@ export const DocumentSidebar: FC<Props> = ({
             <li
               // biome-ignore lint/suspicious/noArrayIndexKey: This is an example app
               key={index}
-              className="duration-140 cursor-pointer space-x-3 border-b border-gray-500 p-4 transition ease-in hover:bg-gray-600/10 rtl:space-x-reverse"
+              className="duration-140 cursor-pointer border-b border-gray-500 p-4 transition ease-in hover:bg-gray-600/10 rtl:space-x-reverse"
               onClick={() => {
                 // updateHash(highlight)
                 if (highlight) {
@@ -194,7 +194,9 @@ export const DocumentSidebar: FC<Props> = ({
               }}
             >
               <div>
-                <strong>{highlight.comment.text}</strong>
+                <strong>
+                  {highlight.comment.author.name}: {highlight.comment.text}
+                </strong>
                 {highlight.content.text ? (
                   <blockquote style={{ marginTop: "0.5rem" }}>
                     {`${highlight.content.text.slice(0, 90).trim()}…`}
@@ -209,8 +211,14 @@ export const DocumentSidebar: FC<Props> = ({
                   </div>
                 ) : null}
               </div>
-              <div className="highlight__location">
-                Page {highlight.position.pageNumber}
+
+              <div className="highlight__footer relative">
+                <div className="absolute left-0">
+                  {highlight.comment.editedTime}
+                </div>
+                <div className="absolute right-0">
+                  Page {highlight.position.pageNumber}
+                </div>
               </div>
             </li>
           ))}

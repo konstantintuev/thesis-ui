@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase/browser-client"
-import { TablesInsert, TablesUpdate } from "@/supabase/types"
+import { Tables, TablesInsert, TablesUpdate } from "@/supabase/types"
 
 export const getChatById = async (chatId: string) => {
   const { data: chat } = await supabase
@@ -11,11 +11,17 @@ export const getChatById = async (chatId: string) => {
   return chat
 }
 
-export const getChatsByWorkspaceId = async (workspaceId: string) => {
+export const getChatsByWorkspaceId = async (
+  workspaceId: string,
+  userWorkspaces: Tables<"workspaces">[]
+) => {
   const { data: chats, error } = await supabase
     .from("chats")
     .select("*")
-    .eq("workspace_id", workspaceId)
+    // either chat is in the workspace or not in any user workspace as shared by team
+    .or(
+      `workspace_id.eq.${workspaceId},workspace_id.not.in.(${userWorkspaces.map(it => it.id).join(",")})`
+    )
     .order("created_at", { ascending: false })
 
   if (!chats) {

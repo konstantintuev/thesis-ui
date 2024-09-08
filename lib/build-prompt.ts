@@ -58,36 +58,41 @@ export async function buildFinalMessages(
   let usedTokens = 0
   usedTokens += PROMPT_TOKENS
 
-  const processedChatMessages = chatMessages.map((chatMessage, index) => {
-    const nextChatMessage = chatMessages[index + 1]
+  // Add retrieval text to previous message - NO, WTF WAS HE THINKING
+  const addRAGTextToPreviousMsg = false
+  let processedChatMessages = chatMessages
+  if (addRAGTextToPreviousMsg) {
+    processedChatMessages = chatMessages.map((chatMessage, index) => {
+      const nextChatMessage = chatMessages[index + 1]
 
-    if (nextChatMessage === undefined) {
-      return chatMessage
-    }
-
-    const nextChatMessageFileItems = nextChatMessage.fileItems
-
-    if (nextChatMessageFileItems.length > 0) {
-      const findFileItems = nextChatMessageFileItems
-        .map(fileItemId =>
-          chatFileItems.find(chatFileItem => chatFileItem.id === fileItemId)
-        )
-        .filter(item => item !== undefined) as Tables<"file_items">[]
-
-      const retrievalText = buildRetrievalText(findFileItems)
-
-      return {
-        message: {
-          ...chatMessage.message,
-          content:
-            `${chatMessage.message.content}\n\n${retrievalText}` as string
-        },
-        fileItems: []
+      if (nextChatMessage === undefined) {
+        return chatMessage
       }
-    }
 
-    return chatMessage
-  })
+      const nextChatMessageFileItems = nextChatMessage.fileItems
+
+      if (nextChatMessageFileItems.length > 0) {
+        const findFileItems = nextChatMessageFileItems
+          .map(fileItemId =>
+            chatFileItems.find(chatFileItem => chatFileItem.id === fileItemId)
+          )
+          .filter(item => item !== undefined) as Tables<"file_items">[]
+
+        const retrievalText = buildRetrievalText(findFileItems)
+
+        return {
+          message: {
+            ...chatMessage.message,
+            content:
+              `${chatMessage.message.content}\n\n${retrievalText}` as string
+          },
+          fileItems: []
+        }
+      }
+
+      return chatMessage
+    })
+  }
 
   let finalMessages = []
 
@@ -192,6 +197,19 @@ export function removeRetrievalText(content: string) {
     return content
   }
   return content.substring(0, startIndex)
+}
+
+export function removeRetrievalTextFromMessages(
+  messages: Tables<"messages">[]
+) {
+  return messages.map((message, index) => {
+    if (index === messages.length - 1) {
+      // Keep RAG of last message
+      return message
+    }
+    message.content = removeRetrievalText(message.content)
+    return message
+  })
 }
 
 export async function buildGoogleGeminiFinalMessages(

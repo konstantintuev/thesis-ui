@@ -32,6 +32,7 @@ import { FileProcessor } from "@/types/file-processing"
 import { fetchFileProcessors } from "@/lib/retrieval/fetch-file-processors"
 import { getTeams } from "@/db/teams"
 import { TeamAndMe } from "@/components/sidebar/items/teams/teams-select"
+import { profileBroken } from "@/lib/handle-bad-user"
 
 interface GlobalStateProps {
   children: React.ReactNode
@@ -189,8 +190,14 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
     if (session) {
       const user = session.user
 
-      const profile = await getProfileByUserId(user.id)
-      setProfile(profile)
+      let profile: Tables<"profiles"> | null = null
+      try {
+        profile = await getProfileByUserId(user.id)
+        setProfile(profile)
+      } catch (e) {
+        void profileBroken(router)
+        throw e
+      }
 
       if (!profile.has_onboarded) {
         return router.push("/setup")
@@ -228,6 +235,8 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
       }
 
       return profile
+    } else {
+      void profileBroken(router)
     }
   }
 

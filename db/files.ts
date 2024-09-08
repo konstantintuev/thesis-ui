@@ -31,9 +31,20 @@ export const getFileWorkspacesByWorkspaceId = async (workspaceId: string) => {
     .eq("id", workspaceId)
     .single()
 
+  const { data: teamData, error: teamError } = await supabase
+    .from("files")
+    .select(
+      `
+      *
+    `
+    )
+    .not("id", "in", `(${(workspace?.files.map(it => it.id) ?? []).join(",")})`)
+
   if (!workspace) {
     throw new Error(error.message)
   }
+
+  workspace.files = workspace.files.concat(teamData ?? [])
 
   return workspace
 }

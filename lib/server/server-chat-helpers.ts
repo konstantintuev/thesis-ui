@@ -63,6 +63,10 @@ function addApiKeysToProfile(profile: Tables<"profiles">) {
     }
   }
 
+  if (profile.azure_openai_api_key && profile.azure_openai_api_key.length > 0) {
+    profile.use_azure_openai = true
+  }
+
   return profile
 }
 

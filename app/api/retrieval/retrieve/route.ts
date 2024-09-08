@@ -12,6 +12,8 @@ import {
   addUuidObjectToString,
   uuidPattern
 } from "@/lib/retrieval/attachable-content"
+import { FileItemSearchResult } from "@/types/ml-server-communication"
+import { searchFilesMLServer } from "@/lib/retrieval/processing/multiple"
 
 export async function POST(request: Request) {
   const json = await request.json()
@@ -48,33 +50,49 @@ export async function POST(request: Request) {
       uniqueFileIds = [...new Set(fileIds)]
     }
 
-    if (embeddingsProvider === "openai") {
-      if (profile.use_azure_openai) {
-        checkApiKey(profile.azure_openai_api_key, "Azure OpenAI")
-      } else {
-        checkApiKey(profile.openai_api_key, "OpenAI")
+    let localFileItems: FileItemSearchResult[] = []
+
+    if (embeddingsProvider === "local") {
+      const localEmbedding = await generateBgeLocalEmbedding(userInput)
+
+      const { data: embeddingsFileItems, error: embeddingsFileItemsError } =
+        await supabaseAdmin.rpc("match_file_items_bge", {
+          query_embedding: localEmbedding as any,
+          match_count: sourceCount,
+          file_ids: uniqueFileIds.length > 0 ? uniqueFileIds : undefined
+        })
+
+      if (!embeddingsFileItems) {
+        throw embeddingsFileItemsError
       }
-    }
-
-    let chunks: Database["public"]["Functions"]["match_file_items_bge"]["Returns"] =
-      []
-
-    let openai
-    if (profile.use_azure_openai) {
-      openai = new OpenAI({
-        apiKey: profile.azure_openai_api_key || "",
-        baseURL: `${profile.azure_openai_endpoint}/openai/deployments/${profile.azure_openai_embeddings_id}`,
-        defaultQuery: { "api-version": "2023-12-01-preview" },
-        defaultHeaders: { "api-key": profile.azure_openai_api_key }
+      localFileItems = embeddingsFileItems.map(it => {
+        let ret = it as any as FileItemSearchResult
+        ret.score = it.similarity
+        return ret
       })
-    } else {
-      openai = new OpenAI({
-        apiKey: profile.openai_api_key || "",
-        organization: profile.openai_organization_id
-      })
-    }
-
-    if (embeddingsProvider === "openai") {
+    } else if (embeddingsProvider === "colbert") {
+      localFileItems = await searchFilesMLServer(
+        supabaseAdmin,
+        userInput,
+        uniqueFileIds,
+        sourceCount
+      )
+    } else if (embeddingsProvider === "openai") {
+      let openai
+      if (profile.use_azure_openai) {
+        openai = new OpenAI({
+          apiKey: profile.azure_openai_api_key || "",
+          baseURL: `${profile.azure_openai_endpoint}/openai/deployments/${profile.azure_openai_embeddings_id}`,
+          defaultQuery: { "api-version": "2023-12-01-preview" },
+          defaultHeaders: { "api-key": profile.azure_openai_api_key }
+        })
+      } else {
+        // TODO: untested and unneeded really, doesn't return the whole file table
+        openai = new OpenAI({
+          apiKey: profile.openai_api_key || "",
+          organization: profile.openai_organization_id
+        })
+      }
       const response = await openai.embeddings.create({
         model: "text-embedding-3-small",
         input: userInput
@@ -93,25 +111,12 @@ export async function POST(request: Request) {
         throw openaiError
       }
 
-      chunks = openaiFileItems
-    } else {
-      const localEmbedding = await generateBgeLocalEmbedding(userInput)
-
-      const { data: localFileItems, error: localFileItemsError } =
-        await supabaseAdmin.rpc("match_file_items_bge", {
-          query_embedding: localEmbedding as any,
-          match_count: sourceCount,
-          file_ids: uniqueFileIds.length > 0 ? uniqueFileIds : undefined
-        })
-
-      if (localFileItemsError) {
-        throw localFileItemsError
-      }
-
-      chunks = localFileItems
+      localFileItems = openaiFileItems.map(it => {
+        let ret = it as any as FileItemSearchResult
+        ret.score = it.similarity
+        return ret
+      })
     }
-
-    let mostSimilarChunks = chunks?.sort((a, b) => b.similarity - a.similarity)
 
     // Add the attachable content back to each chunk
     /* Strat:
@@ -120,6 +125,7 @@ export async function POST(request: Request) {
      * 3. Done
      */
 
+    let mostSimilarChunks = localFileItems?.sort((a, b) => b.score - a.score)
     mostSimilarChunks = await Promise.all(
       mostSimilarChunks?.map(async chunk => {
         if (chunk.chunk_attachable_content) {
@@ -138,6 +144,24 @@ export async function POST(request: Request) {
         return chunk
       })
     )
+
+    let maxLength = 6000
+
+    let cumulativeLength = 0
+    let lastIndex = 0
+
+    for (let i = 0; i < mostSimilarChunks.length; i++) {
+      cumulativeLength += mostSimilarChunks[i].content.length
+
+      if (cumulativeLength > maxLength) {
+        lastIndex = i
+        break
+      }
+    }
+
+    if (cumulativeLength > maxLength) {
+      mostSimilarChunks.splice(lastIndex)
+    }
 
     return new Response(JSON.stringify({ results: mostSimilarChunks }), {
       status: 200

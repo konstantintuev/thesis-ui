@@ -27,4 +27,6 @@ export type TeamApiUpdate = {
   name: string
   description: string
   emails: string
+  // Required for compatibility with TeamAndMe
+  has_me?: boolean
 }

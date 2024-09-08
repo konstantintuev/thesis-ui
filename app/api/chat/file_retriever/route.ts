@@ -91,9 +91,9 @@ export async function POST(request: Request) {
 
       const { data: embeddingsFileItems, error: localFileItemsError } =
         await supabaseAdmin.rpc("match_file_items_any_bge", {
-          query_embedding: localEmbedding as any,
+          query_embedding: localEmbedding as any
           // TODO: maybe make dynamic?
-          min_layer_number: 1
+          //min_layer_number: 1
         })
 
       if (localFileItemsError) {

@@ -1,12 +1,18 @@
 import { supabase } from "@/lib/supabase/browser-client"
-import { Database, TablesInsert, TablesUpdate } from "@/supabase/types"
+import { Database, Tables, TablesInsert, TablesUpdate } from "@/supabase/types"
 import { SupabaseClient } from "@supabase/supabase-js"
 
-export const getFoldersByWorkspaceId = async (workspaceId: string) => {
+export const getFoldersByWorkspaceId = async (
+  workspaceId: string,
+  userWorkspaces: Tables<"workspaces">[]
+) => {
   const { data: folders, error } = await supabase
     .from("folders")
     .select("*")
-    .eq("workspace_id", workspaceId)
+    // either chat is in the workspace or not in any user workspace as shared by team
+    .or(
+      `workspace_id.eq.${workspaceId},workspace_id.not.in.(${userWorkspaces.map(it => it.id).join(",")})`
+    )
 
   if (!folders) {
     throw new Error(error.message)

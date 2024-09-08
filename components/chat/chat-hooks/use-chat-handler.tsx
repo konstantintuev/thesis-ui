@@ -25,6 +25,7 @@ import {
   createChatCollectionConsumer,
   getChatCollectionCreator
 } from "@/db/collections"
+import { toast } from "sonner"
 
 export const useChatHandler = () => {
   const router = useRouter()
@@ -77,7 +78,8 @@ export const useChatHandler = () => {
     selectedCollectionCreatorChat,
     collectionRetrievalActive,
     setSelectedCollectionCreatorChat,
-    setCollectionCreatorChat
+    setCollectionCreatorChat,
+    workspaces
   } = useContext(ChatbotUIContext)
 
   const chatInputRef = useRef<HTMLTextAreaElement>(null)
@@ -88,7 +90,7 @@ export const useChatHandler = () => {
     }
   }, [isPromptPickerOpen, isFilePickerOpen, isToolPickerOpen])
 
-  const handleNewChat = async () => {
+  const handleNewChat = async (reuseChatSettings: boolean = false) => {
     if (!selectedWorkspace) return
 
     setUserInput("")
@@ -172,25 +174,28 @@ export const useChatHandler = () => {
           | "colbert"
       })
     } else if (selectedWorkspace) {
-      // We reset the chat settings to file retriever as this is the default usage
-      //    ...otherwise the last chat settings will be used again
-      setChatSettings({
-        model: (selectedWorkspace?.default_model || "file_retriever") as LLMID,
-        prompt:
-          selectedWorkspace?.default_prompt ||
-          "You are a friendly, helpful AI assistant.",
-        temperature: selectedWorkspace?.default_temperature || 0.5,
-        contextLength: selectedWorkspace?.default_context_length || 4096,
-        includeProfileContext:
-          selectedWorkspace?.include_profile_context || true,
-        includeWorkspaceInstructions:
-          selectedWorkspace?.include_workspace_instructions || true,
-        embeddingsProvider:
-          (selectedWorkspace?.embeddings_provider as
-            | "openai"
-            | "local"
-            | "colbert") || "local"
-      })
+      if (!reuseChatSettings) {
+        // We reset the chat settings to file retriever as this is the default usage
+        //    ...otherwise the last chat settings will be used again
+        setChatSettings({
+          model: (selectedWorkspace?.default_model ||
+            "file_retriever") as LLMID,
+          prompt:
+            selectedWorkspace?.default_prompt ||
+            "You are a friendly, helpful AI assistant.",
+          temperature: selectedWorkspace?.default_temperature || 0.5,
+          contextLength: selectedWorkspace?.default_context_length || 4096,
+          includeProfileContext:
+            selectedWorkspace?.include_profile_context || true,
+          includeWorkspaceInstructions:
+            selectedWorkspace?.include_workspace_instructions || true,
+          embeddingsProvider:
+            (selectedWorkspace?.embeddings_provider as
+              | "openai"
+              | "local"
+              | "colbert") || "local"
+        })
+      }
     }
 
     return router.push(`/${selectedWorkspace.id}/chat`)
@@ -212,6 +217,7 @@ export const useChatHandler = () => {
     isRegeneration: boolean
   ) => {
     const startingInput = messageContent
+    let needToRemoveTempChatMsges = 0
 
     try {
       setUserInput("")
@@ -259,6 +265,9 @@ export const useChatHandler = () => {
           setChatMessages,
           selectedAssistant
         )
+      if (!isRegeneration) {
+        needToRemoveTempChatMsges = 2
+      }
 
       // Create a new chat session before first message
       //  We do this so the internally managed providers can save data based on chatID
@@ -316,10 +325,13 @@ export const useChatHandler = () => {
        *     AND want to use retrieval
        */
       if (
-        (((newMessageFiles.length > 0 ||
+        (// There are files to retrieve
+        ((newMessageFiles.length > 0 ||
           chatFiles.length > 0 ||
           collectionRetrievalActive) &&
+          //... and we want to retrieve them
           useRetrieval) ||
+          //... or we are chatting with verified files from chat
           selectedCollectionCreatorChat) &&
         currentChat?.model !== "file_retriever"
       ) {
@@ -336,6 +348,17 @@ export const useChatHandler = () => {
       }
 
       setSelectedCollectionCreatorChat(null)
+
+      if (retrievedFileItems === undefined || retrievedFileItems === null) {
+        toast.error(
+          <div>
+            Retrieval failed!!!
+            <br />
+            Try again later or contact admin!
+          </div>
+        )
+        throw Error()
+      }
 
       // TODO: don't pass chatId, workspaceId on external providers
       let payload: ChatPayload = {
@@ -421,6 +444,8 @@ export const useChatHandler = () => {
         }
       }
 
+      needToRemoveTempChatMsges = 0
+
       await handleCreateMessages(
         chatMessages,
         currentChat,
@@ -441,6 +466,14 @@ export const useChatHandler = () => {
       setFirstTokenReceived(false)
       setUserInput("")
     } catch (error) {
+      setChatMessages(prevState => {
+        if (needToRemoveTempChatMsges > 0) {
+          // remove last needToRemoveTempChatMsges elements
+          prevState.splice(-needToRemoveTempChatMsges)
+          needToRemoveTempChatMsges = 0
+        }
+        return prevState
+      })
       setIsGenerating(false)
       setFirstTokenReceived(false)
       setUserInput(startingInput)

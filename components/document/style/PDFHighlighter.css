@@ -15,9 +15,9 @@
   padding: 0;
 }
 
-.highlight__location {
+.highlight__footer{
   margin-top: 0.5rem;
-  text-align: right;
+  height: 10px;
   font-size: 10px;
 }
 

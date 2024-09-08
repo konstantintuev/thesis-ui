@@ -1,20 +1,13 @@
 import { CHAT_SETTING_LIMITS } from "@/lib/chat-setting-limits"
 import { checkApiKey, getServerProfile } from "@/lib/server/server-chat-helpers"
-import { ChatSettings } from "@/types"
+import { ChatAPIPayload, ChatSettings } from "@/types"
 import { OpenAIStream, StreamingTextResponse } from "ai"
 import OpenAI from "openai"
-import { removeRetrievalText } from "@/lib/build-prompt"
 
 export const runtime = "edge"
 export async function POST(request: Request) {
   const json = await request.json()
-  let { chatSettings, messages } = json as {
-    chatSettings: ChatSettings
-    messages: Array<{
-      content: string
-      role: string
-    }>
-  }
+  const { chatSettings, messages } = json as ChatAPIPayload
 
   try {
     const profile = await getServerProfile()
@@ -25,14 +18,6 @@ export async function POST(request: Request) {
     const groq = new OpenAI({
       apiKey: profile.groq_api_key || "",
       baseURL: "https://api.groq.com/openai/v1"
-    })
-
-    messages = messages.map((message, index) => {
-      if (index === messages.length - 1) {
-        return message
-      }
-      message.content = removeRetrievalText(message.content)
-      return message
     })
 
     const response = await groq.chat.completions.create({

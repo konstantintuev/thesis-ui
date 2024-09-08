@@ -171,13 +171,28 @@ export const processMultipleResult = async (
 
 export const searchFilesMLServer = async (
   supabaseAdmin: SupabaseClient<Database>,
-  query: string
+  query: string,
+  uniqueFileIds?: string[],
+  sourceCount?: number
 ): Promise<FileItemSearchResult[]> => {
+  let uniqueChunkIds = new Set<string>()
+  if (uniqueFileIds) {
+    let { data } = await supabaseAdmin
+      .from("file_items")
+      .select("*")
+      .in("file_id", uniqueFileIds)
+    uniqueChunkIds = new Set<string>(data?.map(file_item => file_item.id) ?? [])
+  }
+
   const response = await fetch(
     `http://127.0.0.1:8000/file_processing/search_query`,
     {
       method: "POST",
-      body: JSON.stringify({ query: query })
+      body: JSON.stringify({
+        query: query,
+        unique_file_ids: Array.from(uniqueChunkIds),
+        source_count: sourceCount
+      })
     }
   )
   let res = (await response.json()) as SearchResults

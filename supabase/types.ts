@@ -1556,21 +1556,21 @@ export type Database = {
       teams: {
         Row: {
           created_at: string
-          description: string | null
+          description: string
           id: string
           name: string
           user_id: string
         }
         Insert: {
           created_at?: string
-          description?: string | null
+          description: string
           id?: string
           name: string
           user_id?: string
         }
         Update: {
           created_at?: string
-          description?: string | null
+          description?: string
           id?: string
           name?: string
           user_id?: string
@@ -1866,9 +1866,18 @@ export type Database = {
         Returns: {
           id: string
           file_id: string
+          user_id: string
+          created_at: string
+          updated_at: string
+          sharing: string
           content: string
+          local_embedding: string
+          openai_embedding: string
           tokens: number
+          children: string[]
           chunk_attachable_content: string
+          chunk_index: number
+          layer_number: number
           similarity: number
         }[]
       }

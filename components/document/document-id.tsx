@@ -42,8 +42,6 @@ import { getFileFromStorage } from "@/db/storage/files"
 import { getChatById } from "@/db/chats"
 import { getMessagesByChatId } from "@/db/messages"
 
-const testHighlights: Record<string, Array<IHighlight>> = _testHighlights
-
 interface State {
   url: string
   highlights: Array<IHighlight>
@@ -78,7 +76,7 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
   const chatid = params.chatid as string
   const workspaceid = params.workspaceid as string
 
-  const { chatFileHighlights, setChatFileHighlights } =
+  const { profile, chatFileHighlights, setChatFileHighlights } =
     useContext(ChatbotUIContext)
 
   const [documentUrl, setDocumentUrl] = useState<string>("")
@@ -206,7 +204,15 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
               id,
               position: { ...originalPosition, ...position },
               content: { ...originalContent, ...content },
-              comment: { ...originalComment, ...comment },
+              comment: {
+                ...originalComment,
+                ...comment,
+                author: {
+                  name: profile?.display_name ?? "Unknown",
+                  userId: profile?.user_id ?? "Unknown"
+                },
+                editedTime: new Date().toLocaleString()
+              },
               ...rest
             }
           : h
@@ -259,7 +265,18 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
                   }}
                   closeTip={hideTipAndSelection}
                   onConfirm={comment => {
-                    addHighlight({ content, position, comment })
+                    addHighlight({
+                      content,
+                      position,
+                      comment: {
+                        ...comment,
+                        author: {
+                          name: profile?.display_name ?? "Unknown",
+                          userId: profile?.user_id ?? "Unknown"
+                        },
+                        editedTime: new Date().toLocaleString()
+                      }
+                    })
 
                     hideTipAndSelection()
                   }}

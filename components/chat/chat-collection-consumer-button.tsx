@@ -88,7 +88,7 @@ export const ChatCollectionConsumerButton: FC<
                     | "local"
                     | "colbert") || "local"
               })
-              void chatHandler.handleNewChat()
+              void chatHandler.handleNewChat(true)
             }}
           >
             <IconFileImport

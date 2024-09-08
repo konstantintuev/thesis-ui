@@ -29,7 +29,8 @@ export const TeamItem: FC<TeamItemProps> = ({ team }) => {
         >
       }) => (
         <>
-          {renderState.teamApiContent?.emails.length === 0 && (
+          {(renderState.teamApiContent?.has_me === false ||
+            renderState.teamApiContent?.emails.length === 0) && (
             <div className="space-y-1.5 text-sm">
               <div>Not a member of the team!</div>
 
@@ -47,7 +48,7 @@ export const TeamItem: FC<TeamItemProps> = ({ team }) => {
               onChange={e =>
                 renderState.setTeamApiContent(prev => {
                   return {
-                    ...prev,
+                    ...prev!,
                     name: e.target.value
                   }
                 })
@@ -69,7 +70,7 @@ export const TeamItem: FC<TeamItemProps> = ({ team }) => {
               onChange={e =>
                 renderState.setTeamApiContent(prev => {
                   return {
-                    ...prev,
+                    ...prev!,
                     description: e.target.value
                   }
                 })
@@ -93,7 +94,7 @@ export const TeamItem: FC<TeamItemProps> = ({ team }) => {
                 onValueChange={e =>
                   renderState.setTeamApiContent(prev => {
                     return {
-                      ...prev,
+                      ...prev!,
                       emails: e
                     }
                   })

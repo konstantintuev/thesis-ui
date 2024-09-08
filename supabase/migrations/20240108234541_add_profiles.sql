@@ -120,7 +120,7 @@ BEGIN
     );
 
     -- Create the home workspace for the new user
-    INSERT INTO public.workspaces(user_id, is_home, name, default_context_length, default_model, default_prompt, default_temperature, description, embeddings_provider, include_profile_context, include_workspace_instructions, instructions)
+    INSERT INTO public.workspaces(user_id, is_home, name, default_context_length, default_model, default_prompt, default_temperature, description, embeddings_provider, include_profile_context, include_workspace_instructions, instructions, default_chat_model, file_processor)
     VALUES(
         NEW.id,
         TRUE,
@@ -130,10 +130,12 @@ BEGIN
         'You are a friendly, helpful AI assistant.',
         0.5,
         'My home workspace.',
-        'openai',
+        'colbert',
         TRUE,
         TRUE,
-        ''
+        '',
+        'gpt-4-vision-preview',
+        'pdf_to_md_azure_doc_intel'
     );
 
     RETURN NEW;

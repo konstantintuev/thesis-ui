@@ -53,7 +53,8 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
     setChatImages,
     setNewMessageFiles,
     setNewMessageImages,
-    setShowFilesDisplay
+    setShowFilesDisplay,
+    workspaces
   } = useContext(ChatbotUIContext)
 
   const [loading, setLoading] = useState(true)
@@ -130,14 +131,14 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
       }
     }
 
-    const chats = await getChatsByWorkspaceId(workspaceId)
+    const chats = await getChatsByWorkspaceId(workspaceId, workspaces)
     setChats(chats)
 
     const collectionData =
       await getCollectionWorkspacesByWorkspaceId(workspaceId)
     setCollections(collectionData.collections)
 
-    const folders = await getFoldersByWorkspaceId(workspaceId)
+    const folders = await getFoldersByWorkspaceId(workspaceId, workspaces)
     setFolders(folders)
 
     const fileData = await getFileWorkspacesByWorkspaceId(workspaceId)

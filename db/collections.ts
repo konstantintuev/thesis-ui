@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase/browser-client"
-import { Database, TablesInsert, TablesUpdate } from "@/supabase/types"
+import { Database, Tables, TablesInsert, TablesUpdate } from "@/supabase/types"
 import { SupabaseClient } from "@supabase/supabase-js"
 
 export const getCollectionById = async (collectionId: string) => {
@@ -32,13 +32,35 @@ export const getCollectionWorkspacesByWorkspaceId = async (
     )
     .eq("id", workspaceId)
     .eq("collections.hidden", false)
-    .single()
+    .maybeSingle()
+
+  const { data: teamCollections, error: teamError } = await supabase
+    .from("collections")
+    .select(
+      `
+      *
+    `
+    )
+    .not(
+      "id",
+      "in",
+      `(${(workspace?.collections.map(it => it.id) ?? []).join(",")})`
+    )
+    .eq("hidden", false)
 
   if (!workspace) {
-    throw new Error(error.message)
+    return {
+      id: workspaceId,
+      name: "",
+      collections: teamCollections ?? []
+    }
   }
 
-  return workspace
+  return {
+    id: workspace.id,
+    name: workspace.name,
+    collections: workspace.collections.concat(teamCollections ?? [])
+  }
 }
 
 export const getCollectionWorkspacesByCollectionId = async (

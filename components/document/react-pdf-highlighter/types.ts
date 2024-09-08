@@ -35,6 +35,11 @@ export interface ScaledPosition {
   usePdfCoordinates?: boolean
 }
 
+export interface Author {
+  userId: string
+  name: string
+}
+
 export interface Content {
   text?: string
   image?: string
@@ -47,6 +52,8 @@ export interface HighlightContent {
 export interface Comment {
   text: string
   emoji: string
+  author: Author
+  editedTime: string
 }
 
 export interface HighlightComment {
