@@ -14,7 +14,9 @@ import { UpdateChat } from "./update-chat"
 import { ShareChat } from "./share-chat"
 
 interface ChatItemProps {
-  chat: Tables<"chats">
+  chat: Tables<"chats"> & {
+    from_team?: boolean
+  }
 }
 
 export const ChatItem: FC<ChatItemProps> = ({ chat }) => {
@@ -92,7 +94,7 @@ export const ChatItem: FC<ChatItemProps> = ({ chat }) => {
       )}
 
       <div className="ml-3 flex-1 truncate text-sm font-semibold">
-        {chat.name}
+        {(chat.from_team ? "Team: " : "") + chat.name}
       </div>
 
       <div

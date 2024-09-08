@@ -52,14 +52,25 @@ export const getCollectionWorkspacesByWorkspaceId = async (
     return {
       id: workspaceId,
       name: "",
-      collections: teamCollections ?? []
+      collections:
+        teamCollections?.map(it => {
+          // @ts-ignore
+          it.from_team = true
+          return it
+        }) ?? []
     }
   }
 
   return {
     id: workspace.id,
     name: workspace.name,
-    collections: workspace.collections.concat(teamCollections ?? [])
+    collections: workspace.collections.concat(
+      teamCollections?.map(it => {
+        // @ts-ignore
+        it.from_team = true
+        return it
+      }) ?? []
+    )
   }
 }
 

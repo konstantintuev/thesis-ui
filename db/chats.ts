@@ -18,17 +18,28 @@ export const getChatsByWorkspaceId = async (
   const { data: chats, error } = await supabase
     .from("chats")
     .select("*")
-    // either chat is in the workspace or not in any user workspace as shared by team
-    .or(
-      `workspace_id.eq.${workspaceId},workspace_id.not.in.(${userWorkspaces.map(it => it.id).join(",")})`
-    )
+    // either chat is in the workspace
+    .eq("workspace_id", workspaceId)
+    .order("created_at", { ascending: false })
+
+  const { data: teamChats, error: teamError } = await supabase
+    .from("chats")
+    .select("*")
+    //...or not in any user workspace as shared by team
+    .not("workspace_id", "in", `(${userWorkspaces.map(it => it.id).join(",")})`)
     .order("created_at", { ascending: false })
 
   if (!chats) {
     throw new Error(error.message)
   }
 
-  return chats
+  return chats.concat(
+    teamChats?.map(it => {
+      // @ts-ignore
+      it.from_team = true
+      return it
+    }) ?? []
+  )
 }
 
 export const createChat = async (chat: TablesInsert<"chats">) => {

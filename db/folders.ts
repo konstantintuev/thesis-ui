@@ -9,16 +9,29 @@ export const getFoldersByWorkspaceId = async (
   const { data: folders, error } = await supabase
     .from("folders")
     .select("*")
-    // either chat is in the workspace or not in any user workspace as shared by team
+    // either folder is in the workspace
     .or(
       `workspace_id.eq.${workspaceId},workspace_id.not.in.(${userWorkspaces.map(it => it.id).join(",")})`
     )
+    .eq("workspace_id", workspaceId)
+
+  const { data: teamFolders, error: teamError } = await supabase
+    .from("folders")
+    .select("*")
+    // ...or not in any user workspace as shared by team
+    .not("workspace_id", "in", `(${userWorkspaces.map(it => it.id).join(",")})`)
 
   if (!folders) {
     throw new Error(error.message)
   }
 
-  return folders
+  return folders.concat(
+    teamFolders?.map(it => {
+      // @ts-ignore
+      it.from_team = true
+      return it
+    }) ?? []
+  )
 }
 
 export const createFolder = async (

@@ -44,7 +44,13 @@ export const getFileWorkspacesByWorkspaceId = async (workspaceId: string) => {
     throw new Error(error.message)
   }
 
-  workspace.files = workspace.files.concat(teamData ?? [])
+  workspace.files = workspace.files.concat(
+    teamData?.map(it => {
+      // @ts-ignore
+      it.from_team = true
+      return it
+    }) ?? []
+  )
 
   return workspace
 }

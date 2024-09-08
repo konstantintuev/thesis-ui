@@ -19,6 +19,7 @@ import { LLMID } from "@/types"
 import { useParams, useRouter } from "next/navigation"
 import { ReactNode, useContext, useEffect, useState } from "react"
 import Loading from "../loading"
+import { Tables } from "@/supabase/types"
 
 interface WorkspaceLayoutProps {
   children: ReactNode
@@ -65,14 +66,12 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
 
       if (!session) {
         return router.push("/login")
-      } else {
-        await fetchWorkspaceData(workspaceId)
       }
     })()
   }, [])
 
   useEffect(() => {
-    ;(async () => await fetchWorkspaceData(workspaceId))()
+    ;(async () => await fetchWorkspaceData(workspaceId, workspaces))()
 
     setUserInput("")
     setChatMessages([])
@@ -86,10 +85,16 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
     setNewMessageFiles([])
     setNewMessageImages([])
     setShowFilesDisplay(false)
-  }, [workspaceId])
+  }, [workspaceId, workspaces])
 
-  const fetchWorkspaceData = async (workspaceId: string) => {
+  const fetchWorkspaceData = async (
+    workspaceId: string,
+    workspaces: Tables<"workspaces">[]
+  ) => {
     setLoading(true)
+    if (!workspaceId || workspaces.length === 0) {
+      return
+    }
 
     const workspace = await getWorkspaceById(workspaceId)
     setSelectedWorkspace(workspace)
