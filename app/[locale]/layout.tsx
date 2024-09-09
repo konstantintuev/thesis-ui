@@ -1,3 +1,4 @@
+import "@/lib/i18-helpers"
 import { Toaster } from "@/components/ui/sonner"
 import { GlobalState } from "@/components/utility/global-state"
 import { Providers } from "@/components/utility/providers"

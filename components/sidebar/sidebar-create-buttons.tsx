@@ -13,6 +13,7 @@ import { CreatePreset } from "./items/presets/create-preset"
 import { CreateRulePrompt } from "./items/prompts/create-rule-prompt"
 import { CreateTool } from "./items/tools/create-tool"
 import { CreateTeam } from "@/components/sidebar/items/teams/create-team"
+import { useTranslation } from "react-i18next"
 
 interface SidebarCreateButtonsProps {
   contentType: ContentType
@@ -26,6 +27,7 @@ export const SidebarCreateButtons: FC<SidebarCreateButtonsProps> = ({
   const { profile, selectedWorkspace, folders, setFolders } =
     useContext(ChatbotUIContext)
   const { handleNewChat } = useChatHandler()
+  const { t } = useTranslation()
 
   const [isCreatingPrompt, setIsCreatingPrompt] = useState(false)
   const [isCreatingPreset, setIsCreatingPreset] = useState(false)
@@ -106,9 +108,11 @@ export const SidebarCreateButtons: FC<SidebarCreateButtonsProps> = ({
     <div className="flex w-full space-x-2">
       <Button className="flex h-[36px] grow" onClick={getCreateFunction()}>
         <IconPlus className="mr-1" size={20} />
-        New{" "}
-        {contentType.charAt(0).toUpperCase() +
-          contentType.slice(1, contentType.length - 1)}
+        {(
+          `New ` +
+          contentType.charAt(0).toUpperCase() +
+          contentType.slice(1, contentType.length - 1)
+        ).toTranslationKey(t)}
       </Button>
 
       {hasData && contentType !== "teams" && (

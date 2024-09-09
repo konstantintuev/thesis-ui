@@ -1,3 +1,5 @@
 {
-  "Ask anything. Type \"/\" for prompts, \"@\" for files, and \"#\" for tools.": "Ask anything. Type \"/\" for prompts, \"@\" for files, and \"#\" for tools."
+  "ALL - Ask anything. Type @  /  #  !": "Ask anything. Type \"/\" for prompts, \"#\" for files, \"@\" for assistants and \"!\" for tools.",
+  "Ask anything - chat": "Ask anything. Type \"/\" for prompts, \"#\" for files and \"@\" for assistants!",
+  "Ask anything - files": "Search for files interactively."
 }

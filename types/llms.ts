@@ -63,8 +63,11 @@ const file_retriever_models = ["file_retriever"] as const
 export type FileRetriever = (typeof file_retriever_models)[number]
 
 export function isModelIdFileRetriever(
-  modelId: string
-): modelId is FileRetriever {
+  modelId?: string
+): modelId is FileRetriever | undefined {
+  if (!modelId) {
+    return false
+  }
   return (file_retriever_models as readonly string[]).includes(modelId)
 }
 export interface LLM {

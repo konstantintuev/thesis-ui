@@ -1,5 +1,6 @@
 "use client"
 
+import "@/lib/i18-helpers"
 import { Dashboard } from "@/components/ui/dashboard"
 import { ChatbotUIContext } from "@/context/context"
 import { getAssistantWorkspacesByWorkspaceId } from "@/db/assistants"

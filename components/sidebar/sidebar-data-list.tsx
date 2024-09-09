@@ -9,7 +9,7 @@ import { updatePrompt } from "@/db/prompts"
 import { updateTool } from "@/db/tools"
 import { cn } from "@/lib/utils"
 import { Tables } from "@/supabase/types"
-import { ContentType, DataItemType, DataListType, TeamApiUpdate } from "@/types"
+import { ContentType, DataItemType, DataListType } from "@/types"
 import { FC, useContext, useEffect, useRef, useState } from "react"
 import { Separator } from "../ui/separator"
 import { AssistantItem } from "./items/assistants/assistant-item"
@@ -22,6 +22,7 @@ import { PresetItem } from "./items/presets/preset-item"
 import { PromptItem } from "./items/prompts/prompt-item"
 import { ToolItem } from "./items/tools/tool-item"
 import { TeamItem } from "@/components/sidebar/items/teams/team-item"
+import { useTranslation } from "react-i18next"
 
 interface SidebarDataListProps {
   contentType: ContentType
@@ -45,6 +46,8 @@ export const SidebarDataList: FC<SidebarDataListProps> = ({
     setModels,
     setTeams
   } = useContext(ChatbotUIContext)
+
+  const { t } = useTranslation()
 
   const divRef = useRef<HTMLDivElement>(null)
 
@@ -290,7 +293,7 @@ export const SidebarDataList: FC<SidebarDataListProps> = ({
                       sortedData.length > 0 && (
                         <div key={dateCategory} className="pb-2">
                           <div className="text-muted-foreground mb-1 text-sm font-bold">
-                            {dateCategory}
+                            {dateCategory.toTranslationKey(t)}
                           </div>
 
                           <div

@@ -1,4 +1,11 @@
 {
-  "Ask anything. Type \"/\" for prompts, \"@\" for files, and \"#\" for tools.": "Ask anything. Type \"/\" for prompts, \"@\" for files, and \"#\" for tools.",
-  "Quick Settings": "Quick Settings"
+  "Ask anything - files": "Suchen Sie interaktiv nach Dateien.",
+  "Ask anything - chat": "Fragen Sie nach allem. Geben Sie \"/\" für Prompts, \"#\" für Dateien und \"@\" für Assistenten ein!",
+  "Quick Settings": "Quick Settings",
+  "New Chat": "Neuer Chat",
+  "Today": "Heute",
+  "Yesterday": "Gestern",
+  "Previous Week": "Letzte Woche",
+  "Older": "Ältere",
+  "Search chats...": "Chats suchen..."
 }

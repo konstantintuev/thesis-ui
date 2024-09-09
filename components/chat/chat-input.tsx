@@ -22,6 +22,7 @@ import { useChatHistoryHandler } from "./chat-hooks/use-chat-history"
 import { usePromptAndCommand } from "./chat-hooks/use-prompt-and-command"
 import { useSelectMultipleFilesHandler } from "./chat-hooks/use-select-multiple-files-handler"
 import { ChatCollectionConsumerButton } from "@/components/chat/chat-collection-consumer-button"
+import { isModelIdFileRetriever } from "@/types"
 
 interface ChatInputProps {}
 
@@ -270,10 +271,13 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
         <TextareaAutosize
           textareaRef={chatInputRef}
           className="ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring text-md flex w-full resize-none rounded-md border-none bg-transparent py-2 pl-4 pr-14 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-          placeholder={t(
+          placeholder={
             // `Ask anything. Type "@" for assistants, "/" for prompts, "#" for files, and "!" for tools.`
-            `Ask anything. Type @  /  #  !`
-          )}
+            (isModelIdFileRetriever(chatSettings?.model)
+              ? `Ask anything - files`
+              : `Ask anything - chat`
+            ).toTranslationKey(t)
+          }
           onValueChange={handleInputChange}
           value={userInput}
           minRows={1}

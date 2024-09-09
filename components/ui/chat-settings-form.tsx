@@ -2,8 +2,12 @@
 
 import { ChatbotUIContext } from "@/context/context"
 import { CHAT_SETTING_LIMITS } from "@/lib/chat-setting-limits"
-import { ChatSettings } from "@/types"
-import { IconInfoCircle } from "@tabler/icons-react"
+import { ChatSettings, isModelIdFileRetriever, LLMID } from "@/types"
+import {
+  IconAdjustmentsHorizontal,
+  IconInfoCircle,
+  IconRepeat
+} from "@tabler/icons-react"
 import { FC, useContext } from "react"
 import { ModelSelect } from "../models/model-select"
 import { AdvancedSettings } from "./advanced-settings"
@@ -21,6 +25,7 @@ import { TextareaAutosize } from "./textarea-autosize"
 import { WithTooltip } from "./with-tooltip"
 import { FileProcessingSelect } from "@/components/document/file-processing-select"
 import { FileProcessor } from "@/types/file-processing"
+import { Button } from "@/components/ui/button"
 
 interface ChatSettingsFormProps {
   retrieverSettings?: ChatSettings
@@ -43,14 +48,30 @@ export const ChatSettingsForm: FC<ChatSettingsFormProps> = ({
   useAdvancedDropdown = true,
   showTooltip = true
 }) => {
-  const { profile, models } = useContext(ChatbotUIContext)
+  const { profile, selectedWorkspace } = useContext(ChatbotUIContext)
 
   if (!profile) return null
 
-  // TODO: add different chat and retrieval models
+  const changingGlobalSettings = !!retrieverSettings
+
+  const switchChatAndRetrieval = () => {
+    if (!selectedWorkspace) return
+    if (isModelIdFileRetriever(chatSettings.model)) {
+      onChangeChatSettings({
+        ...chatSettings,
+        model: selectedWorkspace?.default_chat_model as LLMID
+      })
+    } else {
+      onChangeChatSettings({
+        ...chatSettings,
+        model: selectedWorkspace?.default_model as LLMID
+      })
+    }
+  }
+
   return (
     <div className="space-y-3">
-      {retrieverSettings && onChangeRetrieverSettings && (
+      {changingGlobalSettings && onChangeRetrieverSettings && (
         <div className="space-y-1">
           <Label>File Retrieval Model</Label>
 
@@ -65,15 +86,35 @@ export const ChatSettingsForm: FC<ChatSettingsFormProps> = ({
       )}
 
       <div className="space-y-1">
-        <Label>Chat Model</Label>
+        <Label>{changingGlobalSettings ? "Chat Model" : "Model"}</Label>
 
-        <ModelSelect
-          selectedModelId={chatSettings.model}
-          onSelectModel={model => {
-            onChangeChatSettings({ ...chatSettings, model })
-          }}
-          excludeProvider={retrieverSettings && "file_retriever"}
-        />
+        <div className="flex flex-row items-center">
+          <ModelSelect
+            selectedModelId={chatSettings.model}
+            onSelectModel={model => {
+              onChangeChatSettings({ ...chatSettings, model })
+            }}
+            excludeProvider={
+              changingGlobalSettings ? "file_retriever" : undefined
+            }
+          />
+          <div className="mx-1" />
+          {!changingGlobalSettings && (
+            <WithTooltip
+              delayDuration={0}
+              side="top"
+              display={<div>Switch between file retrieval and chat</div>}
+              trigger={
+                <Button
+                  className="flex h-full items-center space-x-2"
+                  variant="secondary"
+                >
+                  <IconRepeat size={26} onClick={switchChatAndRetrieval} />
+                </Button>
+              }
+            />
+          )}
+        </div>
       </div>
 
       <div className="space-y-1">
