@@ -4,7 +4,7 @@ import { TablesInsert } from "@/supabase/types"
 import { FC, useContext, useState } from "react"
 import {
   extractWeight,
-  ruleInput
+  RuleInput
 } from "@/components/sidebar/items/rules/rules"
 
 interface CreateRuleProps {
@@ -35,16 +35,18 @@ export const CreateRule: FC<CreateRuleProps> = ({ isOpen, onOpenChange }) => {
           weight: extractWeight(weight) / 100
         } as TablesInsert<"rules">
       }
-      renderInputs={() =>
-        ruleInput(
+      renderInputs={(useExpandedSheet, setUseExpandedSheet) =>
+        RuleInput({
           name,
           setName,
           setIsTyping,
           weight,
           setWeight,
           comparison,
-          setComparison
-        )
+          setComparison,
+          useExpandedSheet,
+          setUseExpandedSheet
+        })
       }
     />
   )

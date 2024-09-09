@@ -85,7 +85,7 @@ import {
   DataItemType,
   TeamApiUpdate
 } from "@/types"
-import { FC, useContext, useEffect, useRef, useState } from "react"
+import { FC, ReactNode, useContext, useEffect, useRef, useState } from "react"
 import profile from "react-syntax-highlighter/dist/esm/languages/hljs/profile"
 import { toast } from "sonner"
 import { SidebarDeleteItem } from "./sidebar-delete-item"
@@ -99,7 +99,7 @@ interface SidebarUpdateItemProps {
   item: DataItemType
   contentType: ContentType
   children: React.ReactNode
-  renderInputs: (renderState: any) => JSX.Element
+  renderInputs: (renderState: any) => ReactNode
   updateState: any
 }
 
@@ -171,6 +171,9 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
     null
   )
 
+  // Rules Render State
+  const [useExpandedSheet, setUseExpandedSheet] = useState(false)
+
   useEffect(() => {
     if (isOpen) {
       const fetchData = async () => {
@@ -222,7 +225,10 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
       teamApiContent,
       setTeamApiContent
     },
-    rules: null
+    rules: {
+      useExpandedSheet,
+      setUseExpandedSheet
+    }
   }
 
   const fetchDataFunctions = {
@@ -683,7 +689,7 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
       <SheetTrigger asChild>{children}</SheetTrigger>
 
       <SheetContent
-        className="flex min-w-[450px] flex-col justify-between"
+        className={`flex flex-col justify-between ${useExpandedSheet ? "min-w-[1200px]" : "min-w-[450px]"}`}
         side="left"
         onKeyDown={handleKeyDown}
       >

@@ -25,7 +25,7 @@ import { createTool } from "@/db/tools"
 import { convertBlobToBase64 } from "@/lib/blob-to-b64"
 import { Tables, TablesInsert } from "@/supabase/types"
 import { ContentType } from "@/types"
-import { FC, useContext, useRef, useState } from "react"
+import { FC, ReactNode, useContext, useRef, useState } from "react"
 import { toast } from "sonner"
 import { useSelectMultipleFilesHandler } from "@/components/chat/chat-hooks/use-select-multiple-files-handler"
 import { addTeam } from "@/lib/team-api-calls"
@@ -37,7 +37,10 @@ interface SidebarCreateItemProps {
   isTyping: boolean
   onOpenChange: (isOpen: boolean) => void
   contentType: ContentType
-  renderInputs: () => JSX.Element
+  renderInputs: (
+    useExpandedSheet: boolean,
+    setUseExpandedSheet: React.Dispatch<React.SetStateAction<boolean>>
+  ) => ReactNode
   createState: any
 }
 
@@ -69,6 +72,8 @@ export const SidebarCreateItem: FC<SidebarCreateItemProps> = ({
   const buttonRef = useRef<HTMLButtonElement>(null)
 
   const [creating, setCreating] = useState(false)
+
+  const [useExpandedSheet, setUseExpandedSheet] = useState(false)
 
   const [showConfirmSaveDialog, setShowConfirmSaveDialog] = useState(false)
 
@@ -235,7 +240,7 @@ export const SidebarCreateItem: FC<SidebarCreateItemProps> = ({
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetContent
-        className="flex min-w-[450px] flex-col justify-between overflow-auto"
+        className={`flex flex-col justify-between overflow-auto ${useExpandedSheet ? "min-w-[1200px]" : "min-w-[450px]"}`}
         side="left"
         onKeyDown={handleKeyDown}
       >
@@ -247,7 +252,9 @@ export const SidebarCreateItem: FC<SidebarCreateItemProps> = ({
             </SheetTitle>
           </SheetHeader>
 
-          <div className="mt-4 space-y-3">{renderInputs()}</div>
+          <div className="mt-4 space-y-3">
+            {renderInputs(useExpandedSheet, setUseExpandedSheet)}
+          </div>
         </div>
 
         <SheetFooter className="mt-2 flex justify-between">

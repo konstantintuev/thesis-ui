@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils"
 import { Tables } from "@/supabase/types"
 import { ContentType, DataItemType } from "@/types"
 import { useRouter } from "next/navigation"
-import { FC, useContext, useRef, useState } from "react"
+import { FC, ReactNode, useContext, useRef, useState } from "react"
 import { SidebarUpdateItem } from "./sidebar-update-item"
 
 interface SidebarItemProps {
@@ -13,7 +13,7 @@ interface SidebarItemProps {
   contentType: ContentType
   icon: React.ReactNode
   updateState: any
-  renderInputs: (renderState: any) => JSX.Element
+  renderInputs: (renderState: any) => ReactNode
 }
 
 export const SidebarItem: FC<SidebarItemProps> = ({

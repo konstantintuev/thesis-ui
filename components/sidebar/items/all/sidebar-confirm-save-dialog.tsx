@@ -38,12 +38,19 @@ export const SidebarConfirmSaveDialog: FC<SidebarConfirmSaveDialogProps> = ({
     >
       <DialogContent onKeyDown={handleKeyDown}>
         <DialogHeader>
-          <DialogTitle>{`Confirm ${
+          <DialogTitle className="mb-2">{`Confirm ${
             action.charAt(0).toUpperCase() + action.slice(1, action.length)
           }`}</DialogTitle>
 
           <DialogDescription>
-            Are you sure you want to {action}?
+            <p className="mb-4">Are you sure you want to {action}?</p>
+            <div className="rounded-lg bg-blue-50 p-4">
+              <p className="text-sm font-semibold text-blue-700">Note:</p>
+              <p className="text-sm text-gray-700">
+                Use <span className="font-bold">Shift + Enter</span> for new
+                line
+              </p>
+            </div>
           </DialogDescription>
         </DialogHeader>
 

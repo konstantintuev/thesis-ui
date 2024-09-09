@@ -1467,6 +1467,7 @@ export type Database = {
         Row: {
           comparison: Json
           created_at: string
+          folder_id: string | null
           id: string
           name: string
           type: string
@@ -1476,6 +1477,7 @@ export type Database = {
         Insert: {
           comparison: Json
           created_at?: string
+          folder_id?: string | null
           id?: string
           name: string
           type?: string
@@ -1485,6 +1487,7 @@ export type Database = {
         Update: {
           comparison?: Json
           created_at?: string
+          folder_id?: string | null
           id?: string
           name?: string
           type?: string
@@ -1497,6 +1500,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "public_rules_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "folders"
             referencedColumns: ["id"]
           },
         ]
@@ -1783,6 +1793,10 @@ export type Database = {
           value_types: string[]
         }[]
       }
+      aggregate_metadata: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       create_duplicate_messages_for_new_chat: {
         Args: {
           old_chat_id: string
@@ -1828,6 +1842,21 @@ export type Database = {
         }
         Returns: string
       }
+      flatten_json:
+        | {
+            Args: {
+              json_data: Json
+              parent_path?: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              json_data: Json
+              parent_path?: string
+            }
+            Returns: Json
+          }
       get_emails_by_user_ids: {
         Args: {
           user_ids: string[]
@@ -1849,6 +1878,25 @@ export type Database = {
           _member_team_id: string
         }
         Returns: boolean
+      }
+      json_access: {
+        Args: {
+          attribute: string
+        }
+        Returns: string
+      }
+      json_merge: {
+        Args: {
+          json1: Json
+          json2: Json
+        }
+        Returns: Json
+      }
+      jsonb_access: {
+        Args: {
+          attribute: string
+        }
+        Returns: string
       }
       match_file_items_any_bge: {
         Args: {

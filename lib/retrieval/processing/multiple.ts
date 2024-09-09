@@ -16,6 +16,7 @@ import {
   MultipleFilesQueueResult,
   SearchResults
 } from "@/types/ml-server-communication"
+import { TargetApiTypeBasicRules } from "@/app/api/rules/route"
 
 export const processMultiple = async (
   fileURLs: string[],
@@ -216,4 +217,25 @@ export const searchFilesMLServer = async (
     fileItem => fileItem !== undefined && fileItem !== null
   )
   return fileItems as FileItemSearchResult[]
+}
+
+export const transformTextToBasicRules = async (
+  query: string,
+  filesDescription: string,
+  attributes: TargetApiTypeBasicRules[]
+): Promise<any> => {
+  const response = await fetch(
+    `http://127.0.0.1:8000/file_processing/text_2_query`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        query,
+        files_description: filesDescription,
+        attributes
+      })
+    }
+  )
+  let res = await response.json()
+
+  return res
 }

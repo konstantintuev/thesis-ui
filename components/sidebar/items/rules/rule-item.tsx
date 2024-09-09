@@ -4,7 +4,7 @@ import { FC, useState } from "react"
 import { SidebarItem } from "../all/sidebar-display-item"
 import {
   extractWeight,
-  ruleInput
+  RuleInput
 } from "@/components/sidebar/items/rules/rules"
 
 interface PromptItemProps {
@@ -39,16 +39,18 @@ export const RuleItem: FC<PromptItemProps> = ({ rule }) => {
           comparison
         } as TablesUpdate<"rules">
       }
-      renderInputs={() =>
-        ruleInput(
+      renderInputs={renderState =>
+        RuleInput({
           name,
           setName,
           setIsTyping,
           weight,
           setWeight,
           comparison,
-          setComparison
-        )
+          setComparison,
+          useExpandedSheet: renderState.useExpandedSheet,
+          setUseExpandedSheet: renderState.setUseExpandedSheet
+        })
       }
     />
   )
