@@ -21,18 +21,64 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TABLE IF NOT EXISTS comparisons
-(
-    batch_id        UUID PRIMARY KEY DEFAULT uuid_generate_v4(), -- Batch ID for all comparisons in the group
-    weight          FLOAT, -- Weight of the comparison from 0 to 1
-    comparison_name TEXT,  -- Name of the comparison
-    comparison      json   -- JSON object containing the comparison details:
-              --- [
-                  --- {comparator      TEXT, -- eq, ne, gt, gte, lt, lte, contain, like, in, nin, not_like, not_contain
-                  --- attribute        TEXT, -- Column name (e.g. genre, year, director)
-                  --- value}           TEXT  -- Value to compare against (e.g. 'Action', '2022', 'John Doe')
-              --- ]
-);
+create table if not exists rules(
+    id         uuid                     not null default uuid_generate_v4(),
+    weight     double precision         not null,
+    name       text                     not null,
+    comparison json                     not null,
+    user_id    uuid                     not null default auth.uid(),
+    type       text                     not null default 'basic'::text,
+    created_at timestamp with time zone not null default now(),
+    folder_id  uuid                     null,
+    constraint rules_pkey primary key (id),
+    constraint rules_name_key unique (name),
+    constraint public_comparisons_user_id_fkey foreign key (user_id) references auth.users (id) on update cascade on delete cascade,
+    constraint public_rules_folder_id_fkey foreign key (folder_id) references folders (id) on update cascade on delete set null,
+    constraint comparisons_type_check check (
+        (
+            type = any (array ['basic'::text, 'advanced'::text])
+            )
+        ),
+    constraint comparisons_name_check check (
+        (
+            name <> ''
+        )
+        ),
+    constraint comparisons_weight_check check (
+        (
+            weight > 0
+            )
+        )
+) tablespace pg_default;
+
+alter table "public"."rules" enable row level security;
+
+create policy "Enable read access to rule folders"
+    on "public"."folders"
+    as permissive
+    for select
+    to public
+    using ((EXISTS (SELECT 1
+                    FROM rules
+                    WHERE (rules.folder_id = folders.id))));
+
+create policy "Enable delete for users based on user_id"
+    on "public"."rules"
+    as restrictive
+    for delete
+    to authenticated
+    using (((SELECT auth.uid() AS uid) = user_id));
+
+
+create policy "Select for authenticated and change for own"
+    on "public"."rules"
+    as permissive
+    for all
+    to authenticated
+    using (true)
+    with check ((user_id = auth.uid()));
+
+
 
 CREATE OR REPLACE FUNCTION rank_files(file_ids UUID[] DEFAULT NULL)
     RETURNS TABLE
@@ -64,7 +110,7 @@ DECLARE
     comparison_json   TEXT  := '';
 BEGIN
     -- Loop through each comparison batch and build the scoring logic dynamically
-    FOR comp IN SELECT * FROM comparisons
+    FOR comp IN SELECT * FROM rules where type = 'basic'
         LOOP
             -- Initialize the condition SQL for this batch
             condition_sql := '';
@@ -139,7 +185,7 @@ BEGIN
 
             -- Build the JSON for each comparison
             comparison_json := comparison_json ||
-                               format('''%s'', CASE WHEN %s THEN true ELSE false END, ', comp.comparison_name,
+                               format('''%s'', CASE WHEN %s THEN true ELSE false END, ', comp.name,
                                       condition_sql);
 
             -- Add to total weight if condition_sql is valid

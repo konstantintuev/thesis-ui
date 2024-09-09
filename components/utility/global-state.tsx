@@ -56,6 +56,7 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
   const [tools, setTools] = useState<Tables<"tools">[]>([])
   const [workspaces, setWorkspaces] = useState<Tables<"workspaces">[]>([])
   const [teams, setTeams] = useState<TeamAndMe[]>([])
+  const [rules, setRules] = useState<Tables<"rules">[]>([])
 
   // MODELS STORE
   const [envKeyMap, setEnvKeyMap] = useState<Record<string, VALID_ENV_KEYS>>({})
@@ -270,6 +271,8 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
         setWorkspaces,
         teams,
         setTeams,
+        rules,
+        setRules,
 
         // MODELS STORE
         envKeyMap,

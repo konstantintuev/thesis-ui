@@ -669,27 +669,6 @@ export type Database = {
           },
         ]
       }
-      comparisons: {
-        Row: {
-          batch_id: string
-          comparison: Json | null
-          comparison_name: string | null
-          weight: number | null
-        }
-        Insert: {
-          batch_id?: string
-          comparison?: Json | null
-          comparison_name?: string | null
-          weight?: number | null
-        }
-        Update: {
-          batch_id?: string
-          comparison?: Json | null
-          comparison_name?: string | null
-          weight?: number | null
-        }
-        Relationships: []
-      }
       file_items: {
         Row: {
           children: string[] | null
@@ -1477,6 +1456,44 @@ export type Database = {
           },
           {
             foreignKeyName: "prompts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rules: {
+        Row: {
+          comparison: Json
+          created_at: string
+          id: string
+          name: string
+          type: string
+          user_id: string
+          weight: number
+        }
+        Insert: {
+          comparison: Json
+          created_at?: string
+          id?: string
+          name: string
+          type?: string
+          user_id?: string
+          weight: number
+        }
+        Update: {
+          comparison?: Json
+          created_at?: string
+          id?: string
+          name?: string
+          type?: string
+          user_id?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "public_comparisons_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"

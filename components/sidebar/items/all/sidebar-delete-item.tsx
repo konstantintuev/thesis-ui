@@ -22,6 +22,8 @@ import { Tables } from "@/supabase/types"
 import { ContentType, DataItemType } from "@/types"
 import { FC, useContext, useRef, useState } from "react"
 import { deleteTeam } from "@/db/teams"
+import { deleteRule } from "@/db/rules"
+import { toast } from "sonner"
 
 interface SidebarDeleteItemProps {
   item: DataItemType
@@ -41,7 +43,8 @@ export const SidebarDeleteItem: FC<SidebarDeleteItemProps> = ({
     setAssistants,
     setTools,
     setModels,
-    setTeams
+    setTeams,
+    setRules
   } = useContext(ChatbotUIContext)
 
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -82,6 +85,9 @@ export const SidebarDeleteItem: FC<SidebarDeleteItemProps> = ({
     },
     teams: async (team: Tables<"teams">) => {
       return await deleteTeam(team.id)
+    },
+    rules: async (rule: Tables<"rules">) => {
+      return await deleteRule(rule.id)
     }
   }
 
@@ -94,7 +100,8 @@ export const SidebarDeleteItem: FC<SidebarDeleteItemProps> = ({
     assistants: setAssistants,
     tools: setTools,
     models: setModels,
-    teams: setTeams
+    teams: setTeams,
+    rules: setRules
   }
 
   const handleDelete = async () => {
@@ -107,6 +114,8 @@ export const SidebarDeleteItem: FC<SidebarDeleteItemProps> = ({
       setStateFunction((prevItems: any) =>
         prevItems.filter((prevItem: any) => prevItem.id !== item.id)
       )
+    } else {
+      toast.error("Not authorised to delete!")
     }
 
     setShowDialog(false)

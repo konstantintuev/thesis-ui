@@ -10,10 +10,11 @@ import { CreateCollection } from "./items/collections/create-collection"
 import { CreateFile } from "./items/files/create-file"
 import { CreateModel } from "./items/models/create-model"
 import { CreatePreset } from "./items/presets/create-preset"
-import { CreateRulePrompt } from "./items/prompts/create-rule-prompt"
+import { CreatePrompt } from "./items/prompts/create-prompt"
 import { CreateTool } from "./items/tools/create-tool"
 import { CreateTeam } from "@/components/sidebar/items/teams/create-team"
 import { useTranslation } from "react-i18next"
+import { CreateRule } from "@/components/sidebar/items/rules/create-rule"
 
 interface SidebarCreateButtonsProps {
   contentType: ContentType
@@ -37,6 +38,7 @@ export const SidebarCreateButtons: FC<SidebarCreateButtonsProps> = ({
   const [isCreatingTool, setIsCreatingTool] = useState(false)
   const [isCreatingModel, setIsCreatingModel] = useState(false)
   const [isCreatingTeam, setIsCreatingTeam] = useState(false)
+  const [isCreatingRule, setIsCreatingRule] = useState(false)
 
   const handleCreateFolder = async () => {
     if (!profile) return
@@ -99,6 +101,11 @@ export const SidebarCreateButtons: FC<SidebarCreateButtonsProps> = ({
           setIsCreatingTeam(true)
         }
 
+      case "rules":
+        return async () => {
+          setIsCreatingRule(true)
+        }
+
       default:
         break
     }
@@ -109,7 +116,7 @@ export const SidebarCreateButtons: FC<SidebarCreateButtonsProps> = ({
       <Button className="flex h-[36px] grow" onClick={getCreateFunction()}>
         <IconPlus className="mr-1" size={20} />
         {(
-          `New ` +
+          "New " +
           contentType.charAt(0).toUpperCase() +
           contentType.slice(1, contentType.length - 1)
         ).toTranslationKey(t)}
@@ -122,7 +129,7 @@ export const SidebarCreateButtons: FC<SidebarCreateButtonsProps> = ({
       )}
 
       {isCreatingPrompt && (
-        <CreateRulePrompt
+        <CreatePrompt
           isOpen={isCreatingPrompt}
           onOpenChange={setIsCreatingPrompt}
         />
@@ -166,6 +173,10 @@ export const SidebarCreateButtons: FC<SidebarCreateButtonsProps> = ({
 
       {isCreatingTeam && (
         <CreateTeam isOpen={isCreatingTeam} onOpenChange={setIsCreatingTeam} />
+      )}
+
+      {isCreatingRule && (
+        <CreateRule isOpen={isCreatingRule} onOpenChange={setIsCreatingRule} />
       )}
     </div>
   )

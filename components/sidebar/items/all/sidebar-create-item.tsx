@@ -29,6 +29,8 @@ import { FC, useContext, useRef, useState } from "react"
 import { toast } from "sonner"
 import { useSelectMultipleFilesHandler } from "@/components/chat/chat-hooks/use-select-multiple-files-handler"
 import { addTeam } from "@/lib/team-api-calls"
+import { createRule } from "@/db/rules"
+import { SidebarConfirmSaveDialog } from "@/components/sidebar/items/all/sidebar-confirm-save-dialog"
 
 interface SidebarCreateItemProps {
   isOpen: boolean
@@ -58,7 +60,8 @@ export const SidebarCreateItem: FC<SidebarCreateItemProps> = ({
     setAssistantImages,
     setTools,
     setModels,
-    setTeams
+    setTeams,
+    setRules
   } = useContext(ChatbotUIContext)
 
   const { handleSelectDeviceFiles } = useSelectMultipleFilesHandler()
@@ -66,6 +69,8 @@ export const SidebarCreateItem: FC<SidebarCreateItemProps> = ({
   const buttonRef = useRef<HTMLButtonElement>(null)
 
   const [creating, setCreating] = useState(false)
+
+  const [showConfirmSaveDialog, setShowConfirmSaveDialog] = useState(false)
 
   const createFunctions = {
     chats: createChat,
@@ -179,7 +184,8 @@ export const SidebarCreateItem: FC<SidebarCreateItemProps> = ({
     },
     tools: createTool,
     models: createModel,
-    teams: addTeam
+    teams: addTeam,
+    rules: createRule
   }
 
   const stateUpdateFunctions = {
@@ -191,7 +197,8 @@ export const SidebarCreateItem: FC<SidebarCreateItemProps> = ({
     assistants: setAssistants,
     tools: setTools,
     models: setModels,
-    teams: setTeams
+    teams: setTeams,
+    rules: setRules
   }
 
   const handleCreate = async () => {
@@ -221,7 +228,7 @@ export const SidebarCreateItem: FC<SidebarCreateItemProps> = ({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (!isTyping && e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
-      buttonRef.current?.click()
+      setShowConfirmSaveDialog(true)
     }
   }
 
@@ -244,6 +251,13 @@ export const SidebarCreateItem: FC<SidebarCreateItemProps> = ({
         </div>
 
         <SheetFooter className="mt-2 flex justify-between">
+          <SidebarConfirmSaveDialog
+            action="create"
+            showConfirmSaveDialog={showConfirmSaveDialog}
+            setShowConfirmSaveDialog={setShowConfirmSaveDialog}
+            handleResult={res => res && buttonRef.current?.click()}
+          />
+
           <div className="flex grow justify-end space-x-2">
             <Button
               disabled={creating}

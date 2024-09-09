@@ -91,6 +91,8 @@ import { toast } from "sonner"
 import { SidebarDeleteItem } from "./sidebar-delete-item"
 import { useSelectMultipleFilesHandler } from "@/components/chat/chat-hooks/use-select-multiple-files-handler"
 import { getTeam, updateTeam } from "@/lib/team-api-calls"
+import { updateRule } from "@/db/rules"
+import { SidebarConfirmSaveDialog } from "@/components/sidebar/items/all/sidebar-confirm-save-dialog"
 
 interface SidebarUpdateItemProps {
   isTyping: boolean
@@ -122,10 +124,13 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
     setModels,
     setAssistantImages,
     setTeams,
-    teams
+    teams,
+    setRules
   } = useContext(ChatbotUIContext)
 
   const buttonRef = useRef<HTMLButtonElement>(null)
+
+  const [showConfirmSaveDialog, setShowConfirmSaveDialog] = useState(false)
 
   const [isOpen, setIsOpen] = useState(false)
   const [startingWorkspaces, setStartingWorkspaces] = useState<
@@ -216,7 +221,8 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
     teams: {
       teamApiContent,
       setTeamApiContent
-    }
+    },
+    rules: null
   }
 
   const fetchDataFunctions = {
@@ -250,7 +256,8 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
     teams: async (teamID: string) => {
       const team = await getTeam(teamID)
       setTeamApiContent(team)
-    }
+    },
+    rules: null
   }
 
   const fetchWorkpaceFunctions = {
@@ -282,7 +289,8 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
     models: async (modelId: string) => {
       const item = await getModelWorkspacesByModelId(modelId)
       return item.workspaces
-    }
+    },
+    rules: null
   }
 
   const fetchSelectedWorkspaces = async () => {
@@ -603,6 +611,10 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
       if (!teamApiContent) return teams.find(team => team.id == teamId)
       const updatedTeam = await updateTeam(teamApiContent)
       return updatedTeam
+    },
+    rules: async (ruleId: string, updateState: any) => {
+      const updatedTeam = await updateRule(ruleId, updateState)
+      return updatedTeam
     }
   }
 
@@ -615,7 +627,8 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
     assistants: setAssistants,
     tools: setTools,
     models: setModels,
-    teams: setTeams
+    teams: setTeams,
+    rules: setRules
   }
 
   const handleUpdate = async () => {
@@ -661,7 +674,7 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (!isTyping && e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
-      buttonRef.current?.click()
+      setShowConfirmSaveDialog(true)
     }
   }
 
@@ -698,6 +711,13 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
         </div>
 
         <SheetFooter className="mt-2 flex justify-between">
+          <SidebarConfirmSaveDialog
+            action="update"
+            showConfirmSaveDialog={showConfirmSaveDialog}
+            setShowConfirmSaveDialog={setShowConfirmSaveDialog}
+            handleResult={res => res && buttonRef.current?.click()}
+          />
+
           <SidebarDeleteItem item={item} contentType={contentType} />
 
           <div className="flex grow justify-end space-x-2">

@@ -43,6 +43,8 @@ interface ChatbotUIContext {
   setWorkspaces: Dispatch<SetStateAction<Tables<"workspaces">[]>>
   teams: TeamAndMe[]
   setTeams: Dispatch<SetStateAction<TeamAndMe[]>>
+  rules: Tables<"rules">[]
+  setRules: Dispatch<SetStateAction<Tables<"rules">[]>>
 
   // MODELS STORE
   envKeyMap: Record<string, VALID_ENV_KEYS>
@@ -190,6 +192,8 @@ export const ChatbotUIContext = createContext<ChatbotUIContext>({
   setWorkspaces: () => {},
   teams: [],
   setTeams: () => {},
+  rules: [],
+  setRules: () => {},
 
   // MODELS STORE
   envKeyMap: {},

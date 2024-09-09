@@ -7,12 +7,12 @@ import { PROMPT_NAME_MAX } from "@/db/limits"
 import { TablesInsert } from "@/supabase/types"
 import { FC, useContext, useState } from "react"
 
-interface CreateRulePromptProps {
+interface CreatePromptProps {
   isOpen: boolean
   onOpenChange: (isOpen: boolean) => void
 }
 
-export const CreateRulePrompt: FC<CreateRulePromptProps> = ({
+export const CreatePrompt: FC<CreatePromptProps> = ({
   isOpen,
   onOpenChange
 }) => {

@@ -23,6 +23,8 @@ import { PromptItem } from "./items/prompts/prompt-item"
 import { ToolItem } from "./items/tools/tool-item"
 import { TeamItem } from "@/components/sidebar/items/teams/team-item"
 import { useTranslation } from "react-i18next"
+import { RuleItem } from "@/components/sidebar/items/rules/rule-item"
+import { updateRule } from "@/db/rules"
 
 interface SidebarDataListProps {
   contentType: ContentType
@@ -44,7 +46,8 @@ export const SidebarDataList: FC<SidebarDataListProps> = ({
     setAssistants,
     setTools,
     setModels,
-    setTeams
+    setTeams,
+    setRules
   } = useContext(ChatbotUIContext)
 
   const { t } = useTranslation()
@@ -95,6 +98,9 @@ export const SidebarDataList: FC<SidebarDataListProps> = ({
 
       case "teams":
         return <TeamItem key={item.id} team={item as Tables<"teams">} />
+
+      case "rules":
+        return <RuleItem key={item.id} rule={item as Tables<"rules">} />
 
       default:
         return null
@@ -151,7 +157,8 @@ export const SidebarDataList: FC<SidebarDataListProps> = ({
     models: updateModel,
     teams: () => ({
       id: null
-    })
+    }),
+    rules: updateRule
   }
 
   const stateUpdateFunctions = {
@@ -163,7 +170,8 @@ export const SidebarDataList: FC<SidebarDataListProps> = ({
     assistants: setAssistants,
     tools: setTools,
     models: setModels,
-    teams: () => {}
+    teams: () => {},
+    rules: setRules
   }
 
   const updateFolder = async (itemId: string, folderId: string | null) => {

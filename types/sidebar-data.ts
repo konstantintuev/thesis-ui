@@ -10,6 +10,7 @@ export type DataListType =
   | Tables<"tools">[]
   | Tables<"models">[]
   | Tables<"teams">[]
+  | Tables<"rules">[]
 
 export type DataItemType =
   | Tables<"collections">
@@ -21,6 +22,7 @@ export type DataItemType =
   | Tables<"tools">
   | Tables<"models">
   | Tables<"teams">
+  | Tables<"rules">
 
 export type TeamApiUpdate = {
   id: string

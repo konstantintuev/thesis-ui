@@ -8,7 +8,8 @@ import {
   IconMessage,
   IconPencil,
   IconRobotFace,
-  IconSparkles
+  IconSparkles,
+  IconFilterSearch
 } from "@tabler/icons-react"
 import { FC } from "react"
 import { TabsList } from "../ui/tabs"
@@ -79,6 +80,12 @@ export const SidebarSwitcher: FC<SidebarSwitcherProps> = ({
         <SidebarSwitchItem
           icon={<IconUsersGroup size={SIDEBAR_ICON_SIZE} />}
           contentType="teams"
+          onContentTypeChange={onContentTypeChange}
+        />
+
+        <SidebarSwitchItem
+          icon={<IconFilterSearch size={SIDEBAR_ICON_SIZE} />}
+          contentType="rules"
           onContentTypeChange={onContentTypeChange}
         />
       </TabsList>

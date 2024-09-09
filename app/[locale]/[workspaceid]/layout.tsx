@@ -21,6 +21,7 @@ import { useParams, useRouter } from "next/navigation"
 import { ReactNode, useContext, useEffect, useState } from "react"
 import Loading from "../loading"
 import { Tables } from "@/supabase/types"
+import { getRules } from "@/db/rules"
 
 interface WorkspaceLayoutProps {
   children: ReactNode
@@ -44,6 +45,7 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
     setPrompts,
     setTools,
     setModels,
+    setRules,
     selectedWorkspace,
     setSelectedWorkspace,
     setSelectedChat,
@@ -161,6 +163,9 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
 
     const modelData = await getModelWorkspacesByWorkspaceId(workspaceId)
     setModels(modelData.models)
+
+    const rules = await getRules()
+    setRules(rules)
 
     setChatSettings({
       model: (workspace?.default_model || "gpt-4-1106-preview") as LLMID,
