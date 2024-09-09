@@ -81,7 +81,7 @@ export const RuleInput: FC<{
         {useExpandedSheet && <hr className="mb-4 border-t-2 border-gray-200" />}
 
         <div className="flex flex-wrap">
-          <CollapsibleContent className="flex-1">
+          <CollapsibleContent className="h-[calc(100vh-18rem)] flex-1 overflow-y-auto">
             {getBasicRuleInstructions()}
           </CollapsibleContent>
 

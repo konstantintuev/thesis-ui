@@ -1,5 +1,6 @@
 export const getBasicRuleInstructions = (): JSX.Element => (
   <div className="mx-auto max-w-4xl p-6">
+    {/* Thank you, ChatGPT, for the nice text based on all the instructions, code sample, use cases and metadata I gave you! */}
     {/* Introduction */}
     <p className="mb-6 text-lg text-gray-700">
       Welcome to the rule creation system! Here, you will define rules that are
