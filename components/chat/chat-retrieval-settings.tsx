@@ -1,6 +1,6 @@
-import { ChatbotUIContext } from "@/context/context"
 import { IconAdjustmentsHorizontal } from "@tabler/icons-react"
-import { FC, useContext, useState } from "react"
+import { FC, useState } from "react"
+import { useStore } from "@/context/context"
 import { Button } from "../ui/button"
 import {
   Dialog,
@@ -15,7 +15,7 @@ import { WithTooltip } from "../ui/with-tooltip"
 interface ChatRetrievalSettingsProps {}
 
 export const ChatRetrievalSettings: FC<ChatRetrievalSettingsProps> = ({}) => {
-  const { sourceCount, setSourceCount } = useContext(ChatbotUIContext)
+  const { sourceCount, setSourceCount } = useStore()
 
   const [isOpen, setIsOpen] = useState(false)
 

@@ -1,5 +1,5 @@
-import { ChatbotUIContext } from "@/context/context"
-import { FC, useContext } from "react"
+import { FC } from "react"
+import { useStore } from "@/context/context"
 import { AssistantPicker } from "./assistant-picker"
 import { usePromptAndCommand } from "./chat-hooks/use-prompt-and-command"
 import { FilePicker } from "./file-picker"
@@ -18,7 +18,7 @@ export const ChatCommandInput: FC<ChatCommandInputProps> = ({}) => {
     hashtagCommand,
     focusPrompt,
     focusFile
-  } = useContext(ChatbotUIContext)
+  } = useStore()
 
   const { handleSelectUserFile, handleSelectUserCollection } =
     usePromptAndCommand()

@@ -8,7 +8,6 @@ import {
   DialogTitle,
   DialogTrigger
 } from "@/components/ui/dialog"
-import { ChatbotUIContext } from "@/context/context"
 import { deleteAssistant } from "@/db/assistants"
 import { deleteChat } from "@/db/chats"
 import { deleteCollection } from "@/db/collections"
@@ -20,7 +19,8 @@ import { deleteFileFromStorage } from "@/db/storage/files"
 import { deleteTool } from "@/db/tools"
 import { Tables } from "@/supabase/types"
 import { ContentType, DataItemType } from "@/types"
-import { FC, useContext, useRef, useState } from "react"
+import { FC, useRef, useState } from "react"
+import { useStore } from "@/context/context"
 import { deleteTeam } from "@/db/teams"
 import { deleteRule } from "@/db/rules"
 import { toast } from "sonner"
@@ -45,7 +45,7 @@ export const SidebarDeleteItem: FC<SidebarDeleteItemProps> = ({
     setModels,
     setTeams,
     setRules
-  } = useContext(ChatbotUIContext)
+  } = useStore()
 
   const buttonRef = useRef<HTMLButtonElement>(null)
 

@@ -1,4 +1,3 @@
-import { ChatbotUIContext } from "@/context/context"
 import { createAssistants } from "@/db/assistants"
 import { createChats } from "@/db/chats"
 import { createCollections } from "@/db/collections"
@@ -7,7 +6,8 @@ import { createPresets } from "@/db/presets"
 import { createPrompts } from "@/db/prompts"
 import { createTools } from "@/db/tools"
 import { IconUpload, IconX } from "@tabler/icons-react"
-import { FC, useContext, useRef, useState } from "react"
+import { FC, useRef, useState } from "react"
+import { useStore } from "@/context/context"
 import { toast } from "sonner"
 import { SIDEBAR_ICON_SIZE } from "../sidebar/sidebar-switcher"
 import { Badge } from "../ui/badge"
@@ -34,7 +34,7 @@ export const Import: FC<ImportProps> = ({}) => {
     setCollections,
     setAssistants,
     setTools
-  } = useContext(ChatbotUIContext)
+  } = useStore()
 
   const inputRef = useRef<HTMLInputElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)

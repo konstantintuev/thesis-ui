@@ -1,10 +1,10 @@
 import { SidebarCreateItem } from "@/components/sidebar/items/all/sidebar-create-item"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ChatbotUIContext } from "@/context/context"
 import { MODEL_NAME_MAX } from "@/db/limits"
 import { TablesInsert } from "@/supabase/types"
-import { FC, useContext, useState } from "react"
+import { FC, useState } from "react"
+import { useStore } from "@/context/context"
 
 interface CreateModelProps {
   isOpen: boolean
@@ -12,7 +12,7 @@ interface CreateModelProps {
 }
 
 export const CreateModel: FC<CreateModelProps> = ({ isOpen, onOpenChange }) => {
-  const { profile, selectedWorkspace } = useContext(ChatbotUIContext)
+  const { profile, selectedWorkspace } = useStore()
 
   const [isTyping, setIsTyping] = useState(false)
 

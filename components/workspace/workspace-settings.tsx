@@ -1,4 +1,3 @@
-import { ChatbotUIContext } from "@/context/context"
 import { WORKSPACE_INSTRUCTIONS_MAX } from "@/db/limits"
 import {
   getWorkspaceImageFromStorage,
@@ -8,7 +7,8 @@ import { updateWorkspace } from "@/db/workspaces"
 import { convertBlobToBase64 } from "@/lib/blob-to-b64"
 import { isModelIdFileRetriever, LLMID } from "@/types"
 import { IconHome, IconSettings } from "@tabler/icons-react"
-import { FC, useContext, useEffect, useRef, useState } from "react"
+import { FC, useEffect, useRef, useState } from "react"
+import { useStore } from "@/context/context"
 import { toast } from "sonner"
 import { Button } from "../ui/button"
 import { ChatSettingsForm } from "../ui/chat-settings-form"
@@ -42,7 +42,7 @@ export const WorkspaceSettings: FC<WorkspaceSettingsProps> = ({}) => {
     workspaceImages,
     setWorkspaceImages,
     availableFileProcessors
-  } = useContext(ChatbotUIContext)
+  } = useStore()
 
   const buttonRef = useRef<HTMLButtonElement>(null)
 

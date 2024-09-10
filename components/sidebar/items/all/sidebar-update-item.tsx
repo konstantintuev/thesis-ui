@@ -9,7 +9,6 @@ import {
   SheetTrigger
 } from "@/components/ui/sheet"
 import { AssignWorkspaces } from "@/components/workspace/assign-workspaces"
-import { ChatbotUIContext } from "@/context/context"
 import {
   createAssistantCollection,
   deleteAssistantCollection,
@@ -85,7 +84,8 @@ import {
   DataItemType,
   TeamApiUpdate
 } from "@/types"
-import { FC, ReactNode, useContext, useEffect, useRef, useState } from "react"
+import { FC, ReactNode, useEffect, useRef, useState } from "react"
+import { useStore } from "@/context/context"
 import profile from "react-syntax-highlighter/dist/esm/languages/hljs/profile"
 import { toast } from "sonner"
 import { SidebarDeleteItem } from "./sidebar-delete-item"
@@ -126,7 +126,7 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
     setTeams,
     teams,
     setRules
-  } = useContext(ChatbotUIContext)
+  } = useStore()
 
   const buttonRef = useRef<HTMLButtonElement>(null)
 

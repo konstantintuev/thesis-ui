@@ -1,6 +1,6 @@
-import { ChatbotUIContext } from "@/context/context"
 import { Tables } from "@/supabase/types"
-import { FC, useContext, useEffect, useRef, useState } from "react"
+import { FC, useEffect, useRef, useState } from "react"
+import { useStore } from "@/context/context"
 import { Button } from "../ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog"
 import { Label } from "../ui/label"
@@ -16,7 +16,7 @@ export const PromptPicker: FC<PromptPickerProps> = ({}) => {
     setIsPromptPickerOpen,
     focusPrompt,
     slashCommand
-  } = useContext(ChatbotUIContext)
+  } = useStore()
 
   const { handleSelectPrompt } = usePromptAndCommand()
 

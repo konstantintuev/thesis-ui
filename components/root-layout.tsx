@@ -6,9 +6,8 @@ import initTranslations from "@/lib/i18n"
 import { Providers } from "@/components/utility/providers"
 import TranslationsProvider from "@/components/utility/translations-provider"
 import { Toaster } from "@/components/ui/sonner"
-import { GlobalState } from "@/components/utility/global-state"
 import Loading from "@/app/[locale]/loading"
-import { supabase } from "@/lib/supabase/browser-client"
+import { GlobalStateInit } from "@/components/utility/global-state-init"
 
 interface RootLayoutProps {
   children: ReactNode
@@ -52,7 +51,7 @@ export function RootLayoutComponent({
       >
         <Toaster richColors position="top-center" duration={3000} />
         <div className="bg-background text-foreground flex h-dvh flex-col items-center overflow-x-auto">
-          <GlobalState>{children}</GlobalState>
+          <GlobalStateInit>{children}</GlobalStateInit>
         </div>
       </TranslationsProvider>
     </Providers>

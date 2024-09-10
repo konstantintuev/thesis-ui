@@ -6,14 +6,14 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { FileIcon } from "@/components/ui/file-icon"
 import { Input } from "@/components/ui/input"
-import { ChatbotUIContext } from "@/context/context"
 import { CollectionFile } from "@/types"
 import {
   IconChevronDown,
   IconCircleCheckFilled,
   IconUsers
 } from "@tabler/icons-react"
-import { FC, useContext, useEffect, useRef, useState } from "react"
+import { FC, useEffect, useRef, useState } from "react"
+import { useStore } from "@/context/context"
 import { Tables } from "@/supabase/types"
 
 export type TeamAndMe = Tables<"teams"> & {
@@ -29,7 +29,7 @@ export const TeamsSelect: FC<TeamsSelectProps> = ({
   selectedTeams,
   onTeamSelect
 }) => {
-  const { teams } = useContext(ChatbotUIContext)
+  const { teams } = useStore()
 
   const inputRef = useRef<HTMLInputElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)

@@ -1,7 +1,7 @@
-import React, { FC, useContext, useEffect } from "react"
+import React, { FC, useEffect } from "react"
+import { useStore } from "@/context/context"
 import type { IHighlight } from "./react-pdf-highlighter"
 import { useParams } from "next/navigation"
-import { ChatbotUIContext } from "@/context/context"
 import {
   IconCheck,
   IconPlus,
@@ -38,7 +38,7 @@ export const DocumentSidebar: FC<Props> = ({
   const workspaceid = params.workspaceid as string
 
   const { chatFileHighlights, setChatFiles, chatFiles, setCollections } =
-    useContext(ChatbotUIContext)
+    useStore()
 
   useEffect(() => {
     ;(async function () {

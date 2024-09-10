@@ -1,7 +1,7 @@
 import { SidebarCreateItem } from "@/components/sidebar/items/all/sidebar-create-item"
-import { ChatbotUIContext } from "@/context/context"
 import { TablesInsert } from "@/supabase/types"
-import { FC, useContext, useState } from "react"
+import { FC, useState } from "react"
+import { useStore } from "@/context/context"
 import {
   extractWeight,
   BasicRuleInput
@@ -15,7 +15,7 @@ interface CreateRuleProps {
 }
 
 export const CreateRule: FC<CreateRuleProps> = ({ isOpen, onOpenChange }) => {
-  const { profile } = useContext(ChatbotUIContext)
+  const { profile } = useStore()
   const [name, setName] = useState("")
   const [weight, setWeight] = useState<string>("")
   const [comparison, setComparison] = useState<string>("")

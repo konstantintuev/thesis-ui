@@ -1,7 +1,7 @@
-import { ChatbotUIContext } from "@/context/context"
 import { Tables } from "@/supabase/types"
 import { IconBooks } from "@tabler/icons-react"
-import { FC, useContext, useEffect, useRef } from "react"
+import { FC, useEffect, useRef } from "react"
+import { useStore } from "@/context/context"
 import { FileIcon } from "../ui/file-icon"
 
 interface FilePickerProps {
@@ -25,8 +25,7 @@ export const FilePicker: FC<FilePickerProps> = ({
   onSelectCollection,
   isFocused
 }) => {
-  const { files, collections, setIsFilePickerOpen } =
-    useContext(ChatbotUIContext)
+  const { files, collections, setIsFilePickerOpen } = useStore()
 
   const itemsRef = useRef<(HTMLDivElement | null)[]>([])
 

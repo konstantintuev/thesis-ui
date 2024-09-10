@@ -1,17 +1,16 @@
-import { ChatbotUIContext } from "@/context/context"
 import {
   type UIEventHandler,
   useCallback,
-  useContext,
   useEffect,
   useRef,
   useState
 } from "react"
+import { useStore } from "@/context/context"
 import { useParams } from "next/navigation"
 
 export const useScroll = () => {
-  const { isGenerating, chatMessages, scrollHeight } =
-    useContext(ChatbotUIContext)
+  const { isGenerating, chatMessages, scrollHeight, setScrollHeight } =
+    useStore()
 
   const params = useParams()
 

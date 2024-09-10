@@ -1,7 +1,7 @@
 import { useChatHandler } from "@/components/chat/chat-hooks/use-chat-handler"
-import { ChatbotUIContext } from "@/context/context"
 import { Tables } from "@/supabase/types"
-import { FC, useContext, useState } from "react"
+import { FC } from "react"
+import { useStore } from "@/context/context"
 import { Message } from "../messages/message"
 import {
   IconCircleFilled,
@@ -29,7 +29,7 @@ export const RetrieverMessageFileHeader: FC<
   RetrieverMessageFileHeaderProps
 > = ({ fileName, fileId, duplicateReference }) => {
   const { isGenerating, chatFiles, selectedChat, selectedWorkspace } =
-    useContext(ChatbotUIContext)
+    useStore()
 
   const params = useParams()
 

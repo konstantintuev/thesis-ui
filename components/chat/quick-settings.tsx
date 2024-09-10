@@ -1,4 +1,3 @@
-import { ChatbotUIContext } from "@/context/context"
 import { getAssistantCollectionsByAssistantId } from "@/db/assistant-collections"
 import { getAssistantFilesByAssistantId } from "@/db/assistant-files"
 import { getAssistantToolsByAssistantId } from "@/db/assistant-tools"
@@ -9,7 +8,8 @@ import { Tables } from "@/supabase/types"
 import { LLMID } from "@/types"
 import { IconChevronDown, IconRobotFace } from "@tabler/icons-react"
 import Image from "next/image"
-import { FC, useContext, useEffect, useRef, useState } from "react"
+import { FC, useEffect, useRef, useState } from "react"
+import { useStore } from "@/context/context"
 import { useTranslation } from "react-i18next"
 import { ModelIcon } from "../models/model-icon"
 import { Button } from "../ui/button"
@@ -43,7 +43,7 @@ export const QuickSettings: FC<QuickSettingsProps> = ({}) => {
     setSelectedTools,
     setShowFilesDisplay,
     selectedWorkspace
-  } = useContext(ChatbotUIContext)
+  } = useStore()
 
   const inputRef = useRef<HTMLInputElement>(null)
 

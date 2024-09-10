@@ -1,6 +1,6 @@
-import { FC, useContext } from "react"
+import { FC } from "react"
+import { useStore } from "@/context/context"
 import { Button } from "@/components/ui/button"
-import { ChatbotUIContext } from "@/context/context"
 import { IconFileImport } from "@tabler/icons-react"
 import { WithTooltip } from "@/components/ui/with-tooltip"
 import { useChatHandler } from "@/components/chat/chat-hooks/use-chat-handler"
@@ -22,7 +22,7 @@ export const ChatCollectionConsumerButton: FC<
     availableHostedModels,
     availableLocalModels,
     availableOpenRouterModels
-  } = useContext(ChatbotUIContext)
+  } = useStore()
 
   if (selectedChat?.model !== "file_retriever") {
     return undefined

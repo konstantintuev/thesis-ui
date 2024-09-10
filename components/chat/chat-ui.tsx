@@ -1,6 +1,5 @@
 import Loading from "@/app/[locale]/loading"
 import { useChatHandler } from "@/components/chat/chat-hooks/use-chat-handler"
-import { ChatbotUIContext } from "@/context/context"
 import { getAssistantToolsByAssistantId } from "@/db/assistant-tools"
 import { createChatFilesState, getChatFilesByChatId } from "@/db/chat-files"
 import { getChatById } from "@/db/chats"
@@ -11,7 +10,8 @@ import { convertBlobToBase64 } from "@/lib/blob-to-b64"
 import useHotkey from "@/lib/hooks/use-hotkey"
 import { LLMID, MessageImage } from "@/types"
 import { useParams } from "next/navigation"
-import { FC, useContext, useEffect, useState } from "react"
+import { FC, useEffect, useState } from "react"
+import { useStore } from "@/context/context"
 import { ChatHelp } from "./chat-help"
 import { useScroll } from "./chat-hooks/use-scroll"
 import { ChatInput } from "./chat-input"
@@ -49,7 +49,7 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
     setCollectionCreatorChat,
     setSelectedCollectionCreatorChat,
     chatSettings
-  } = useContext(ChatbotUIContext)
+  } = useStore()
 
   const { handleNewChat, handleFocusChatInput } = useChatHandler()
 

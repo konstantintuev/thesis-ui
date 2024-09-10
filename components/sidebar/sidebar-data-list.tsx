@@ -1,4 +1,3 @@
-import { ChatbotUIContext } from "@/context/context"
 import { updateAssistant } from "@/db/assistants"
 import { updateChat } from "@/db/chats"
 import { updateCollection } from "@/db/collections"
@@ -10,7 +9,8 @@ import { updateTool } from "@/db/tools"
 import { cn } from "@/lib/utils"
 import { Tables } from "@/supabase/types"
 import { ContentType, DataItemType, DataListType } from "@/types"
-import { FC, useContext, useEffect, useRef, useState } from "react"
+import { FC, useEffect, useRef, useState } from "react"
+import { useStore } from "@/context/context"
 import { Separator } from "../ui/separator"
 import { AssistantItem } from "./items/assistants/assistant-item"
 import { ChatItem } from "./items/chat/chat-item"
@@ -48,7 +48,7 @@ export const SidebarDataList: FC<SidebarDataListProps> = ({
     setModels,
     setTeams,
     setRules
-  } = useContext(ChatbotUIContext)
+  } = useStore()
 
   const { t } = useTranslation()
 

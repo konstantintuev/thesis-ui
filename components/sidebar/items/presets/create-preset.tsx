@@ -2,10 +2,10 @@ import { SidebarCreateItem } from "@/components/sidebar/items/all/sidebar-create
 import { ChatSettingsForm } from "@/components/ui/chat-settings-form"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ChatbotUIContext } from "@/context/context"
 import { PRESET_NAME_MAX } from "@/db/limits"
 import { TablesInsert } from "@/supabase/types"
-import { FC, useContext, useState } from "react"
+import { FC, useState } from "react"
+import { useStore } from "@/context/context"
 
 interface CreatePresetProps {
   isOpen: boolean
@@ -16,7 +16,7 @@ export const CreatePreset: FC<CreatePresetProps> = ({
   isOpen,
   onOpenChange
 }) => {
-  const { profile, selectedWorkspace } = useContext(ChatbotUIContext)
+  const { profile, selectedWorkspace } = useStore()
 
   const [name, setName] = useState("")
   const [isTyping, setIsTyping] = useState(false)

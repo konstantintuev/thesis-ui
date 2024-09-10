@@ -1,6 +1,5 @@
 "use client"
 
-import { ChatbotUIContext } from "@/context/context"
 import { CHAT_SETTING_LIMITS } from "@/lib/chat-setting-limits"
 import { ChatSettings, isModelIdFileRetriever, LLMID } from "@/types"
 import {
@@ -8,7 +7,8 @@ import {
   IconInfoCircle,
   IconRepeat
 } from "@tabler/icons-react"
-import { FC, useContext } from "react"
+import { FC } from "react"
+import { useStore } from "@/context/context"
 import { ModelSelect } from "../models/model-select"
 import { AdvancedSettings } from "./advanced-settings"
 import { Checkbox } from "./checkbox"
@@ -48,7 +48,7 @@ export const ChatSettingsForm: FC<ChatSettingsFormProps> = ({
   useAdvancedDropdown = true,
   showTooltip = true
 }) => {
-  const { profile, selectedWorkspace } = useContext(ChatbotUIContext)
+  const { profile, selectedWorkspace } = useStore()
 
   if (!profile) return null
 
@@ -176,7 +176,7 @@ const AdvancedContent: FC<AdvancedContentProps> = ({
   showTooltip
 }) => {
   const { profile, selectedWorkspace, availableOpenRouterModels, models } =
-    useContext(ChatbotUIContext)
+    useStore()
 
   const isCustomModel = models.some(
     model => model.model_id === chatSettings.model

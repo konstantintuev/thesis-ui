@@ -6,7 +6,6 @@ import {
   SheetHeader,
   SheetTitle
 } from "@/components/ui/sheet"
-import { ChatbotUIContext } from "@/context/context"
 import { createAssistantCollections } from "@/db/assistant-collections"
 import { createAssistantFiles } from "@/db/assistant-files"
 import { createAssistantTools } from "@/db/assistant-tools"
@@ -25,7 +24,8 @@ import { createTool } from "@/db/tools"
 import { convertBlobToBase64 } from "@/lib/blob-to-b64"
 import { Tables, TablesInsert } from "@/supabase/types"
 import { ContentType } from "@/types"
-import { FC, ReactNode, useContext, useRef, useState } from "react"
+import { FC, ReactNode, useRef, useState } from "react"
+import { useStore } from "@/context/context"
 import { toast } from "sonner"
 import { useSelectMultipleFilesHandler } from "@/components/chat/chat-hooks/use-select-multiple-files-handler"
 import { addTeam } from "@/lib/team-api-calls"
@@ -65,7 +65,7 @@ export const SidebarCreateItem: FC<SidebarCreateItemProps> = ({
     setModels,
     setTeams,
     setRules
-  } = useContext(ChatbotUIContext)
+  } = useStore()
 
   const { handleSelectDeviceFiles } = useSelectMultipleFilesHandler()
 

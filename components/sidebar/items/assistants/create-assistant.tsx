@@ -3,10 +3,10 @@ import { ChatSettingsForm } from "@/components/ui/chat-settings-form"
 import ImagePicker from "@/components/ui/image-picker"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ChatbotUIContext } from "@/context/context"
 import { ASSISTANT_DESCRIPTION_MAX, ASSISTANT_NAME_MAX } from "@/db/limits"
 import { Tables, TablesInsert } from "@/supabase/types"
-import { FC, useContext, useEffect, useState } from "react"
+import { FC, useEffect, useState } from "react"
+import { useStore } from "@/context/context"
 import { AssistantRetrievalSelect } from "./assistant-retrieval-select"
 import { AssistantToolSelect } from "./assistant-tool-select"
 
@@ -19,7 +19,7 @@ export const CreateAssistant: FC<CreateAssistantProps> = ({
   isOpen,
   onOpenChange
 }) => {
-  const { profile, selectedWorkspace } = useContext(ChatbotUIContext)
+  const { profile, selectedWorkspace } = useStore()
 
   const [name, setName] = useState("")
   const [isTyping, setIsTyping] = useState(false)

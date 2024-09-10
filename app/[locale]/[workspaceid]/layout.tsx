@@ -2,7 +2,6 @@
 
 import "@/lib/i18-helpers"
 import { Dashboard } from "@/components/ui/dashboard"
-import { ChatbotUIContext } from "@/context/context"
 import { getAssistantWorkspacesByWorkspaceId } from "@/db/assistants"
 import { getChatsByWorkspaceId } from "@/db/chats"
 import { getCollectionWorkspacesByWorkspaceId } from "@/db/collections"
@@ -18,7 +17,8 @@ import { convertBlobToBase64 } from "@/lib/blob-to-b64"
 import { supabase } from "@/lib/supabase/browser-client"
 import { LLMID } from "@/types"
 import { useParams, useRouter } from "next/navigation"
-import { ReactNode, useContext, useEffect, useMemo, useState } from "react"
+import { ReactNode, useEffect, useMemo, useRef, useState } from "react"
+import { useStore } from "@/context/context"
 import Loading from "../loading"
 import { Tables } from "@/supabase/types"
 import { getRules } from "@/db/rules"
@@ -60,15 +60,12 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
     setShowFilesDisplay,
     workspaces,
     chatSettings
-  } = useContext(ChatbotUIContext)
+  } = useStore()
 
   const [loading, setLoading] = useState(true)
 
-  const workspaceLoaded = useMemo(() => {
-    return {
-      loadedWorkspaceId: ""
-    }
-  }, [])
+  const workspaceLoaded = useRef<string | null>(null)
+  const workspaceFetching = useRef<string | null>(null)
 
   useEffect(() => {
     ;(async () => {
@@ -103,13 +100,17 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
     workspaceId: string,
     workspaces: Tables<"workspaces">[]
   ) => {
-    if (workspaceLoaded.loadedWorkspaceId === workspaceId) {
-      return
-    }
-    setLoading(true)
     if (!workspaceId || workspaces.length === 0) {
       return
     }
+    if (
+      workspaceLoaded.current === workspaceId ||
+      workspaceFetching.current === workspaceId
+    ) {
+      return
+    }
+    workspaceFetching.current = workspaceId
+    setLoading(true)
 
     const workspace = await getWorkspaceById(workspaceId)
     setSelectedWorkspace(workspace)
@@ -179,7 +180,8 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
     const rules = await getRules()
     setRules(rules)
 
-    if (!chatSettings?.model) {
+    // Really important as async functions are out of state
+    if (!chatSettings?.model && !useStore.getState().chatSettings?.model) {
       setChatSettings({
         model: (workspace?.default_model || "gpt-4-1106-preview") as LLMID,
         prompt:
@@ -197,7 +199,8 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
     }
 
     setLoading(false)
-    workspaceLoaded.loadedWorkspaceId = workspaceId
+    workspaceLoaded.current = workspaceId
+    workspaceFetching.current = null
   }
 
   if (loading) {

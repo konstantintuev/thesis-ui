@@ -1,4 +1,3 @@
-import { ChatbotUIContext } from "@/context/context"
 import { getFileFromStorage } from "@/db/storage/files"
 import useHotkey from "@/lib/hooks/use-hotkey"
 import { cn } from "@/lib/utils"
@@ -16,7 +15,8 @@ import {
   IconX
 } from "@tabler/icons-react"
 import Image from "next/image"
-import { FC, useContext, useState } from "react"
+import { FC, useState } from "react"
+import { useStore } from "@/context/context"
 import { Button } from "../ui/button"
 import { FilePreview } from "../ui/file-preview"
 import { WithTooltip } from "../ui/with-tooltip"
@@ -48,7 +48,7 @@ export const ChatFilesDisplay: FC<ChatFilesDisplayProps> = ({}) => {
     collectionRetrievalActive,
     collectionCreatorChat,
     isGenerating
-  } = useContext(ChatbotUIContext)
+  } = useStore()
 
   const [selectedFile, setSelectedFile] = useState<ChatFile | null>(null)
   const [selectedImage, setSelectedImage] = useState<MessageImage | null>(null)
@@ -287,7 +287,7 @@ export const ChatFilesDisplay: FC<ChatFilesDisplayProps> = ({}) => {
 }
 
 const RetrievalToggle = ({}) => {
-  const { useRetrieval, setUseRetrieval } = useContext(ChatbotUIContext)
+  const { useRetrieval, setUseRetrieval } = useStore()
 
   return (
     <div className="flex items-center">

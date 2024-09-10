@@ -2,11 +2,12 @@ import React, {
   Component,
   FC,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useState
 } from "react"
+
+import { useStore } from "@/context/context"
 
 import {
   AreaHighlight,
@@ -36,7 +37,6 @@ import {
   getHighlights,
   saveHighlights
 } from "@/db/chat-files"
-import { ChatbotUIContext } from "@/context/context"
 import dynamic from "next/dynamic"
 import { getFileFromStorage } from "@/db/storage/files"
 import { getChatById } from "@/db/chats"
@@ -76,8 +76,7 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
   const chatid = params.chatid as string
   const workspaceid = params.workspaceid as string
 
-  const { profile, chatFileHighlights, setChatFileHighlights } =
-    useContext(ChatbotUIContext)
+  const { profile, chatFileHighlights, setChatFileHighlights } = useStore()
 
   const [documentUrl, setDocumentUrl] = useState<string>("")
   const [documentName, setDocumentName] = useState<string>("")

@@ -1,4 +1,3 @@
-import { ChatbotUIContext } from "@/context/context"
 import {
   PROFILE_CONTEXT_MAX,
   PROFILE_DISPLAY_NAME_MAX,
@@ -23,7 +22,8 @@ import {
 } from "@tabler/icons-react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { FC, useCallback, useContext, useRef, useState } from "react"
+import { FC, useCallback, useRef, useState } from "react"
+import { useStore } from "@/context/context"
 import { toast } from "sonner"
 import { SIDEBAR_ICON_SIZE } from "../sidebar/sidebar-switcher"
 import { Button } from "../ui/button"
@@ -53,7 +53,7 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
     setAvailableHostedModels,
     setAvailableOpenRouterModels,
     availableOpenRouterModels
-  } = useContext(ChatbotUIContext)
+  } = useStore()
 
   const router = useRouter()
 

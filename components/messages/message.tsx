@@ -1,5 +1,4 @@
 import { useChatHandler } from "@/components/chat/chat-hooks/use-chat-handler"
-import { ChatbotUIContext } from "@/context/context"
 import { LLM_LIST } from "@/lib/models/llm/llm-list"
 import { cn } from "@/lib/utils"
 import { Tables } from "@/supabase/types"
@@ -14,7 +13,8 @@ import {
   IconPencil
 } from "@tabler/icons-react"
 import Image from "next/image"
-import { FC, useContext, useEffect, useRef, useState } from "react"
+import { FC, useEffect, useRef, useState } from "react"
+import { useStore } from "@/context/context"
 import { ModelIcon } from "../models/model-icon"
 import { Button } from "../ui/button"
 import { FileIcon } from "../ui/file-icon"
@@ -61,7 +61,7 @@ export const Message: FC<MessageProps> = ({
     toolInUse,
     files,
     models
-  } = useContext(ChatbotUIContext)
+  } = useStore()
 
   const { handleSendMessage } = useChatHandler()
 

@@ -1,7 +1,7 @@
-import { ChatbotUIContext } from "@/context/context"
 import { Tables } from "@/supabase/types"
 import { ContentType } from "@/types"
-import { FC, useContext } from "react"
+import { FC } from "react"
+import { useStore } from "@/context/context"
 import { SIDEBAR_WIDTH } from "../ui/dashboard"
 import { TabsContent } from "../ui/tabs"
 import { WorkspaceSwitcher } from "../utility/workspace-switcher"
@@ -26,7 +26,7 @@ export const Sidebar: FC<SidebarProps> = ({ contentType, showSidebar }) => {
     models,
     teams,
     rules
-  } = useContext(ChatbotUIContext)
+  } = useStore()
 
   const chatFolders = folders.filter(folder => folder.type === "chats")
   const presetFolders = folders.filter(folder => folder.type === "presets")

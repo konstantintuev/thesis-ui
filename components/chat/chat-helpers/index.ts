@@ -23,10 +23,9 @@ import {
   LLM,
   MessageImage
 } from "@/types"
-import React, { SetStateAction, useContext } from "react"
+import React, { SetStateAction } from "react"
 import { toast } from "sonner"
 import { v4 as uuidv4 } from "uuid"
-import { ChatbotUIContext } from "@/context/context"
 import {
   createChatCollectionConsumer,
   getCollectionWorkspacesByWorkspaceId

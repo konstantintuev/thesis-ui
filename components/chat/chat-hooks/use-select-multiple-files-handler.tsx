@@ -1,8 +1,8 @@
-import { ChatbotUIContext } from "@/context/context"
 import { createMultipleFiles } from "@/db/files"
 import { LLM_LIST } from "@/lib/models/llm/llm-list"
 import mammoth from "mammoth"
-import { useContext, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
+import { useStore } from "@/context/context"
 import { toast } from "sonner"
 import { TablesInsert } from "@/supabase/types"
 
@@ -25,7 +25,7 @@ export const useSelectMultipleFilesHandler = () => {
     setShowFilesDisplay,
     setFiles,
     setUseRetrieval
-  } = useContext(ChatbotUIContext)
+  } = useStore()
 
   const [filesToAccept, setFilesToAccept] = useState(ACCEPTED_FILE_TYPES)
 

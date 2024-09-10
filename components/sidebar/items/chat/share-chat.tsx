@@ -9,11 +9,11 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ChatbotUIContext } from "@/context/context"
 import { updateChat } from "@/db/chats"
 import { Tables } from "@/supabase/types"
 import { IconEdit, IconShare } from "@tabler/icons-react"
-import { FC, useContext, useEffect, useRef, useState } from "react"
+import { FC, useEffect, useRef, useState } from "react"
+import { useStore } from "@/context/context"
 import {
   TeamAndMe,
   TeamsSelect
@@ -25,7 +25,7 @@ interface ShareChatProps {
 }
 
 export const ShareChat: FC<ShareChatProps> = ({ chat }) => {
-  const { teams } = useContext(ChatbotUIContext)
+  const { teams } = useStore()
 
   const buttonRef = useRef<HTMLButtonElement>(null)
 

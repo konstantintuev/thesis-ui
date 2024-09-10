@@ -1,4 +1,3 @@
-import { ChatbotUIContext } from "@/context/context"
 import { getAssistantCollectionsByAssistantId } from "@/db/assistant-collections"
 import { getAssistantFilesByAssistantId } from "@/db/assistant-files"
 import { getAssistantToolsByAssistantId } from "@/db/assistant-tools"
@@ -9,7 +8,8 @@ import { buildFinalMessages } from "@/lib/build-prompt"
 import { Tables } from "@/supabase/types"
 import { ChatMessage, ChatPayload, LLMID, ModelProvider } from "@/types"
 import { useRouter } from "next/navigation"
-import { useContext, useEffect, useRef } from "react"
+import { useEffect, useRef } from "react"
+import { useStore } from "@/context/context"
 import { LLM_LIST } from "@/lib/models/llm/llm-list"
 import {
   createTempMessages,
@@ -80,7 +80,7 @@ export const useChatHandler = () => {
     setSelectedCollectionCreatorChat,
     setCollectionCreatorChat,
     workspaces
-  } = useContext(ChatbotUIContext)
+  } = useStore()
 
   const chatInputRef = useRef<HTMLTextAreaElement>(null)
 

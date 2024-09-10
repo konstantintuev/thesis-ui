@@ -1,7 +1,7 @@
-import { ChatbotUIContext } from "@/context/context"
 import { LLM, LLMID, ModelProvider } from "@/types"
 import { IconCheck, IconChevronDown } from "@tabler/icons-react"
-import { FC, useContext, useEffect, useRef, useState } from "react"
+import { FC, useEffect, useRef, useState } from "react"
+import { useStore } from "@/context/context"
 import { Button } from "../ui/button"
 import {
   DropdownMenu,
@@ -22,7 +22,7 @@ export const FileProcessingSelect: FC<FileProcessingSelectProps> = ({
   selectedProcessorId,
   onSelectProcessor
 }) => {
-  const { profile, availableFileProcessors } = useContext(ChatbotUIContext)
+  const { profile, availableFileProcessors } = useStore()
 
   const inputRef = useRef<HTMLInputElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)

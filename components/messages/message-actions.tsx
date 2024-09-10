@@ -1,6 +1,6 @@
-import { ChatbotUIContext } from "@/context/context"
 import { IconCheck, IconCopy, IconEdit, IconRepeat } from "@tabler/icons-react"
-import { FC, useContext, useEffect, useState } from "react"
+import { FC, useEffect, useState } from "react"
+import { useStore } from "@/context/context"
 import { WithTooltip } from "../ui/with-tooltip"
 
 export const MESSAGE_ICON_SIZE = 18
@@ -24,7 +24,7 @@ export const MessageActions: FC<MessageActionsProps> = ({
   onEdit,
   onRegenerate
 }) => {
-  const { isGenerating } = useContext(ChatbotUIContext)
+  const { isGenerating } = useStore()
 
   const [showCheckmark, setShowCheckmark] = useState(false)
 

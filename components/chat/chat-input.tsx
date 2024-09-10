@@ -1,4 +1,3 @@
-import { ChatbotUIContext } from "@/context/context"
 import useHotkey from "@/lib/hooks/use-hotkey"
 import { LLM_LIST } from "@/lib/models/llm/llm-list"
 import { cn } from "@/lib/utils"
@@ -10,7 +9,8 @@ import {
   IconX
 } from "@tabler/icons-react"
 import Image from "next/image"
-import { FC, useContext, useEffect, useRef, useState } from "react"
+import { FC, useEffect, useRef, useState } from "react"
+import { useStore } from "@/context/context"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { Input } from "../ui/input"
@@ -60,7 +60,7 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
     assistantImages,
     selectedCollectionCreatorChat,
     setSelectedCollectionCreatorChat
-  } = useContext(ChatbotUIContext)
+  } = useStore()
 
   const {
     chatInputRef,

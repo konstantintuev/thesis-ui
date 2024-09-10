@@ -7,10 +7,9 @@ import { ChatSettings } from "@/components/chat/chat-settings"
 import { ChatUI } from "@/components/chat/chat-ui"
 import { QuickSettings } from "@/components/chat/quick-settings"
 import { Brand } from "@/components/ui/brand"
-import { ChatbotUIContext } from "@/context/context"
 import useHotkey from "@/lib/hooks/use-hotkey"
 import { useTheme } from "next-themes"
-import { useContext } from "react"
+import { useStore } from "@/context/context"
 
 export default function ChatPage() {
   useHotkey("o", () => handleNewChat())
@@ -18,7 +17,7 @@ export default function ChatPage() {
     handleFocusChatInput()
   })
 
-  const { chatMessages } = useContext(ChatbotUIContext)
+  const { chatMessages } = useStore()
 
   const { handleNewChat, handleFocusChatInput } = useChatHandler()
 
