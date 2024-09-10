@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase/browser-client"
-import { Tables, TablesInsert, TablesUpdate } from "@/supabase/types"
+import { Database, Tables, TablesInsert, TablesUpdate } from "@/supabase/types"
 
 export const getRules = async () => {
   const { data: rules, error } = await supabase
@@ -63,4 +63,15 @@ export const deleteRule = async (ruleId: string) => {
   }
 
   return true
+}
+
+export const rankFiles = async (
+  args: Database["public"]["Functions"]["rank_files"]["Args"]
+) => {
+  const response = await supabase.rpc("rank_files", args)
+
+  if (response.error) {
+    return []
+  }
+  return response.data
 }

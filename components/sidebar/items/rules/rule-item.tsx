@@ -1,6 +1,6 @@
 import { Tables, TablesUpdate } from "@/supabase/types"
 import { IconFilterCheck, IconFilterStar } from "@tabler/icons-react"
-import { FC, useState } from "react"
+import { FC, useEffect, useState } from "react"
 import { SidebarItem } from "../all/sidebar-display-item"
 import {
   extractWeight,

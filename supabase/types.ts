@@ -1996,6 +1996,7 @@ export type Database = {
       rank_files: {
         Args: {
           file_ids?: string[]
+          rule_ids?: string[]
         }
         Returns: {
           id: string

@@ -6,13 +6,15 @@ import { Button } from "@/components/ui/button"
 import { text2Query } from "@/lib/rule-processing"
 import { toast } from "sonner"
 import { IconChevronRight } from "@tabler/icons-react"
-import { FC } from "react"
+import { FC, useState } from "react"
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger
 } from "@/components/ui/collapsible"
 import { getBasicRuleInstructions } from "@/components/sidebar/items/rules/rule-instructions"
+import { createRule, deleteRule, rankFiles } from "@/db/rules"
+import { TablesInsert } from "@/supabase/types"
 
 export function extractWeight(input: string): number {
   if (input === "") {
@@ -24,13 +26,11 @@ export function extractWeight(input: string): number {
   return parseFloat(input)
 }
 
+const jsonLikeRegex = /^[\{\[\s]*(".*?"\s*:\s*.*?\s*,?\s*)*[\}\]\s]*$/s
 function isJson(it: string) {
-  try {
-    JSON.parse(it)
-  } catch (e) {
-    return false
-  }
-  return true
+  if (it.length === 0) return true
+
+  return jsonLikeRegex.test(it)
 }
 
 export const RuleInput: FC<{
@@ -56,6 +56,8 @@ export const RuleInput: FC<{
 }): JSX.Element => {
   let comparisonIsJson = isJson(comparison)
 
+  const [ruleTestResults, setRuleTestResults] = useState<string | undefined>()
+
   return (
     <div>
       <Collapsible
@@ -80,16 +82,18 @@ export const RuleInput: FC<{
 
         {useExpandedSheet && <hr className="mb-4 border-t-2 border-gray-200" />}
 
-        <div className="flex flex-wrap">
-          <CollapsibleContent className="h-[calc(100vh-18rem)] flex-1 overflow-y-auto">
+        <div
+          className={`grid size-full ${useExpandedSheet ? "grid-cols-[2fr_auto_1fr]" : "grid-cols-1"}`}
+        >
+          <CollapsibleContent className="overflow-y-scroll p-4">
             {getBasicRuleInstructions()}
           </CollapsibleContent>
 
           {useExpandedSheet && (
-            <div className="mx-6 hidden border-l border-gray-300 lg:block"></div>
+            <div className="mx-6 block border-l border-gray-300"></div>
           )}
 
-          <div className="flex w-[400px] flex-col gap-2">
+          <div className={`flex flex-col gap-2 overflow-y-scroll p-4`}>
             <div className="space-y-1">
               <Label>Name</Label>
 
@@ -167,6 +171,48 @@ export const RuleInput: FC<{
                 >
                   Generate Rule JSON from Plain Text
                 </Button>
+              </div>
+            )}
+
+            <div className="my-1">
+              <Button
+                onClick={async () => {
+                  try {
+                    let ruleInserted = await createRule({
+                      name: `${new Date().toLocaleString()}: Test ${name}`,
+                      comparison,
+                      weight: extractWeight(weight) / 100
+                    } as TablesInsert<"rules">)
+                    let res = await rankFiles({
+                      rule_ids: [ruleInserted.id]
+                    })
+                    await deleteRule(ruleInserted.id)
+                    let resForHumans = res.map(ruleRes => ({
+                      rule_application_result: ruleRes.comparison_results,
+                      file_name: ruleRes.name,
+                      total_score: ruleRes.total_score,
+                      file_metadata: ruleRes.metadata
+                    }))
+                    setRuleTestResults(JSON.stringify(resForHumans, null, 2))
+                  } catch (e) {
+                    // @ts-ignore
+                    toast.error(e?.message ?? "Unknown error")
+                    // @ts-ignore
+                    setRuleTestResults(e?.message ?? "Unknown error")
+                  }
+                }}
+              >
+                Test Rule with Accessible Files
+              </Button>
+            </div>
+
+            {ruleTestResults && (
+              <div className="my-1 grid grid-cols-1 space-y-1">
+                <Label>{`Rule Test Results:`}</Label>
+
+                <pre className="whitespace-pre-wrap break-words rounded bg-gray-100 p-4 text-sm text-gray-800">
+                  {ruleTestResults}
+                </pre>
               </div>
             )}
           </div>

@@ -104,7 +104,7 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION rank_files(file_ids UUID[] DEFAULT NULL)
+CREATE OR REPLACE FUNCTION rank_files(file_ids UUID[] DEFAULT NULL, rule_ids UUID[] DEFAULT NULL)
     RETURNS TABLE
             (
                 id                 UUID,
@@ -135,7 +135,12 @@ DECLARE
 
 BEGIN
     -- Loop through each comparison batch and build the scoring logic dynamically
-    FOR comp IN SELECT * FROM rules WHERE rules.type = 'basic'
+    FOR comp IN SELECT * FROM rules WHERE rules.type = 'basic' AND
+        -- If rule_ids is not NULL, check if the rule id is in the array
+        ((rule_ids IS NOT NULL AND rules.id = ANY(rule_ids))
+        -- ...otherwise match any
+            OR rule_ids IS NULL
+        )
         LOOP
             -- Initialize the condition SQL for this batch
             condition_sql := '';
@@ -275,6 +280,12 @@ BEGIN
     RETURN QUERY EXECUTE dynamic_sql USING file_ids;
 END
 $$ LANGUAGE plpgsql;
+
+
+
+
+
+
 
 CREATE OR REPLACE FUNCTION flatten_json(json_data JSONB, parent_path TEXT DEFAULT '')
     RETURNS JSONB AS
