@@ -14,7 +14,7 @@ export const getRules = async () => {
 }
 
 export const createRule = async (rule: TablesInsert<"rules">) => {
-  if (typeof rule.comparison === "string") {
+  if (typeof rule.comparison === "string" && rule.type === "basic") {
     rule.comparison = JSON.parse(rule.comparison)
   }
   const { data: createdRule, error } = await supabase
@@ -33,7 +33,7 @@ export const updateRule = async (
   ruleId: string,
   rule: TablesUpdate<"rules">
 ) => {
-  if (typeof rule.comparison === "string") {
+  if (typeof rule.comparison === "string" && rule.type === "basic") {
     rule.comparison = JSON.parse(rule.comparison)
   }
 

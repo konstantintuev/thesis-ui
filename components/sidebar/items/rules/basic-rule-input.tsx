@@ -5,7 +5,7 @@ import { TextareaAutosize } from "@/components/ui/textarea-autosize"
 import { Button } from "@/components/ui/button"
 import { text2Query } from "@/lib/rule-processing"
 import { toast } from "sonner"
-import { IconChevronRight } from "@tabler/icons-react"
+import { IconChevronRight, IconRepeat } from "@tabler/icons-react"
 import { FC, useState } from "react"
 import {
   Collapsible,
@@ -15,6 +15,7 @@ import {
 import { getBasicRuleInstructions } from "@/components/sidebar/items/rules/rule-instructions"
 import { createRule, deleteRule, rankFiles } from "@/db/rules"
 import { TablesInsert } from "@/supabase/types"
+import { RuleType } from "@/types/rules"
 
 export function extractWeight(input: string): number {
   if (input === "") {
@@ -33,7 +34,7 @@ function isJson(it: string) {
   return jsonLikeRegex.test(it)
 }
 
-export const RuleInput: FC<{
+export const BasicRuleInput: FC<{
   useExpandedSheet: boolean
   setUseExpandedSheet: React.Dispatch<React.SetStateAction<boolean>>
   name: string
@@ -43,6 +44,10 @@ export const RuleInput: FC<{
   setWeight: React.Dispatch<React.SetStateAction<string>>
   comparison: string
   setComparison: React.Dispatch<React.SetStateAction<string>>
+  ruleTestResults?: string
+  setRuleTestResults: React.Dispatch<React.SetStateAction<string | undefined>>
+  ruleType: RuleType
+  setRuleType?: React.Dispatch<React.SetStateAction<RuleType>>
 }> = ({
   useExpandedSheet,
   setUseExpandedSheet,
@@ -52,11 +57,13 @@ export const RuleInput: FC<{
   weight,
   setWeight,
   comparison,
-  setComparison
+  setComparison,
+  ruleTestResults,
+  setRuleTestResults,
+  ruleType,
+  setRuleType
 }): JSX.Element => {
   let comparisonIsJson = isJson(comparison)
-
-  const [ruleTestResults, setRuleTestResults] = useState<string | undefined>()
 
   return (
     <div>
@@ -74,7 +81,7 @@ export const RuleInput: FC<{
                   : "mr-1"
               }
             >
-              Instructions for Writing Rules for Ranking Files
+              Instructions for Writing Metadata-Rules for Ranking Files
             </div>
             {!useExpandedSheet && <IconChevronRight size={20} stroke={3} />}
           </div>
@@ -85,15 +92,32 @@ export const RuleInput: FC<{
         <div
           className={`grid size-full ${useExpandedSheet ? "grid-cols-[2fr_auto_1fr]" : "grid-cols-1"}`}
         >
-          <CollapsibleContent className="overflow-y-scroll p-4">
-            {getBasicRuleInstructions()}
-          </CollapsibleContent>
+          <CollapsibleContent>{getBasicRuleInstructions()}</CollapsibleContent>
 
           {useExpandedSheet && (
             <div className="mx-6 block border-l border-gray-300"></div>
           )}
 
-          <div className={`flex flex-col gap-2 overflow-y-scroll p-4`}>
+          <div className={`flex flex-col gap-2`}>
+            {setRuleType && (
+              <div className="space-y-1.5">
+                <Label>Switch to Question-based Rules</Label>
+
+                <Button
+                  className="flex items-center space-x-2"
+                  variant="secondary"
+                >
+                  <IconRepeat
+                    size={26}
+                    onClick={() => {
+                      setRuleType("advanced")
+                      setUseExpandedSheet(false)
+                    }}
+                  />
+                </Button>
+              </div>
+            )}
+
             <div className="space-y-1">
               <Label>Name</Label>
 
