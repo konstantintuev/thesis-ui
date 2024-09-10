@@ -15,6 +15,20 @@ export const getProfileByUserId = async (userId: string) => {
   return profile
 }
 
+export const getPublicProfileByUserId = async (userId: string) => {
+  const { data: profile, error } = await supabase
+    .from("profiles_public_view")
+    .select("*")
+    .eq("user_id", userId)
+    .single()
+
+  if (!profile) {
+    throw new Error(error.message)
+  }
+
+  return profile
+}
+
 export const getProfilesByUserId = async (userId: string) => {
   const { data: profiles, error } = await supabase
     .from("profiles")

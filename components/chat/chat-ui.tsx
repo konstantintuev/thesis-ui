@@ -22,6 +22,7 @@ import {
   getChatCollectionConsumer,
   getChatCollectionCreatorByCollection
 } from "@/db/collections"
+import { getPublicProfileByUserId } from "@/db/profile"
 
 interface ChatUIProps {}
 
@@ -46,7 +47,8 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
     setSelectedTools,
     setCollectionRetrievalActive,
     setCollectionCreatorChat,
-    setSelectedCollectionCreatorChat
+    setSelectedCollectionCreatorChat,
+    chatSettings
   } = useContext(ChatbotUIContext)
 
   const { handleNewChat, handleFocusChatInput } = useChatHandler()
@@ -74,6 +76,8 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
 
   useEffect(() => {
     if (noNeedToUpdateData) {
+      chatMessages
+      chatSettings
       return
     }
 
@@ -93,7 +97,7 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
     } else {
       setLoading(false)
     }
-  }, [])
+  }, [chatSettings])
 
   const fetchMessages = async () => {
     const fetchedMessages = await getMessagesByChatId(chatID as string)
@@ -147,16 +151,20 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
 
     setShowFilesDisplay(true)
 
-    const fetchedChatMessages = fetchedMessages.map(message => {
-      return {
-        message,
-        fileItems: messageFileItems
-          .filter(messageFileItem => messageFileItem.id === message.id)
-          .flatMap(messageFileItem =>
-            messageFileItem.file_items.map(fileItem => fileItem.id)
-          )
-      }
-    })
+    const fetchedChatMessages = await Promise.all(
+      fetchedMessages.map(async message => {
+        const profile = await getPublicProfileByUserId(message.user_id)
+        return {
+          message,
+          profile: profile,
+          fileItems: messageFileItems
+            .filter(messageFileItem => messageFileItem.id === message.id)
+            .flatMap(messageFileItem =>
+              messageFileItem.file_items.map(fileItem => fileItem.id)
+            )
+        }
+      })
+    )
 
     setChatMessages(fetchedChatMessages)
   }

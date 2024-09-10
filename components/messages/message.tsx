@@ -34,6 +34,7 @@ interface MessageProps {
   onStartEdit: (message: Tables<"messages">) => void
   onCancelEdit: () => void
   onSubmitEdit: (value: string, sequenceNumber: number) => void
+  profile: Tables<"profiles_public_view">
 }
 
 export const Message: FC<MessageProps> = ({
@@ -43,11 +44,11 @@ export const Message: FC<MessageProps> = ({
   isLast,
   onStartEdit,
   onCancelEdit,
-  onSubmitEdit
+  onSubmitEdit,
+  profile
 }) => {
   const {
     assistants,
-    profile,
     isGenerating,
     setIsGenerating,
     firstTokenReceived,

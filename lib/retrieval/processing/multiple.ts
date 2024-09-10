@@ -191,7 +191,9 @@ export const searchFilesMLServer = async (
       method: "POST",
       body: JSON.stringify({
         query: query,
-        unique_file_ids: Array.from(uniqueChunkIds),
+        unique_file_ids: uniqueChunkIds
+          ? Array.from(uniqueChunkIds)
+          : undefined,
         source_count: sourceCount
       })
     }

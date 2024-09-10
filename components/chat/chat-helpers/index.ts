@@ -97,7 +97,8 @@ export const createTempMessages = (
   b64Images: string[],
   isRegeneration: boolean,
   setChatMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>,
-  selectedAssistant: Tables<"assistants"> | null
+  selectedAssistant: Tables<"assistants"> | null,
+  profile: Tables<"profiles">
 ) => {
   let tempUserChatMessage: ChatMessage = {
     message: {
@@ -113,7 +114,8 @@ export const createTempMessages = (
       updated_at: "",
       user_id: ""
     },
-    fileItems: []
+    fileItems: [],
+    profile
   }
 
   let tempAssistantChatMessage: ChatMessage = {
@@ -130,7 +132,8 @@ export const createTempMessages = (
       updated_at: "",
       user_id: ""
     },
-    fileItems: []
+    fileItems: [],
+    profile
   }
 
   let newMessages = []
@@ -356,6 +359,7 @@ export const processResponse = async (
                   ...chatMessage.message,
                   content: fullText
                 },
+                profile: chatMessage.profile,
                 fileItems: chatMessage.fileItems
               }
 
@@ -523,11 +527,13 @@ export const handleCreateMessages = async (
       ...chatMessages,
       {
         message: updatedMessage,
-        fileItems: []
+        fileItems: [],
+        profile
       },
       {
         message: createdMessages[1],
-        fileItems: retrievedFileItems.map(fileItem => fileItem.id)
+        fileItems: retrievedFileItems.map(fileItem => fileItem.id),
+        profile
       }
     ]
 

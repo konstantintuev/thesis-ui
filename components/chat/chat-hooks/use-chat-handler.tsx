@@ -216,6 +216,11 @@ export const useChatHandler = () => {
     chatMessages: ChatMessage[],
     isRegeneration: boolean
   ) => {
+    if (selectedChat?.model && chatSettings?.model != selectedChat?.model) {
+      throw {
+        message: "Model mismatch!"
+      }
+    }
     const startingInput = messageContent
     let needToRemoveTempChatMsges = 0
 
@@ -263,7 +268,8 @@ export const useChatHandler = () => {
           b64Images,
           isRegeneration,
           setChatMessages,
-          selectedAssistant
+          selectedAssistant,
+          profile!
         )
       if (!isRegeneration) {
         needToRemoveTempChatMsges = 2
@@ -325,8 +331,8 @@ export const useChatHandler = () => {
        *     AND want to use retrieval
        */
       if (
-        (// There are files to retrieve
-        ((newMessageFiles.length > 0 ||
+        // There are files to retrieve
+        (((newMessageFiles.length > 0 ||
           chatFiles.length > 0 ||
           collectionRetrievalActive) &&
           //... and we want to retrieve them
@@ -484,21 +490,39 @@ export const useChatHandler = () => {
     editedContent: string,
     sequenceNumber: number
   ) => {
-    if (!selectedChat) return
+    try {
+      if (!selectedChat) return
+      const toDelete = chatMessages.filter(
+        chatMessage => chatMessage.message.sequence_number >= sequenceNumber
+      )
 
-    await deleteMessagesIncludingAndAfter(
-      selectedChat.user_id,
-      selectedChat.id,
-      sequenceNumber
-    )
+      if (
+        !profile?.user_id ||
+        toDelete.some(
+          msgToDelete => msgToDelete.message.user_id !== profile?.user_id
+        )
+      ) {
+        throw {
+          message: "Unauthorised"
+        }
+      }
 
-    const filteredMessages = chatMessages.filter(
-      chatMessage => chatMessage.message.sequence_number < sequenceNumber
-    )
+      await deleteMessagesIncludingAndAfter(
+        profile?.user_id,
+        selectedChat.id,
+        sequenceNumber
+      )
 
-    setChatMessages(filteredMessages)
+      const filteredMessages = chatMessages.filter(
+        chatMessage => chatMessage.message.sequence_number < sequenceNumber
+      )
 
-    handleSendMessage(editedContent, filteredMessages, false)
+      setChatMessages(filteredMessages)
+
+      handleSendMessage(editedContent, filteredMessages, false)
+    } catch (e) {
+      toast.error((e as any)?.message ?? "Can't edit this message!")
+    }
   }
 
   return {

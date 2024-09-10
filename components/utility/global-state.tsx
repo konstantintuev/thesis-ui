@@ -89,15 +89,16 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
   // PASSIVE CHAT STORE
   const [userInput, setUserInput] = useState<string>("")
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
-  const [chatSettings, setChatSettings] = useState<ChatSettings>({
-    model: "file_retriever",
-    prompt: "You are a helpful AI assistant.",
-    temperature: 0.5,
-    contextLength: 4000,
-    includeProfileContext: true,
-    includeWorkspaceInstructions: true,
-    embeddingsProvider: "local"
-  })
+  const chatSettingsSetters = useState<ChatSettings | null>(null)
+  const chatSettings: ChatSettings = chatSettingsSetters[0]!
+  const setChatSettings: React.Dispatch<
+    React.SetStateAction<ChatSettings>
+  > = what => {
+    let itBe = chatSettings
+    let it = chatMessages
+    //TODO: WHY IS THIS FUCKING RESETTING
+    chatSettingsSetters[1](what as any)
+  }
   const [selectedChat, setSelectedChat] = useState<Tables<"chats"> | null>(null)
   const [chatFileItems, setChatFileItems] = useState<Tables<"file_items">[]>([])
   const [chatFileHighlights, setChatFileHighlights] = useState<

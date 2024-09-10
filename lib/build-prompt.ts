@@ -1,5 +1,5 @@
 import { Tables } from "@/supabase/types"
-import { ChatPayload, MessageImage } from "@/types"
+import { ChatPayload, isModelIdFileRetriever, MessageImage } from "@/types"
 import { encode } from "gpt-tokenizer"
 
 const buildBasePrompt = (
@@ -86,6 +86,7 @@ export async function buildFinalMessages(
             content:
               `${chatMessage.message.content}\n\n${retrievalText}` as string
           },
+          profile: chatMessage.profile,
           fileItems: []
         }
       }
@@ -96,16 +97,20 @@ export async function buildFinalMessages(
 
   let finalMessages = []
 
-  for (let i = processedChatMessages.length - 1; i >= 0; i--) {
-    const message = processedChatMessages[i].message
-    const messageTokens = encode(message.content).length
+  if (isModelIdFileRetriever(chatSettings.model)) {
+    finalMessages = processedChatMessages.map(msg => msg.message)
+  } else {
+    for (let i = processedChatMessages.length - 1; i >= 0; i--) {
+      const message = processedChatMessages[i].message
+      const messageTokens = encode(message.content).length
 
-    if (messageTokens <= remainingTokens) {
-      remainingTokens -= messageTokens
-      usedTokens += messageTokens
-      finalMessages.unshift(message)
-    } else {
-      break
+      if (messageTokens <= remainingTokens) {
+        remainingTokens -= messageTokens
+        usedTokens += messageTokens
+        finalMessages.unshift(message)
+      } else {
+        break
+      }
     }
   }
 
@@ -165,7 +170,10 @@ export async function buildFinalMessages(
     }
   })
 
-  if (messageFileItems.length > 0) {
+  if (
+    !isModelIdFileRetriever(chatSettings.model) &&
+    messageFileItems.length > 0
+  ) {
     const retrievalText = buildRetrievalText(messageFileItems)
 
     finalMessages[finalMessages.length - 1] = {

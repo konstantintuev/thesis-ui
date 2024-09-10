@@ -18,7 +18,7 @@ import { convertBlobToBase64 } from "@/lib/blob-to-b64"
 import { supabase } from "@/lib/supabase/browser-client"
 import { LLMID } from "@/types"
 import { useParams, useRouter } from "next/navigation"
-import { ReactNode, useContext, useEffect, useState } from "react"
+import { ReactNode, useContext, useEffect, useMemo, useState } from "react"
 import Loading from "../loading"
 import { Tables } from "@/supabase/types"
 import { getRules } from "@/db/rules"
@@ -58,10 +58,17 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
     setNewMessageFiles,
     setNewMessageImages,
     setShowFilesDisplay,
-    workspaces
+    workspaces,
+    chatSettings
   } = useContext(ChatbotUIContext)
 
   const [loading, setLoading] = useState(true)
+
+  const workspaceLoaded = useMemo(() => {
+    return {
+      loadedWorkspaceId: ""
+    }
+  }, [])
 
   useEffect(() => {
     ;(async () => {
@@ -75,7 +82,9 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
 
   useEffect(() => {
     ;(async () => await fetchWorkspaceData(workspaceId, workspaces))()
+  }, [workspaceId, workspaces])
 
+  useEffect(() => {
     setUserInput("")
     setChatMessages([])
     setSelectedChat(null)
@@ -88,12 +97,15 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
     setNewMessageFiles([])
     setNewMessageImages([])
     setShowFilesDisplay(false)
-  }, [workspaceId, workspaces])
+  }, [workspaceId])
 
   const fetchWorkspaceData = async (
     workspaceId: string,
     workspaces: Tables<"workspaces">[]
   ) => {
+    if (workspaceLoaded.loadedWorkspaceId === workspaceId) {
+      return
+    }
     setLoading(true)
     if (!workspaceId || workspaces.length === 0) {
       return
@@ -167,22 +179,25 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
     const rules = await getRules()
     setRules(rules)
 
-    setChatSettings({
-      model: (workspace?.default_model || "gpt-4-1106-preview") as LLMID,
-      prompt:
-        workspace?.default_prompt ||
-        "You are a friendly, helpful AI assistant.",
-      temperature: workspace?.default_temperature || 0.5,
-      contextLength: workspace?.default_context_length || 4096,
-      includeProfileContext: workspace?.include_profile_context || true,
-      includeWorkspaceInstructions:
-        workspace?.include_workspace_instructions || true,
-      embeddingsProvider:
-        (workspace?.embeddings_provider as "openai" | "local" | "colbert") ||
-        "openai"
-    })
+    if (!chatSettings?.model) {
+      setChatSettings({
+        model: (workspace?.default_model || "gpt-4-1106-preview") as LLMID,
+        prompt:
+          workspace?.default_prompt ||
+          "You are a friendly, helpful AI assistant.",
+        temperature: workspace?.default_temperature || 0.5,
+        contextLength: workspace?.default_context_length || 4096,
+        includeProfileContext: workspace?.include_profile_context || true,
+        includeWorkspaceInstructions:
+          workspace?.include_workspace_instructions || true,
+        embeddingsProvider:
+          (workspace?.embeddings_provider as "openai" | "local" | "colbert") ||
+          "openai"
+      })
+    }
 
     setLoading(false)
+    workspaceLoaded.loadedWorkspaceId = workspaceId
   }
 
   if (loading) {

@@ -1783,7 +1783,35 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      profiles_public_view: {
+        Row: {
+          display_name: string | null
+          image_url: string | null
+          user_id: string | null
+          username: string | null
+        }
+        Insert: {
+          display_name?: string | null
+          image_url?: string | null
+          user_id?: string | null
+          username?: string | null
+        }
+        Update: {
+          display_name?: string | null
+          image_url?: string | null
+          user_id?: string | null
+          username?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       aggregate_json_metadata_keys: {
