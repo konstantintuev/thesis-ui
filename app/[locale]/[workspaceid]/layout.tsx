@@ -59,7 +59,8 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
     setNewMessageImages,
     setShowFilesDisplay,
     workspaces,
-    chatSettings
+    chatSettings,
+    rules
   } = useStore()
 
   const [loading, setLoading] = useState(true)
@@ -102,6 +103,10 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
   ) => {
     if (!workspaceId || workspaces.length === 0) {
       return
+    }
+    // We have lost state - rules is usually > 0
+    if (rules.length === 0) {
+      workspaceLoaded.current = null
     }
     if (
       workspaceLoaded.current === workspaceId ||
@@ -153,32 +158,33 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
     }
 
     const chats = await getChatsByWorkspaceId(workspaceId, workspaces)
-    setChats(chats)
 
     const collectionData =
       await getCollectionWorkspacesByWorkspaceId(workspaceId)
-    setCollections(collectionData.collections)
 
     const folders = await getFoldersByWorkspaceId(workspaceId, workspaces)
-    setFolders(folders)
 
     const fileData = await getFileWorkspacesByWorkspaceId(workspaceId)
-    setFiles(fileData.files)
 
     const presetData = await getPresetWorkspacesByWorkspaceId(workspaceId)
-    setPresets(presetData.presets)
 
     const promptData = await getPromptWorkspacesByWorkspaceId(workspaceId)
-    setPrompts(promptData.prompts)
 
     const toolData = await getToolWorkspacesByWorkspaceId(workspaceId)
-    setTools(toolData.tools)
 
     const modelData = await getModelWorkspacesByWorkspaceId(workspaceId)
-    setModels(modelData.models)
 
-    const rules = await getRules()
-    setRules(rules)
+    const rulesLocal = await getRules()
+
+    setChats(chats)
+    setCollections(collectionData.collections)
+    setFolders(folders)
+    setFiles(fileData.files)
+    setPresets(presetData.presets)
+    setPrompts(promptData.prompts)
+    setTools(toolData.tools)
+    setModels(modelData.models)
+    setRules(rulesLocal)
 
     // Really important as async functions are out of state
     if (!chatSettings?.model && !useStore.getState().chatSettings?.model) {

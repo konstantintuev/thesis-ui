@@ -36,7 +36,8 @@ export const GlobalStateInit: FC<GlobalStateProps> = ({ children }) => {
     setProfile,
     setWorkspaces,
     setTeams,
-    setWorkspaceImages
+    setWorkspaceImages,
+    profile
   } = useStore()
 
   const startDataLoaded = useRef<boolean>(false)
@@ -44,21 +45,25 @@ export const GlobalStateInit: FC<GlobalStateProps> = ({ children }) => {
 
   useEffect(() => {
     ;(async () => {
+      // Profile usually is defined -> we might have lost state
+      if (!profile) {
+        startDataLoaded.current = false
+      }
       if (startDataLoaded.current || startDataFetching.current) {
         return
       }
       startDataFetching.current = true
-      const profile = await fetchStartingData()
+      const profileLocal = await fetchStartingData()
 
-      if (profile) {
-        const hostedModelRes = await fetchHostedModels(profile)
+      if (profileLocal) {
+        const hostedModelRes = await fetchHostedModels(profileLocal)
         if (!hostedModelRes) return
 
         setEnvKeyMap(hostedModelRes.envKeyMap)
         setAvailableHostedModels(hostedModelRes.hostedModels)
 
         if (
-          profile["openrouter_api_key"] ||
+          profileLocal["openrouter_api_key"] ||
           hostedModelRes.envKeyMap["openrouter"]
         ) {
           const openRouterModels = await fetchOpenRouterModels()

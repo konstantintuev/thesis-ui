@@ -110,6 +110,7 @@ export const useChatHandler = () => {
     setIsFilePickerOpen(false)
     setCollectionRetrievalActive(false)
     setCollectionCreatorChat(null)
+    setSelectedCollectionCreatorChat(null)
 
     setSelectedTools([])
     setToolInUse("none")

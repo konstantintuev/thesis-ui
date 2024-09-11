@@ -166,52 +166,50 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
     let messageFileItems: any[] = []
     let filesDisplay = false
 
-    if (isModelIdFileRetriever(chatSettings?.model)) {
-      const imagePromises: Promise<MessageImage>[] = fetchedMessages.flatMap(
-        message =>
-          message.image_paths
-            ? message.image_paths.map(async imagePath => {
-                const url = await getMessageImageFromStorage(imagePath)
+    const imagePromises: Promise<MessageImage>[] = fetchedMessages.flatMap(
+      message =>
+        message.image_paths
+          ? message.image_paths.map(async imagePath => {
+              const url = await getMessageImageFromStorage(imagePath)
 
-                if (url) {
-                  const response = await fetch(url)
-                  const blob = await response.blob()
-                  const base64 = await convertBlobToBase64(blob)
-
-                  return {
-                    messageId: message.id,
-                    path: imagePath,
-                    base64,
-                    url,
-                    file: null
-                  }
-                }
+              if (url) {
+                const response = await fetch(url)
+                const blob = await response.blob()
+                const base64 = await convertBlobToBase64(blob)
 
                 return {
                   messageId: message.id,
                   path: imagePath,
-                  base64: "",
+                  base64,
                   url,
                   file: null
                 }
-              })
-            : []
-      )
+              }
 
-      images = await Promise.all(imagePromises.flat())
+              return {
+                messageId: message.id,
+                path: imagePath,
+                base64: "",
+                url,
+                file: null
+              }
+            })
+          : []
+    )
 
-      const messageFileItemPromises = fetchedMessages.map(
-        async message => await getMessageFileItemsByMessageId(message.id)
-      )
+    images = await Promise.all(imagePromises.flat())
 
-      messageFileItems = await Promise.all(messageFileItemPromises)
+    const messageFileItemPromises = fetchedMessages.map(
+      async message => await getMessageFileItemsByMessageId(message.id)
+    )
 
-      uniqueFileItems = messageFileItems.flatMap(item => item.file_items)
+    messageFileItems = await Promise.all(messageFileItemPromises)
 
-      chatFiles = await getChatFilesByChatId(chatID as string)
+    uniqueFileItems = messageFileItems.flatMap(item => item.file_items)
 
-      filesDisplay = true
-    }
+    chatFiles = await getChatFilesByChatId(chatID as string)
+
+    filesDisplay = isModelIdFileRetriever(chatSettings?.model)
 
     const fetchedChatMessages = await Promise.all(
       fetchedMessages.map(async message => {
