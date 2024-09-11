@@ -24,11 +24,12 @@ export const RuleItem: FC<PromptItemProps> = ({ rule }) => {
       : (rule.comparison as string)
   )
   const [isTyping, setIsTyping] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const [ruleTestResults, setRuleTestResults] = useState<string | undefined>()
   return (
     <SidebarItem
       item={rule}
-      isTyping={isTyping}
+      isTyping={isTyping || isLoading}
       contentType="rules"
       icon={
         rule.type === "basic" ? (
@@ -58,7 +59,9 @@ export const RuleItem: FC<PromptItemProps> = ({ rule }) => {
               setUseExpandedSheet: renderState.setUseExpandedSheet,
               ruleType: rule.type as RuleType,
               ruleTestResults,
-              setRuleTestResults
+              setRuleTestResults,
+              isLoading,
+              setIsLoading
             })
           : AdvancedRuleInput({
               name,
@@ -70,7 +73,9 @@ export const RuleItem: FC<PromptItemProps> = ({ rule }) => {
               setComparison,
               useExpandedSheet: renderState.useExpandedSheet,
               setUseExpandedSheet: renderState.setUseExpandedSheet,
-              ruleType: rule.type as RuleType
+              ruleType: rule.type as RuleType,
+              isLoading,
+              setIsLoading
             })
       }
     />

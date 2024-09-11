@@ -21,6 +21,7 @@ export const CreateRule: FC<CreateRuleProps> = ({ isOpen, onOpenChange }) => {
   const [comparison, setComparison] = useState<string>("")
   const [ruleType, setRuleType] = useState<RuleType>("basic")
   const [isTyping, setIsTyping] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const [ruleTestResults, setRuleTestResults] = useState<string | undefined>()
 
   if (!profile) return null
@@ -29,7 +30,7 @@ export const CreateRule: FC<CreateRuleProps> = ({ isOpen, onOpenChange }) => {
     <SidebarCreateItem
       contentType="rules"
       isOpen={isOpen}
-      isTyping={isTyping}
+      isTyping={isTyping || isLoading}
       onOpenChange={onOpenChange}
       createState={
         {
@@ -55,7 +56,9 @@ export const CreateRule: FC<CreateRuleProps> = ({ isOpen, onOpenChange }) => {
               ruleType,
               setRuleType,
               ruleTestResults,
-              setRuleTestResults
+              setRuleTestResults,
+              isLoading,
+              setIsLoading
             })
           : AdvancedRuleInput({
               name,
@@ -68,7 +71,9 @@ export const CreateRule: FC<CreateRuleProps> = ({ isOpen, onOpenChange }) => {
               useExpandedSheet,
               setUseExpandedSheet,
               ruleType,
-              setRuleType
+              setRuleType,
+              isLoading,
+              setIsLoading
             })
       }
     />

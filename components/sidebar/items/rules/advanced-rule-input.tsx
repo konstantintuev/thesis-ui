@@ -3,18 +3,8 @@ import { Input } from "@/components/ui/input"
 import { RULE_NAME_MAX, RULE_WEIGHT_MAX } from "@/db/limits"
 import { TextareaAutosize } from "@/components/ui/textarea-autosize"
 import { Button } from "@/components/ui/button"
-import { text2Query } from "@/lib/rule-processing"
-import { toast } from "sonner"
-import { IconChevronRight, IconRepeat } from "@tabler/icons-react"
-import { FC, useState } from "react"
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger
-} from "@/components/ui/collapsible"
-import { getBasicRuleInstructions } from "@/components/sidebar/items/rules/rule-instructions"
-import { createRule, deleteRule, rankFiles } from "@/db/rules"
-import { TablesInsert } from "@/supabase/types"
+import { IconRepeat } from "@tabler/icons-react"
+import { FC } from "react"
 import { RuleType } from "@/types/rules"
 
 export function extractWeight(input: string): number {
@@ -39,6 +29,8 @@ export const AdvancedRuleInput: FC<{
   setComparison: React.Dispatch<React.SetStateAction<string>>
   ruleType: RuleType
   setRuleType?: React.Dispatch<React.SetStateAction<RuleType>>
+  isLoading: boolean
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>
 }> = ({
   useExpandedSheet,
   setUseExpandedSheet,
@@ -50,7 +42,9 @@ export const AdvancedRuleInput: FC<{
   comparison,
   setComparison,
   ruleType,
-  setRuleType
+  setRuleType,
+  isLoading,
+  setIsLoading
 }): JSX.Element => {
   return (
     <div className={`flex flex-col gap-2`}>
@@ -59,6 +53,7 @@ export const AdvancedRuleInput: FC<{
           <Label>Switch to Metadata-based Rules</Label>
 
           <Button
+            disabled={isLoading}
             className="flex h-full items-center space-x-2"
             variant="secondary"
           >

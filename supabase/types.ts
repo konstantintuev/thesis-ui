@@ -1907,6 +1907,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_message_sequential: {
+        Args: {
+          _sequence_number: number
+          _chat_id: string
+        }
+        Returns: boolean
+      }
       json_access: {
         Args: {
           attribute: string

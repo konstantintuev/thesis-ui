@@ -14,7 +14,8 @@ export const getRules = async () => {
 }
 
 export const createRule = async (rule: TablesInsert<"rules">) => {
-  if (typeof rule.comparison === "string" && rule.type === "basic") {
+  if (typeof rule.comparison === "string" && rule.type !== "advanced") {
+    // Basic rules are the default and require a parsed json
     rule.comparison = JSON.parse(rule.comparison)
   }
   const { data: createdRule, error } = await supabase
@@ -33,7 +34,8 @@ export const updateRule = async (
   ruleId: string,
   rule: TablesUpdate<"rules">
 ) => {
-  if (typeof rule.comparison === "string" && rule.type === "basic") {
+  if (typeof rule.comparison === "string" && rule.type !== "advanced") {
+    // Basic rules are the default and require a parsed json
     rule.comparison = JSON.parse(rule.comparison)
   }
 

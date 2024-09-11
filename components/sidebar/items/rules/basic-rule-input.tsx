@@ -16,6 +16,7 @@ import { getBasicRuleInstructions } from "@/components/sidebar/items/rules/rule-
 import { createRule, deleteRule, rankFiles } from "@/db/rules"
 import { TablesInsert } from "@/supabase/types"
 import { RuleType } from "@/types/rules"
+import { SmallLoading } from "@/app/[locale]/loading"
 
 export function extractWeight(input: string): number {
   if (input === "") {
@@ -48,6 +49,8 @@ export const BasicRuleInput: FC<{
   setRuleTestResults: React.Dispatch<React.SetStateAction<string | undefined>>
   ruleType: RuleType
   setRuleType?: React.Dispatch<React.SetStateAction<RuleType>>
+  isLoading: boolean
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>
 }> = ({
   useExpandedSheet,
   setUseExpandedSheet,
@@ -61,7 +64,9 @@ export const BasicRuleInput: FC<{
   ruleTestResults,
   setRuleTestResults,
   ruleType,
-  setRuleType
+  setRuleType,
+  isLoading,
+  setIsLoading
 }): JSX.Element => {
   let comparisonIsJson = isJson(comparison)
 
@@ -72,7 +77,10 @@ export const BasicRuleInput: FC<{
         open={useExpandedSheet}
         onOpenChange={setUseExpandedSheet}
       >
-        <CollapsibleTrigger className="flex w-full justify-center hover:opacity-50">
+        <CollapsibleTrigger
+          disabled={isLoading}
+          className="flex w-full justify-center hover:opacity-50"
+        >
           <div className="mb-4 flex items-center font-bold">
             <div
               className={
@@ -104,6 +112,7 @@ export const BasicRuleInput: FC<{
                 <Label>Switch to Question-based Rules</Label>
 
                 <Button
+                  disabled={isLoading}
                   className="flex items-center space-x-2"
                   variant="secondary"
                 >
@@ -172,7 +181,7 @@ export const BasicRuleInput: FC<{
               <TextareaAutosize
                 placeholder={`Rule ${comparisonIsJson ? "json" : "plain text"}...`}
                 value={comparison}
-                onValueChange={setComparison}
+                onValueChange={val => !isLoading && setComparison(val)}
                 minRows={6}
                 maxRows={150}
                 onCompositionStart={() => setIsTyping(true)}
@@ -184,16 +193,24 @@ export const BasicRuleInput: FC<{
               <div className="my-1">
                 <Button
                   onClick={async () => {
+                    if (isLoading) {
+                      return
+                    }
                     try {
+                      setIsLoading(true)
                       let res = await text2Query(comparison)
                       setComparison(JSON.stringify(res, null, 2))
                     } catch (e) {
                       // @ts-ignore
-                      toast.error(e?.message ?? "Unknown error")
+                      toast.error(e?.message ?? "Unknown error", {
+                        duration: 10_000
+                      })
                     }
+                    setIsLoading(false)
                   }}
                 >
-                  Generate Rule JSON from Plain Text
+                  Generate Rule JSON from Plain Text{" "}
+                  {isLoading ? <SmallLoading className="ml-3" /> : undefined}
                 </Button>
               </div>
             )}
@@ -201,7 +218,11 @@ export const BasicRuleInput: FC<{
             <div className="my-1">
               <Button
                 onClick={async () => {
+                  if (isLoading) {
+                    return
+                  }
                   try {
+                    setIsLoading(true)
                     let ruleInserted = await createRule({
                       name: `${new Date().toLocaleString()}: Test ${name}`,
                       comparison,
@@ -217,13 +238,20 @@ export const BasicRuleInput: FC<{
                       total_score: ruleRes.total_score,
                       file_metadata: ruleRes.metadata
                     }))
-                    setRuleTestResults(JSON.stringify(resForHumans, null, 2))
+                    setRuleTestResults(
+                      resForHumans.length === 0
+                        ? "Failed to get test results"
+                        : JSON.stringify(resForHumans, null, 2)
+                    )
                   } catch (e) {
                     // @ts-ignore
-                    toast.error(e?.message ?? "Unknown error")
+                    toast.error(e?.message ?? "Unknown error", {
+                      duration: 10_000
+                    })
                     // @ts-ignore
                     setRuleTestResults(e?.message ?? "Unknown error")
                   }
+                  setIsLoading(false)
                 }}
               >
                 Test Rule with Accessible Files
