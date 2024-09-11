@@ -90,7 +90,7 @@ export const useChatHandler = () => {
     }
   }, [isPromptPickerOpen, isFilePickerOpen, isToolPickerOpen])
 
-  const handleNewChat = async (reuseChatSettings: boolean = false) => {
+  const handleNewChat = async (reuseChatSettings: any = false) => {
     if (!selectedWorkspace) return
 
     setUserInput("")
@@ -174,6 +174,11 @@ export const useChatHandler = () => {
           | "colbert"
       })
     } else if (selectedWorkspace) {
+      // We passed something random -> reuseChatSettings is false
+      if (typeof reuseChatSettings !== "boolean") {
+        reuseChatSettings = false
+      }
+      // We passed boolean now for sure -> use the boolean
       if (!reuseChatSettings) {
         // We reset the chat settings to file retriever as this is the default usage
         //    ...otherwise the last chat settings will be used again

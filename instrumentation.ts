@@ -153,7 +153,7 @@ function getMultipleFileUploadFromMLServer(supabaseAdmin: SupabaseClient<Databas
             }
         } catch (e) {
             setTimeout(checkFileStatuesEvery30s, 30_000);
-            console.info("checkFileStatuesEvery30s failed with exception, try again in 30s:", e);
+            //console.info("checkFileStatuesEvery30s failed with exception, try again in 30s:", e);
         }
     })();
 }

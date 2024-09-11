@@ -41,7 +41,7 @@ async function* getStreamingResponses(
     const response = await openai.chat.completions.create({
       model: model,
       messages: messages as any,
-      max_tokens: CHAT_SETTING_LIMITS[model].MAX_TOKEN_OUTPUT_LENGTH,
+      max_tokens: 350,
       stream: true
     })
 
@@ -235,8 +235,10 @@ export async function POST(request: Request) {
       const messagesArray = filesFound.map(file => [
         {
           role: "system",
-          content:
-            "Today is 03/07/2024.\n\nUser Instructions:\nYou are a friendly, helpful AI assistant."
+          content: `Today is ${new Date().toLocaleDateString()}.
+
+User Instructions:
+You are a friendly, helpful AI assistant.`
         },
         {
           role: "user",
@@ -249,8 +251,10 @@ export async function POST(request: Request) {
             file.chunks?.map(item => `${item.content}`).join("\n\n") +
             "\n</DOCUEMENT SECTIONS>\n" +
             "Start your answers with 'Given your question, the document was found to address the following:'\n" +
-            "Using markdown formatting, give me the main topic of the document and if it's relevant to the question.\n" +
-            "Aditionally, with bullet points please tell me what relevant for the question information do the document sections contain."
+            "Using markdown formatting, please with 2 sentences give the main topic of the document and if it's relevant to the question.\n" +
+            "Aditionally, very shortly summarise with bullet points, which information from the document sections is relevant to the question.\n" +
+            "Please ignore irrelevant information from the document sections and don't even mention it.\n" +
+            "If you need to go into more detail, please use a collapsible with <details> and <summary> - use html syntax inside <details>, markdown in <details> can't be rendered"
         }
       ])
 

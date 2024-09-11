@@ -15,218 +15,203 @@ import { FileProcessor } from "@/types/file-processing"
 import { IHighlight } from "@/components/document/react-pdf-highlighter"
 import { create } from "zustand"
 
+type SetStateAction<S> = S | ((prevState: S) => S)
+type Dispatch<A> = (value: A) => void
+
 interface StoreState {
   // PROFILE STORE
   profile: Tables<"profiles"> | null
-  setProfile: React.Dispatch<React.SetStateAction<Tables<"profiles"> | null>>
+  setProfile: Dispatch<SetStateAction<Tables<"profiles"> | null>>
 
   // ITEMS STORE
   assistants: Tables<"assistants">[]
-  setAssistants: React.Dispatch<React.SetStateAction<Tables<"assistants">[]>>
+  setAssistants: Dispatch<SetStateAction<Tables<"assistants">[]>>
 
   collections: Tables<"collections">[]
-  setCollections: React.Dispatch<React.SetStateAction<Tables<"collections">[]>>
+  setCollections: Dispatch<SetStateAction<Tables<"collections">[]>>
 
   chats: Tables<"chats">[]
-  setChats: React.Dispatch<React.SetStateAction<Tables<"chats">[]>>
+  setChats: Dispatch<SetStateAction<Tables<"chats">[]>>
 
   files: Tables<"files">[]
-  setFiles: React.Dispatch<React.SetStateAction<Tables<"files">[]>>
+  setFiles: Dispatch<SetStateAction<Tables<"files">[]>>
 
   folders: Tables<"folders">[]
-  setFolders: React.Dispatch<React.SetStateAction<Tables<"folders">[]>>
+  setFolders: Dispatch<SetStateAction<Tables<"folders">[]>>
 
   models: Tables<"models">[]
-  setModels: React.Dispatch<React.SetStateAction<Tables<"models">[]>>
+  setModels: Dispatch<SetStateAction<Tables<"models">[]>>
 
   presets: Tables<"presets">[]
-  setPresets: React.Dispatch<React.SetStateAction<Tables<"presets">[]>>
+  setPresets: Dispatch<SetStateAction<Tables<"presets">[]>>
 
   prompts: Tables<"prompts">[]
-  setPrompts: React.Dispatch<React.SetStateAction<Tables<"prompts">[]>>
+  setPrompts: Dispatch<SetStateAction<Tables<"prompts">[]>>
 
   tools: Tables<"tools">[]
-  setTools: React.Dispatch<React.SetStateAction<Tables<"tools">[]>>
+  setTools: Dispatch<SetStateAction<Tables<"tools">[]>>
 
   workspaces: Tables<"workspaces">[]
-  setWorkspaces: React.Dispatch<React.SetStateAction<Tables<"workspaces">[]>>
+  setWorkspaces: Dispatch<SetStateAction<Tables<"workspaces">[]>>
 
   teams: TeamAndMe[]
-  setTeams: React.Dispatch<React.SetStateAction<TeamAndMe[]>>
+  setTeams: Dispatch<SetStateAction<TeamAndMe[]>>
 
   rules: Tables<"rules">[]
-  setRules: React.Dispatch<React.SetStateAction<Tables<"rules">[]>>
+  setRules: Dispatch<SetStateAction<Tables<"rules">[]>>
 
   // MODELS STORE
   envKeyMap: Record<string, VALID_ENV_KEYS>
-  setEnvKeyMap: React.Dispatch<
-    React.SetStateAction<Record<string, VALID_ENV_KEYS>>
-  >
+  setEnvKeyMap: Dispatch<SetStateAction<Record<string, VALID_ENV_KEYS>>>
 
   availableHostedModels: LLM[]
-  setAvailableHostedModels: React.Dispatch<React.SetStateAction<LLM[]>>
+  setAvailableHostedModels: Dispatch<SetStateAction<LLM[]>>
 
   availableLocalModels: LLM[]
-  setAvailableLocalModels: React.Dispatch<React.SetStateAction<LLM[]>>
+  setAvailableLocalModels: Dispatch<SetStateAction<LLM[]>>
 
   availableOpenRouterModels: OpenRouterLLM[]
-  setAvailableOpenRouterModels: React.Dispatch<
-    React.SetStateAction<OpenRouterLLM[]>
-  >
+  setAvailableOpenRouterModels: Dispatch<SetStateAction<OpenRouterLLM[]>>
 
   // FILE PROCESSING STORE
   availableFileProcessors: FileProcessor[]
-  setAvailableFileProcessors: React.Dispatch<
-    React.SetStateAction<FileProcessor[]>
-  >
+  setAvailableFileProcessors: Dispatch<SetStateAction<FileProcessor[]>>
 
   // WORKSPACE STORE
   selectedWorkspace: Tables<"workspaces"> | null
-  setSelectedWorkspace: React.Dispatch<
-    React.SetStateAction<Tables<"workspaces"> | null>
-  >
+  setSelectedWorkspace: Dispatch<SetStateAction<Tables<"workspaces"> | null>>
 
   workspaceImages: WorkspaceImage[]
-  setWorkspaceImages: React.Dispatch<React.SetStateAction<WorkspaceImage[]>>
+  setWorkspaceImages: Dispatch<SetStateAction<WorkspaceImage[]>>
 
   // PRESET STORE
   selectedPreset: Tables<"presets"> | null
-  setSelectedPreset: React.Dispatch<
-    React.SetStateAction<Tables<"presets"> | null>
-  >
+  setSelectedPreset: Dispatch<SetStateAction<Tables<"presets"> | null>>
 
   // ASSISTANT STORE
   selectedAssistant: Tables<"assistants"> | null
-  setSelectedAssistant: React.Dispatch<
-    React.SetStateAction<Tables<"assistants"> | null>
-  >
+  setSelectedAssistant: Dispatch<SetStateAction<Tables<"assistants"> | null>>
 
   assistantImages: AssistantImage[]
-  setAssistantImages: React.Dispatch<React.SetStateAction<AssistantImage[]>>
+  setAssistantImages: Dispatch<SetStateAction<AssistantImage[]>>
 
   openaiAssistants: any[]
-  setOpenaiAssistants: React.Dispatch<React.SetStateAction<any[]>>
+  setOpenaiAssistants: Dispatch<SetStateAction<any[]>>
 
   // PASSIVE CHAT STORE
   userInput: string
-  setUserInput: React.Dispatch<React.SetStateAction<string>>
+  setUserInput: Dispatch<SetStateAction<string>>
 
   chatMessages: ChatMessage[]
-  setChatMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>
+  setChatMessages: Dispatch<SetStateAction<ChatMessage[]>>
 
   chatSettings: ChatSettings | null
-  setChatSettings: React.Dispatch<React.SetStateAction<ChatSettings | null>>
+  setChatSettings: Dispatch<SetStateAction<ChatSettings | null>>
 
   selectedChat: Tables<"chats"> | null
-  setSelectedChat: React.Dispatch<React.SetStateAction<Tables<"chats"> | null>>
+  setSelectedChat: Dispatch<SetStateAction<Tables<"chats"> | null>>
 
   chatFileItems: Tables<"file_items">[]
-  setChatFileItems: React.Dispatch<React.SetStateAction<Tables<"file_items">[]>>
+  setChatFileItems: Dispatch<SetStateAction<Tables<"file_items">[]>>
 
   chatFileHighlights: Record<string, IHighlight[]>
-  setChatFileHighlights: React.Dispatch<
-    React.SetStateAction<Record<string, IHighlight[]>>
-  >
+  setChatFileHighlights: Dispatch<SetStateAction<Record<string, IHighlight[]>>>
 
   selectedCollectionCreatorChat: Tables<"chats"> | null
-  setSelectedCollectionCreatorChat: React.Dispatch<
-    React.SetStateAction<Tables<"chats"> | null>
+  setSelectedCollectionCreatorChat: Dispatch<
+    SetStateAction<Tables<"chats"> | null>
   >
 
   // ACTIVE CHAT STORE
   isGenerating: boolean
-  setIsGenerating: React.Dispatch<React.SetStateAction<boolean>>
+  setIsGenerating: Dispatch<SetStateAction<boolean>>
 
   firstTokenReceived: boolean
-  setFirstTokenReceived: React.Dispatch<React.SetStateAction<boolean>>
+  setFirstTokenReceived: Dispatch<SetStateAction<boolean>>
 
   abortController: AbortController | null
-  setAbortController: React.Dispatch<
-    React.SetStateAction<AbortController | null>
-  >
+  setAbortController: Dispatch<SetStateAction<AbortController | null>>
 
   scrollHeight: {
     pageId: string
     scrollTop: number
   }
-  setScrollHeight: React.Dispatch<
-    React.SetStateAction<{ pageId: string; scrollTop: number }>
+  setScrollHeight: Dispatch<
+    SetStateAction<{ pageId: string; scrollTop: number }>
   >
 
   // CHAT INPUT COMMAND STORE
   isPromptPickerOpen: boolean
-  setIsPromptPickerOpen: React.Dispatch<React.SetStateAction<boolean>>
+  setIsPromptPickerOpen: Dispatch<SetStateAction<boolean>>
 
   slashCommand: string
-  setSlashCommand: React.Dispatch<React.SetStateAction<string>>
+  setSlashCommand: Dispatch<SetStateAction<string>>
 
   isFilePickerOpen: boolean
-  setIsFilePickerOpen: React.Dispatch<React.SetStateAction<boolean>>
+  setIsFilePickerOpen: Dispatch<SetStateAction<boolean>>
 
   hashtagCommand: string
-  setHashtagCommand: React.Dispatch<React.SetStateAction<string>>
+  setHashtagCommand: Dispatch<SetStateAction<string>>
 
   isToolPickerOpen: boolean
-  setIsToolPickerOpen: React.Dispatch<React.SetStateAction<boolean>>
+  setIsToolPickerOpen: Dispatch<SetStateAction<boolean>>
 
   toolCommand: string
-  setToolCommand: React.Dispatch<React.SetStateAction<string>>
+  setToolCommand: Dispatch<SetStateAction<string>>
 
   focusPrompt: boolean
-  setFocusPrompt: React.Dispatch<React.SetStateAction<boolean>>
+  setFocusPrompt: Dispatch<SetStateAction<boolean>>
 
   focusFile: boolean
-  setFocusFile: React.Dispatch<React.SetStateAction<boolean>>
+  setFocusFile: Dispatch<SetStateAction<boolean>>
 
   focusTool: boolean
-  setFocusTool: React.Dispatch<React.SetStateAction<boolean>>
+  setFocusTool: Dispatch<SetStateAction<boolean>>
 
   focusAssistant: boolean
-  setFocusAssistant: React.Dispatch<React.SetStateAction<boolean>>
+  setFocusAssistant: Dispatch<SetStateAction<boolean>>
 
   atCommand: string
-  setAtCommand: React.Dispatch<React.SetStateAction<string>>
+  setAtCommand: Dispatch<SetStateAction<string>>
 
   isAssistantPickerOpen: boolean
-  setIsAssistantPickerOpen: React.Dispatch<React.SetStateAction<boolean>>
+  setIsAssistantPickerOpen: Dispatch<SetStateAction<boolean>>
 
   // ATTACHMENTS STORE
   chatFiles: ChatFile[]
-  setChatFiles: React.Dispatch<React.SetStateAction<ChatFile[]>>
+  setChatFiles: Dispatch<SetStateAction<ChatFile[]>>
 
   chatImages: MessageImage[]
-  setChatImages: React.Dispatch<React.SetStateAction<MessageImage[]>>
+  setChatImages: Dispatch<SetStateAction<MessageImage[]>>
 
   newMessageFiles: ChatFile[]
-  setNewMessageFiles: React.Dispatch<React.SetStateAction<ChatFile[]>>
+  setNewMessageFiles: Dispatch<SetStateAction<ChatFile[]>>
 
   newMessageImages: MessageImage[]
-  setNewMessageImages: React.Dispatch<React.SetStateAction<MessageImage[]>>
+  setNewMessageImages: Dispatch<SetStateAction<MessageImage[]>>
 
   showFilesDisplay: boolean
-  setShowFilesDisplay: React.Dispatch<React.SetStateAction<boolean>>
+  setShowFilesDisplay: Dispatch<SetStateAction<boolean>>
 
   collectionRetrievalActive: boolean
-  setCollectionRetrievalActive: React.Dispatch<React.SetStateAction<boolean>>
+  setCollectionRetrievalActive: Dispatch<SetStateAction<boolean>>
 
   collectionCreatorChat: Tables<"chats"> | null
-  setCollectionCreatorChat: React.Dispatch<
-    React.SetStateAction<Tables<"chats"> | null>
-  >
+  setCollectionCreatorChat: Dispatch<SetStateAction<Tables<"chats"> | null>>
 
   // RETRIEVAL STORE
   useRetrieval: boolean
-  setUseRetrieval: React.Dispatch<React.SetStateAction<boolean>>
+  setUseRetrieval: Dispatch<SetStateAction<boolean>>
 
   sourceCount: number
-  setSourceCount: React.Dispatch<React.SetStateAction<number>>
+  setSourceCount: Dispatch<SetStateAction<number>>
 
   // TOOL STORE
   selectedTools: Tables<"tools">[]
-  setSelectedTools: React.Dispatch<React.SetStateAction<Tables<"tools">[]>>
+  setSelectedTools: Dispatch<SetStateAction<Tables<"tools">[]>>
 
   toolInUse: string
-  setToolInUse: React.Dispatch<React.SetStateAction<string>>
+  setToolInUse: Dispatch<SetStateAction<string>>
 }
 
 export const useStore = create<StoreState>(set => ({

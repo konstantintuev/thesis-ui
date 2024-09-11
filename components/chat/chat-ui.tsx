@@ -8,9 +8,9 @@ import { getMessagesByChatId } from "@/db/messages"
 import { getMessageImageFromStorage } from "@/db/storage/message-images"
 import { convertBlobToBase64 } from "@/lib/blob-to-b64"
 import useHotkey from "@/lib/hooks/use-hotkey"
-import { LLMID, MessageImage } from "@/types"
+import { isModelIdFileRetriever, LLMID, MessageImage } from "@/types"
 import { useParams } from "next/navigation"
-import { FC, useEffect, useState } from "react"
+import { FC, useEffect, useRef, useState } from "react"
 import { useStore } from "@/context/context"
 import { ChatHelp } from "./chat-help"
 import { useScroll } from "./chat-hooks/use-scroll"
@@ -72,7 +72,12 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
 
   const noNeedToUpdateData =
     chatMessages.length > 0 && chatMessages[0].message.chat_id === chatID
-  const [loading, setLoading] = useState(!noNeedToUpdateData)
+  const [loading, setLoading] = useState(false)
+
+  const initialFetchState = useRef<{
+    loaded?: string
+    fetching?: string
+  }>({})
 
   useEffect(() => {
     if (noNeedToUpdateData) {
@@ -81,75 +86,132 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
       return
     }
 
-    const fetchData = async () => {
-      await fetchMessages()
-      await fetchChat()
+    // New chats have undefined chatID -> don't need to be fetched
+    if (
+      initialFetchState.current.loaded === chatID ||
+      initialFetchState.current.fetching === chatID
+    ) {
+      return
+    }
+    setLoading(true)
+    initialFetchState.current.loaded = undefined
+    initialFetchState.current.fetching = chatID
+
+    const fetchData = async (chatID: string) => {
+      /* The biggest problem with async fetching on start is that
+      async functions are stateless, they don't know if the state has changed and therefore
+      if they affect the state, they do it based on outdated information
+      (e.g. the chat has changed, but just now we got the fetch for an older chat ->
+        we just f-ed up the state and the chat hasn't changed correctly)
+      The old functions used to set state after each fetch, which made very little sense ->
+        computationally more demanding as we are building the state for a single
+        cohesive UI - chat
+      */
+      let messagesFetched = await fetchMessages(chatID)
+      if (chatID !== (params.chatid ?? useStore.getState().selectedChat?.id)) {
+        // Outdated chat fetch
+        return
+      }
+      let chatFetched = await fetchChat(chatID)
+      if (
+        !chatFetched ||
+        chatID !== (params.chatid ?? useStore.getState().selectedChat?.id)
+      ) {
+        // Outdated chat fetch
+        return
+      }
+
+      setChatImages(messagesFetched.images)
+      setChatFileItems(messagesFetched.uniqueFileItems ?? [])
+      setChatFiles(
+        messagesFetched.chatFiles
+          ? createChatFilesState(messagesFetched.chatFiles)
+          : []
+      )
+      setShowFilesDisplay(messagesFetched.filesDisplay)
+      setChatMessages(messagesFetched.fetchedChatMessages)
+
+      setSelectedChat(chatFetched.selectedChat)
+      setChatSettings(chatFetched.chatSettings)
+      setUseRetrieval(chatFetched.useRetrieval)
+      setSelectedAssistant(chatFetched.selectedAssistant)
+      setSelectedTools(chatFetched.selectedTools)
+      setSelectedCollectionCreatorChat(
+        chatFetched.selectedCollectionCreatorChat
+      )
+      setCollectionRetrievalActive(chatFetched.collectionRetrievalActive)
+      setCollectionCreatorChat(chatFetched.collectionCreatorChat)
 
       scrollToBottom()
       setIsAtBottom(true)
     }
 
     if (chatID) {
-      fetchData().then(() => {
+      fetchData(chatID).then(() => {
         handleFocusChatInput()
         setLoading(false)
       })
     } else {
       setLoading(false)
     }
+    initialFetchState.current.loaded = chatID
+    initialFetchState.current.fetching = undefined
   }, [chatSettings])
 
-  const fetchMessages = async () => {
-    const fetchedMessages = await getMessagesByChatId(chatID as string)
+  const fetchMessages = async (chatID: string) => {
+    const fetchedMessages = await getMessagesByChatId(chatID)
+    let chatFiles = null
+    let uniqueFileItems = null
+    let images: MessageImage[] = []
+    let messageFileItems: any[] = []
+    let filesDisplay = false
 
-    const imagePromises: Promise<MessageImage>[] = fetchedMessages.flatMap(
-      message =>
-        message.image_paths
-          ? message.image_paths.map(async imagePath => {
-              const url = await getMessageImageFromStorage(imagePath)
+    if (isModelIdFileRetriever(chatSettings?.model)) {
+      const imagePromises: Promise<MessageImage>[] = fetchedMessages.flatMap(
+        message =>
+          message.image_paths
+            ? message.image_paths.map(async imagePath => {
+                const url = await getMessageImageFromStorage(imagePath)
 
-              if (url) {
-                const response = await fetch(url)
-                const blob = await response.blob()
-                const base64 = await convertBlobToBase64(blob)
+                if (url) {
+                  const response = await fetch(url)
+                  const blob = await response.blob()
+                  const base64 = await convertBlobToBase64(blob)
+
+                  return {
+                    messageId: message.id,
+                    path: imagePath,
+                    base64,
+                    url,
+                    file: null
+                  }
+                }
 
                 return {
                   messageId: message.id,
                   path: imagePath,
-                  base64,
+                  base64: "",
                   url,
                   file: null
                 }
-              }
+              })
+            : []
+      )
 
-              return {
-                messageId: message.id,
-                path: imagePath,
-                base64: "",
-                url,
-                file: null
-              }
-            })
-          : []
-    )
+      images = await Promise.all(imagePromises.flat())
 
-    const images: MessageImage[] = await Promise.all(imagePromises.flat())
-    setChatImages(images)
+      const messageFileItemPromises = fetchedMessages.map(
+        async message => await getMessageFileItemsByMessageId(message.id)
+      )
 
-    const messageFileItemPromises = fetchedMessages.map(
-      async message => await getMessageFileItemsByMessageId(message.id)
-    )
+      messageFileItems = await Promise.all(messageFileItemPromises)
 
-    const messageFileItems = await Promise.all(messageFileItemPromises)
+      uniqueFileItems = messageFileItems.flatMap(item => item.file_items)
 
-    const uniqueFileItems = messageFileItems.flatMap(item => item.file_items)
-    setChatFileItems(uniqueFileItems)
+      chatFiles = await getChatFilesByChatId(chatID as string)
 
-    const chatFiles = await getChatFilesByChatId(chatID as string)
-
-    setChatFiles(createChatFilesState(chatFiles))
-
-    setShowFilesDisplay(true)
+      filesDisplay = true
+    }
 
     const fetchedChatMessages = await Promise.all(
       fetchedMessages.map(async message => {
@@ -160,18 +222,29 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
           fileItems: messageFileItems
             .filter(messageFileItem => messageFileItem.id === message.id)
             .flatMap(messageFileItem =>
-              messageFileItem.file_items.map(fileItem => fileItem.id)
+              messageFileItem.file_items.map((fileItem: any) => fileItem.id)
             )
         }
       })
     )
 
-    setChatMessages(fetchedChatMessages)
+    return {
+      images,
+      uniqueFileItems,
+      chatFiles,
+      filesDisplay,
+      fetchedChatMessages
+    }
   }
 
-  const fetchChat = async () => {
-    const chat = await getChatById(chatID as string)
+  const fetchChat = async (chatID: string) => {
+    const chat = await getChatById(chatID)
     if (!chat) return
+
+    let selectedAssistant: any,
+      selectedTools: any = [],
+      collectionRetrievalActive: any,
+      collectionCreatorChat: any
 
     if (chat.assistant_id) {
       const assistant = assistants.find(
@@ -179,44 +252,48 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
       )
 
       if (assistant) {
-        setSelectedAssistant(assistant)
+        selectedAssistant = assistant
 
-        const assistantTools = (
-          await getAssistantToolsByAssistantId(assistant.id)
-        ).tools
-        setSelectedTools(assistantTools)
+        selectedTools = (await getAssistantToolsByAssistantId(assistant.id))
+          .tools
       }
     }
 
-    setSelectedChat(chat)
-    setChatSettings({
-      model: chat.model as LLMID,
-      prompt: chat.prompt,
-      temperature: chat.temperature,
-      contextLength: chat.context_length,
-      includeProfileContext: chat.include_profile_context,
-      includeWorkspaceInstructions: chat.include_workspace_instructions,
-      embeddingsProvider: chat.embeddings_provider as
-        | "openai"
-        | "local"
-        | "colbert"
-    })
-    setUseRetrieval(chat.model !== "file_retriever")
-    setSelectedCollectionCreatorChat(null)
     let chatCollectionConsumer = await getChatCollectionConsumer(chat.id)
     if (chatCollectionConsumer) {
-      setCollectionRetrievalActive(true)
+      collectionRetrievalActive = true
       let chatCollectionCreator = await getChatCollectionCreatorByCollection(
         chatCollectionConsumer.collection_id
       )
       if (chatCollectionCreator) {
-        setCollectionCreatorChat(
-          await getChatById(chatCollectionCreator.chat_id)
-        )
+        collectionCreatorChat = await getChatById(chatCollectionCreator.chat_id)
       }
     } else {
-      setCollectionRetrievalActive(false)
-      setCollectionCreatorChat(null)
+      collectionRetrievalActive = false
+      collectionCreatorChat = null
+    }
+
+    return {
+      chat,
+      chatSettings: {
+        model: chat.model as LLMID,
+        prompt: chat.prompt,
+        temperature: chat.temperature,
+        contextLength: chat.context_length,
+        includeProfileContext: chat.include_profile_context,
+        includeWorkspaceInstructions: chat.include_workspace_instructions,
+        embeddingsProvider: chat.embeddings_provider as
+          | "openai"
+          | "local"
+          | "colbert"
+      },
+      selectedChat: chat,
+      useRetrieval: chat.model !== "file_retriever",
+      selectedAssistant,
+      selectedTools,
+      selectedCollectionCreatorChat: null,
+      collectionRetrievalActive,
+      collectionCreatorChat
     }
   }
 
