@@ -190,7 +190,8 @@ export class PdfHighlighter<T_HT extends IHighlight> extends PureComponent<
         // enhanceTextSelection: true, // deprecated. https://github.com/mozilla/pdf.js/issues/9943#issuecomment-409369485
         textLayerMode: 2,
         removePageBorders: true,
-        linkService: linkService
+        linkService: linkService,
+        enablePermissions: false
       })
 
     linkService.setDocument(pdfDocument)
@@ -247,6 +248,13 @@ export class PdfHighlighter<T_HT extends IHighlight> extends PureComponent<
     if (!textLayer) {
       return null
     }
+
+    textLayer.div.addEventListener("copy", function (e: any) {
+      e.preventDefault()
+      const selectedText = window.getSelection()?.toString()
+      if (!selectedText) return
+      e.clipboardData.setData("text/plain", selectedText)
+    })
 
     return findOrCreateContainerLayer(
       textLayer.div,
@@ -616,7 +624,7 @@ export class PdfHighlighter<T_HT extends IHighlight> extends PureComponent<
         <div
           ref={this.containerNodeRef}
           className="PdfHighlighter"
-          onContextMenu={e => e.preventDefault()}
+          onContextMenu={e => {}}
         >
           <div className="pdfViewer" />
           {this.renderTip()}

@@ -9,7 +9,7 @@ import { Tables } from "@/supabase/types"
 import { ChatMessage, ChatPayload, LLMID, ModelProvider } from "@/types"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef } from "react"
-import { useStore } from "@/context/context"
+import { useMessageStore, useStore } from "@/context/context"
 import { LLM_LIST } from "@/lib/models/llm/llm-list"
 import {
   createTempMessages,
@@ -37,7 +37,6 @@ export const useChatHandler = () => {
     setNewMessageImages,
     profile,
     setIsGenerating,
-    setChatMessages,
     setFirstTokenReceived,
     selectedChat,
     selectedWorkspace,
@@ -51,7 +50,6 @@ export const useChatHandler = () => {
     chatSettings,
     newMessageImages,
     selectedAssistant,
-    chatMessages,
     chatImages,
     setChatImages,
     setChatFiles,
@@ -81,6 +79,8 @@ export const useChatHandler = () => {
     setCollectionCreatorChat,
     workspaces
   } = useStore()
+
+  const { chatMessages, setChatMessages } = useMessageStore()
 
   const chatInputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -350,7 +350,7 @@ export const useChatHandler = () => {
         setToolInUse("retrieval")
 
         retrievedFileItems = await handleRetrieval(
-          userInput,
+          messageContent,
           newMessageFiles,
           chatFiles,
           chatSettings!.embeddingsProvider,

@@ -18,7 +18,7 @@ import { supabase } from "@/lib/supabase/browser-client"
 import { LLMID } from "@/types"
 import { useParams, useRouter } from "next/navigation"
 import { ReactNode, useEffect, useMemo, useRef, useState } from "react"
-import { useStore } from "@/context/context"
+import { useMessageStore, useStore } from "@/context/context"
 import Loading from "../loading"
 import { Tables } from "@/supabase/types"
 import { getRules } from "@/db/rules"
@@ -49,7 +49,6 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
     selectedWorkspace,
     setSelectedWorkspace,
     setSelectedChat,
-    setChatMessages,
     setUserInput,
     setIsGenerating,
     setFirstTokenReceived,
@@ -62,6 +61,8 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
     chatSettings,
     rules
   } = useStore()
+
+  const { setChatMessages } = useMessageStore()
 
   const [loading, setLoading] = useState(true)
 

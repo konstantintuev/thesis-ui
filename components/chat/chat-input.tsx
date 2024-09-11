@@ -10,7 +10,7 @@ import {
 } from "@tabler/icons-react"
 import Image from "next/image"
 import { FC, useEffect, useRef, useState } from "react"
-import { useStore } from "@/context/context"
+import { useMessageStore, useStore } from "@/context/context"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { Input } from "../ui/input"
@@ -40,7 +40,6 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
     focusAssistant,
     setFocusAssistant,
     userInput,
-    chatMessages,
     isGenerating,
     selectedPreset,
     selectedAssistant,
@@ -61,6 +60,8 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
     selectedCollectionCreatorChat,
     setSelectedCollectionCreatorChat
   } = useStore()
+
+  const { chatMessages } = useMessageStore()
 
   const {
     chatInputRef,

@@ -102,9 +102,6 @@ interface StoreState {
   userInput: string
   setUserInput: Dispatch<SetStateAction<string>>
 
-  chatMessages: ChatMessage[]
-  setChatMessages: Dispatch<SetStateAction<ChatMessage[]>>
-
   chatSettings: ChatSettings | null
   setChatSettings: Dispatch<SetStateAction<ChatSettings | null>>
 
@@ -411,13 +408,6 @@ export const useStore = create<StoreState>(set => ({
       userInput: typeof input === "function" ? input(state.userInput) : input
     })),
 
-  chatMessages: [],
-  setChatMessages: messages =>
-    set(state => ({
-      chatMessages:
-        typeof messages === "function" ? messages(state.chatMessages) : messages
-    })),
-
   chatSettings: null,
   setChatSettings: settings =>
     set(state => ({
@@ -658,5 +648,19 @@ export const useStore = create<StoreState>(set => ({
   setToolInUse: tool =>
     set(state => ({
       toolInUse: typeof tool === "function" ? tool(state.toolInUse) : tool
+    }))
+}))
+
+interface MessageStoreState {
+  chatMessages: ChatMessage[]
+  setChatMessages: Dispatch<SetStateAction<ChatMessage[]>>
+}
+
+export const useMessageStore = create<MessageStoreState>(set => ({
+  chatMessages: [],
+  setChatMessages: messages =>
+    set(state => ({
+      chatMessages:
+        typeof messages === "function" ? messages(state.chatMessages) : messages
     }))
 }))

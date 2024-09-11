@@ -11,7 +11,7 @@ import useHotkey from "@/lib/hooks/use-hotkey"
 import { isModelIdFileRetriever, LLMID, MessageImage } from "@/types"
 import { useParams } from "next/navigation"
 import { FC, useEffect, useRef, useState } from "react"
-import { useStore } from "@/context/context"
+import { useMessageStore, useStore } from "@/context/context"
 import { ChatHelp } from "./chat-help"
 import { useScroll } from "./chat-hooks/use-scroll"
 import { ChatInput } from "./chat-input"
@@ -32,7 +32,6 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
   const params = useParams()
 
   const {
-    setChatMessages,
     selectedChat,
     setSelectedChat,
     setChatSettings,
@@ -41,7 +40,6 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
     setSelectedAssistant,
     setChatFileItems,
     setChatFiles,
-    chatMessages,
     setShowFilesDisplay,
     setUseRetrieval,
     setSelectedTools,
@@ -50,6 +48,8 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
     setSelectedCollectionCreatorChat,
     chatSettings
   } = useStore()
+
+  const { chatMessages, setChatMessages } = useMessageStore()
 
   const { handleNewChat, handleFocusChatInput } = useChatHandler()
 

@@ -5,12 +5,12 @@ import {
   useRef,
   useState
 } from "react"
-import { useStore } from "@/context/context"
+import { useMessageStore, useStore } from "@/context/context"
 import { useParams } from "next/navigation"
 
 export const useScroll = () => {
-  const { isGenerating, chatMessages, scrollHeight, setScrollHeight } =
-    useStore()
+  const { isGenerating, scrollHeight, setScrollHeight } = useStore()
+  const { chatMessages } = useMessageStore()
 
   const params = useParams()
 

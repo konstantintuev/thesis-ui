@@ -254,7 +254,8 @@ You are a friendly, helpful AI assistant.`
             "Using markdown formatting, please with 2 sentences give the main topic of the document and if it's relevant to the question.\n" +
             "Aditionally, very shortly summarise with bullet points, which information from the document sections is relevant to the question.\n" +
             "Please ignore irrelevant information from the document sections and don't even mention it.\n" +
-            "If you need to go into more detail, please use a collapsible with <details> and <summary> - use html syntax inside <details>, markdown in <details> can't be rendered"
+            "If you need to go into more detail, please use a collapsible with <details> <summary> </summary> </details>.\n" +
+            "Please use html syntax inside the <details></details> tags, markdown in <details></details> can't be rendered."
         }
       ])
 
@@ -368,6 +369,22 @@ You are a friendly, helpful AI assistant.`
                 generatedText += decoder.decode(chunk)
                 controller.enqueue(chunk)
               }
+              if (
+                generatedText.includes("<details>") &&
+                !generatedText.includes("</details>")
+              ) {
+                generatedText += "\n</details>"
+                controller.enqueue(encoder.encode("\n</details>"))
+              }
+              if (
+                generatedText.includes("<summary>") &&
+                !generatedText.includes("</summary>")
+              ) {
+                generatedText += "\n</summary>"
+                controller.enqueue(encoder.encode("\n</summary>"))
+              }
+              const ok = "o"
+              console.log(ok)
               // Line end
               controller.enqueue(encoder.encode("\n\n******\n\n"))
               const { data, error } = await supabaseAdmin

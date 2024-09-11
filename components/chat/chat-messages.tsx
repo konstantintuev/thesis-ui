@@ -1,13 +1,15 @@
 import { useChatHandler } from "@/components/chat/chat-hooks/use-chat-handler"
 import { Tables } from "@/supabase/types"
 import { FC, useState } from "react"
-import { useStore } from "@/context/context"
+import { useMessageStore, useStore } from "@/context/context"
 import { Message } from "../messages/message"
 
 interface ChatMessagesProps {}
 
 export const ChatMessages: FC<ChatMessagesProps> = ({}) => {
-  const { chatMessages, chatFileItems } = useStore()
+  const { chatFileItems } = useStore()
+
+  const { chatMessages } = useMessageStore()
 
   const { handleSendEdit } = useChatHandler()
 

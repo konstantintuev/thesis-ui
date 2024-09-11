@@ -145,7 +145,7 @@ export async function POST(request: Request) {
       })
     )
 
-    let maxLength = 6000
+    let maxLength = 12_000
 
     let cumulativeLength = 0
     let lastIndex = 0
