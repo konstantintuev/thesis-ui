@@ -42,7 +42,8 @@ export const RuleItem: FC<PromptItemProps> = ({ rule }) => {
         {
           name,
           weight: extractWeight(weight) / 100,
-          comparison
+          comparison,
+          type: rule.type
         } as TablesUpdate<"rules">
       }
       renderInputs={renderState =>
