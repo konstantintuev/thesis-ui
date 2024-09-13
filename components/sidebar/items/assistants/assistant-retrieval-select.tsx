@@ -16,7 +16,7 @@ import { FC, useEffect, useRef, useState } from "react"
 import { useStore } from "@/context/context"
 
 interface AssistantRetrievalSelectProps {
-  selectedAssistantRetrievalItems: Tables<"files">[] | Tables<"collections">[]
+  selectedAssistantRetrievalItems: (Tables<"files"> | Tables<"collections">)[]
   onAssistantRetrievalItemsSelect: (
     item: Tables<"files"> | Tables<"collections">
   ) => void

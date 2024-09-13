@@ -2,7 +2,7 @@
 
 import React, { Component } from "react"
 
-import { GlobalWorkerOptions, getDocument } from "pdfjs-dist"
+import { GlobalWorkerOptions, getDocument, version } from "pdfjs-dist"
 import type { PDFDocumentProxy } from "pdfjs-dist"
 
 interface Props {
@@ -79,7 +79,10 @@ export class PdfLoader extends Component<Props, State> {
 
     GlobalWorkerOptions.workerSrc =
       workerSrc ??
-      new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString()
+      // TODO: next.js doesn't allow this for now - check in the future
+      // We want it as it allows you to use local pdfjs and is better for security
+      //new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString()
+      `//unpkg.com/pdfjs-dist@${version}/build/pdf.worker.min.mjs`
 
     console.log("workerSrc", GlobalWorkerOptions.workerSrc)
 

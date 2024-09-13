@@ -33,6 +33,9 @@ CREATE TABLE IF NOT EXISTS workspaces (
 -- INDEXES --
 
 CREATE INDEX idx_workspaces_user_id ON workspaces (user_id);
+CREATE INDEX idx_workspaces_created_at ON workspaces (created_at DESC);
+CREATE INDEX idx_workspaces_id ON workspaces (id);
+CREATE INDEX idx_workspaces_access ON workspaces (user_id, id);
 
 -- RLS --
 

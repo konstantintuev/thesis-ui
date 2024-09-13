@@ -23,6 +23,10 @@ create table "public"."teams"
     "user_id"     uuid                     not null default auth.uid()
 );
 
+-- Indexes
+CREATE INDEX idx_team_chats_team_id ON team_chats (team_id);
+CREATE INDEX idx_team_chats_chat_id ON team_chats (chat_id);
+
 -- Enable Row Level Security
 alter table "public"."team_chats"
     enable row level security;
@@ -36,8 +40,6 @@ alter table "public"."chat_files"
     add column "query_related_metadata" json;
 alter table "public"."chat_files"
     add column "score_metadata" json;
-alter table "public"."collections"
-    add column "hidden" boolean not null default false;
 alter table "public"."workspaces"
     add column "file_processor" text not null default 'pdf_to_md_gpt4o'::text;
 
@@ -316,27 +318,41 @@ create policy "Enable update for users based on team lead"
                          WHERE ((team_members.team_id = teams.id) AND (team_members.user_id = auth.uid()) AND
                                 (team_members.team_lead = true)))));
 
-create policy "Allow full access to team chat, collection and files folders"
+create policy "Allow full access to team chat folders"
     on "public"."folders"
     as permissive
     for all
     to public
-    using (((EXISTS (SELECT 1
-                     FROM files
-                     WHERE (files.folder_id = folders.id))) OR (EXISTS (SELECT 1
-                                                                        FROM collections
-                                                                        WHERE (collections.folder_id = folders.id))) OR
-            (EXISTS (SELECT 1
-                     FROM chats
-                     WHERE (chats.folder_id = folders.id)))))
-    with check (((EXISTS (SELECT 1
-                          FROM files
-                          WHERE (files.folder_id = folders.id))) OR (EXISTS (SELECT 1
-                                                                             FROM collections
-                                                                             WHERE (collections.folder_id = folders.id))) OR
-                 (EXISTS (SELECT 1
+    using (folders.type = 'chats' AND EXISTS (SELECT 1
+                   FROM chats
+                   WHERE (chats.folder_id = folders.id)))
+    with check (folders.type = 'chats' AND EXISTS (SELECT 1
                           FROM chats
-                          WHERE (chats.folder_id = folders.id)))));
+                          WHERE (chats.folder_id = folders.id)));
+
+create policy "Allow full access to team collection folders"
+    on "public"."folders"
+    as permissive
+    for all
+    to public
+    using (folders.type = 'collections' AND EXISTS (SELECT 1
+                   FROM collections
+                   WHERE (collections.folder_id = folders.id)))
+    with check (folders.type = 'collections' AND EXISTS (SELECT 1
+        FROM collections
+        WHERE (collections.folder_id = folders.id)));
+
+create policy "Allow full access to team files folders"
+    on "public"."folders"
+    as permissive
+    for all
+    to public
+    using (folders.type = 'files' AND EXISTS (SELECT 1
+                     FROM files
+                     WHERE (files.folder_id = folders.id)))
+    with check (folders.type = 'files' AND EXISTS (SELECT 1
+                          FROM files
+                          WHERE (files.folder_id = folders.id)));
 
 create policy "Allow read access to files you access - team"
     on "storage"."objects"

@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS tools (
 -- INDEXES --
 
 CREATE INDEX tools_user_id_idx ON tools(user_id);
+CREATE INDEX tools_id_idx ON tools (id);
 
 -- RLS --
 
@@ -73,6 +74,7 @@ CREATE TABLE IF NOT EXISTS tool_workspaces (
 CREATE INDEX tool_workspaces_user_id_idx ON tool_workspaces(user_id);
 CREATE INDEX tool_workspaces_tool_id_idx ON tool_workspaces(tool_id);
 CREATE INDEX tool_workspaces_workspace_id_idx ON tool_workspaces(workspace_id);
+CREATE INDEX tool_workspaces_user_idx ON tool_workspaces (workspace_id, user_id);
 
 -- RLS --
 

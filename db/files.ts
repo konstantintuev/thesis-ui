@@ -18,41 +18,57 @@ export const getFileById = async (fileId: string) => {
   return file
 }
 
-export const getFileWorkspacesByWorkspaceId = async (workspaceId: string) => {
-  const { data: workspace, error } = await supabase
-    .from("workspaces")
-    .select(
-      `
-      id,
-      name,
-      files (*)
-    `
-    )
-    .eq("id", workspaceId)
-    .single()
-
-  const { data: teamData, error: teamError } = await supabase
+export const getFilesById = async (fileIds: string[]) => {
+  const { data: file, error } = await supabase
     .from("files")
+    .select("*")
+    .in("id", fileIds)
+
+  if (!file) {
+    throw new Error(error.message)
+  }
+
+  return file
+}
+
+export const getFileWorkspacesByWorkspaceId = async (workspaceId: string) => {
+  const { data: fileWorkspace, error } = await supabase
+    .from("file_workspaces")
     .select(
       `
       *
     `
     )
-    .not("id", "in", `(${(workspace?.files.map(it => it.id) ?? []).join(",")})`)
-
-  if (!workspace) {
-    throw new Error(error.message)
-  }
-
-  workspace.files = workspace.files.concat(
-    teamData?.map(it => {
-      // @ts-ignore
-      it.from_team = true
-      return it
-    }) ?? []
+  let { data: files, error: filesError } = await supabase.from("files").select(
+    `
+      *
+    `
   )
 
-  return workspace
+  if (error || filesError) {
+    throw new Error((error ?? filesError)?.message)
+  }
+
+  files =
+    files
+      ?.map(item => {
+        let workspacesForFile = fileWorkspace
+          ?.filter(fw => fw.file_id === item.id)
+          ?.map(it => it.workspace_id)
+        // file is not know to the user
+        if (workspacesForFile.length === 0) {
+          // @ts-ignore
+          item.from_team = true
+          return item
+          // ... or is in the right workspace
+        } else if (workspacesForFile.includes(workspaceId)) {
+          return item
+        }
+        return undefined
+      })
+      ?.filter(item => !!item) ?? null
+
+  return files
 }
 
 export const getFileWorkspacesByFileId = async (fileId: string) => {

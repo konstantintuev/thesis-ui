@@ -35,7 +35,8 @@ export const DeleteFolder: FC<DeleteFolderProps> = ({
     setCollections,
     setAssistants,
     setTools,
-    setModels
+    setModels,
+    setRules
   } = useStore()
 
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -50,7 +51,9 @@ export const DeleteFolder: FC<DeleteFolderProps> = ({
     collections: setCollections,
     assistants: setAssistants,
     tools: setTools,
-    models: setModels
+    models: setModels,
+    teams: () => {},
+    rules: setRules
   }
 
   const handleDeleteFolderOnly = async () => {

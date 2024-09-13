@@ -152,3 +152,24 @@ export const createChatFilesState = (
     }
   })
 }
+
+export const deleteChatFilesIncludingAndAfter = async (
+  userId: string,
+  chatId: string,
+  sequenceNumber: number
+) => {
+  // 1. Delete chat files with sequenceNumber >= `sequenceNumber` and not NULL sequenceNumber number
+  const { error } = await supabase
+    .from("chat_files")
+    .delete()
+    .eq("user_id", userId)
+    .eq("chat_id", chatId)
+    .not("sequence_number", "is", null)
+    .gte("sequence_number", sequenceNumber)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return true
+}

@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS presets (
 -- INDEXES --
 
 CREATE INDEX presets_user_id_idx ON presets(user_id);
+CREATE INDEX presets_id_idx ON presets (id);
 
 -- RLS --
 
@@ -78,6 +79,7 @@ CREATE TABLE IF NOT EXISTS preset_workspaces (
 CREATE INDEX preset_workspaces_user_id_idx ON preset_workspaces(user_id);
 CREATE INDEX preset_workspaces_preset_id_idx ON preset_workspaces(preset_id);
 CREATE INDEX preset_workspaces_workspace_id_idx ON preset_workspaces(workspace_id);
+CREATE INDEX preset_workspaces_user_idx ON preset_workspaces (workspace_id, user_id);
 
 -- RLS --
 

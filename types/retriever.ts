@@ -14,6 +14,7 @@ export type QueryRelatedMetadata = {
     chunk_ids: string[]
     summary: string
   }
+  sequence_number: number
 }
 
 export type ExtendedFileForSearch = Tables<"files"> & {
@@ -23,7 +24,7 @@ export type ExtendedFileForSearch = Tables<"files"> & {
   basic_rule_info?: BasicRuleComparisonResults
   score: number
   already_queried?: boolean
-  query_related_metadata?: Json[]
+  query_related_metadata?: QueryRelatedMetadata[]
 }
 
 export type AttachableContent = {

@@ -1,22 +1,16 @@
-import { useChatHandler } from "@/components/chat/chat-hooks/use-chat-handler"
-import { Tables } from "@/supabase/types"
 import { FC } from "react"
 import { useStore } from "@/context/context"
-import { Message } from "../messages/message"
 import {
-  IconCircleFilled,
   IconFileFilled,
   IconFileTypeCsv,
   IconFileTypeDocx,
   IconFileTypePdf,
   IconFileTypeTxt,
   IconJson,
-  IconMarkdown,
-  IconX
+  IconMarkdown
 } from "@tabler/icons-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { cn } from "@/lib/utils"
 import { WithTooltip } from "@/components/ui/with-tooltip"
 
 interface RetrieverMessageFileHeaderProps {
@@ -56,7 +50,7 @@ export const RetrieverMessageFileHeader: FC<
             e.preventDefault()
           }
         }}
-        className={`relative flex h-[64px] cursor-pointer items-center space-x-4 rounded-xl px-4 py-3 no-underline ${
+        className={`relative flex h-[64px] cursor-pointer items-center space-x-4 rounded-xl px-4 py-3 no-underline transition-all duration-300 ease-in-out ${
           fileInfo.relevant === true
             ? "bg-green-600 text-white"
             : fileInfo.relevant === false

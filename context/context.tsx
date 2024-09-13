@@ -133,9 +133,6 @@ interface StoreState {
     pageId: string
     scrollTop: number
   }
-  setScrollHeight: Dispatch<
-    SetStateAction<{ pageId: string; scrollTop: number }>
-  >
 
   // CHAT INPUT COMMAND STORE
   isPromptPickerOpen: boolean
@@ -478,13 +475,6 @@ export const useStore = create<StoreState>(set => ({
     pageId: "",
     scrollTop: 0
   },
-  setScrollHeight: scrollHeight =>
-    set(state => ({
-      scrollHeight:
-        typeof scrollHeight === "function"
-          ? scrollHeight(state.scrollHeight)
-          : scrollHeight
-    })),
 
   // CHAT INPUT COMMAND STORE
   isPromptPickerOpen: false,

@@ -11,6 +11,18 @@ to authenticated
                                                  FROM chats
                                                  WHERE (chats.id = messages.chat_id)))));
 
+CREATE OR REPLACE FUNCTION public.is_message_sequential(_sequence_number integer, _chat_id uuid)
+    RETURNS boolean
+    LANGUAGE sql
+    SECURITY DEFINER
+AS
+$function$
+Select NOT EXISTS (SELECT 1
+                   FROM messages msg
+                   WHERE (msg.chat_id = _chat_id AND msg.sequence_number >= _sequence_number));
+$function$
+;
+
 create policy "Allow insert with sequential check to messages"
     on "public"."messages"
     as permissive
@@ -43,17 +55,3 @@ create policy "Allow delete without sequential check to messages"
     using (((user_id = auth.uid())) AND ((EXISTS (SELECT 1
                                                  FROM chats
                                                  WHERE (chats.id = messages.chat_id)))));
-
-
-
-CREATE OR REPLACE FUNCTION public.is_message_sequential(_sequence_number integer, _chat_id uuid)
-    RETURNS boolean
-    LANGUAGE sql
-    SECURITY DEFINER
-AS
-$function$
-Select NOT EXISTS (SELECT 1
-                   FROM messages msg
-                   WHERE (msg.chat_id = _chat_id AND msg.sequence_number >= _sequence_number));
-$function$
-;

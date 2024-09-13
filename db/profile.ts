@@ -2,10 +2,10 @@ import { supabase } from "@/lib/supabase/browser-client"
 import { TablesInsert, TablesUpdate } from "@/supabase/types"
 
 export const getProfileByUserId = async (userId: string) => {
+  // We allow only one profile for now
   const { data: profile, error } = await supabase
     .from("profiles")
     .select("*")
-    .eq("user_id", userId)
     .single()
 
   if (!profile) {

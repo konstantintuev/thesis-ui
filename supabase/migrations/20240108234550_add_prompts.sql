@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS prompts (
 -- INDEXES --
 
 CREATE INDEX prompts_user_id_idx ON prompts(user_id);
+CREATE INDEX prompts_id_idx ON prompts (id);
 
 -- RLS --
 
@@ -71,6 +72,7 @@ CREATE TABLE IF NOT EXISTS prompt_workspaces (
 CREATE INDEX prompt_workspaces_user_id_idx ON prompt_workspaces(user_id);
 CREATE INDEX prompt_workspaces_prompt_id_idx ON prompt_workspaces(prompt_id);
 CREATE INDEX prompt_workspaces_workspace_id_idx ON prompt_workspaces(workspace_id);
+CREATE INDEX prompt_workspaces_user_idx ON prompt_workspaces (workspace_id, user_id);
 
 -- RLS --
 

@@ -4,7 +4,13 @@ import { ChatSettings, LLMID } from "@/types"
 import { OpenAIStream, StreamingTextResponse } from "ai"
 import OpenAI from "openai"
 import { createClient } from "@supabase/supabase-js"
-import { Database, Json, Tables, TablesInsert } from "@/supabase/types"
+import {
+  Database,
+  Json,
+  Tables,
+  TablesInsert,
+  TablesUpdate
+} from "@/supabase/types"
 import { generateBgeLocalEmbedding } from "@/lib/generate-local-embedding"
 import { NextResponse } from "next/server"
 import { searchFilesMLServer } from "@/lib/retrieval/processing/multiple"
@@ -23,6 +29,7 @@ import {
   addUuidObjectToString,
   uuidPattern
 } from "@/lib/retrieval/attachable-content"
+import { refinedPrompt } from "@/app/api/chat/file_retriever/retriever-prompts"
 
 export const runtime = "edge"
 
@@ -49,6 +56,15 @@ async function* getStreamingResponses(
     const stream: ReadableStream<Uint8Array> = OpenAIStream(response)
     yield stream
   }
+}
+
+const countOccurrences = (str_: string, subStr: string) => {
+  let occurrenceCount = 0
+  let pos = -subStr.length
+  while ((pos = str_.indexOf(subStr, pos + subStr.length)) > -1) {
+    occurrenceCount++
+  }
+  return occurrenceCount
 }
 
 export async function POST(request: Request) {
@@ -184,7 +200,6 @@ export async function POST(request: Request) {
       .from("chat_files")
       .select("*")
       .eq("chat_id", chatId!)
-      .eq("user_id", profile.user_id)
 
     if (currentChatFiles) {
       filesFound.forEach(retrievedFile => {
@@ -195,6 +210,19 @@ export async function POST(request: Request) {
         retrievedFile.already_queried = !!existingChatFile
         retrievedFile.query_related_metadata =
           existingChatFile?.query_related_metadata as any
+
+        if (retrievedFile.query_related_metadata) {
+          retrievedFile.query_related_metadata =
+            retrievedFile.query_related_metadata.filter(
+              metadata =>
+                // If the sequence_number we are about to set (messages.length - 1) is superseded => ignore
+                !(
+                  metadata.sequence_number &&
+                  metadata.sequence_number >= messages.length - 1
+                )
+            )
+          console.log("")
+        }
       })
     }
 
@@ -232,55 +260,57 @@ export async function POST(request: Request) {
 
       // for each file run summary and return streaming text response
       //  -> when the stream ends, replace with new stream of next file
-      const messagesArray = filesFound.map(file => [
+      const messagesArray = filesFound.map((file, index) => [
         {
           role: "system",
-          content: `Today is ${new Date().toLocaleDateString()}.
-
-User Instructions:
-You are a friendly, helpful AI assistant.`
+          content: refinedPrompt
         },
         {
           role: "user",
           content:
-            "I have the following question: " +
+            "I have the following question:\n\n" +
             fileQuery +
             "\n\n" +
-            "Here are relevant sections from a document:\n" +
-            +"<DOCUEMENT SECTIONS>\n" +
+            "I have found the following document sections, which might help answer my question.\n" +
+            "Could you review them, please?\n" +
+            +"<DOCUMENT SECTIONS>\n" +
             file.chunks?.map(item => `${item.content}`).join("\n\n") +
-            "\n</DOCUEMENT SECTIONS>\n" +
-            "Start your answers with 'Given your question, the document was found to address the following:'\n" +
-            "Using markdown formatting, please with 2 sentences give the main topic of the document and if it's relevant to the question.\n" +
-            "Aditionally, very shortly summarise with bullet points, which information from the document sections is relevant to the question.\n" +
-            "Please ignore irrelevant information from the document sections and don't even mention it.\n" +
-            "If you need to go into more detail, please use a collapsible with <details> <summary> </summary> </details>.\n" +
-            "Please use html syntax inside the <details></details> tags, markdown in <details></details> can't be rendered."
+            "\n</DOCUMENT SECTIONS>"
         }
       ])
 
-      let updateChatFiles: TablesInsert<"chat_files">[] = filesFound.map(
-        file => ({
-          chat_id: chatId,
-          file_id: file.id,
-          user_id: profile.user_id,
-          score_metadata: {
-            basic_rule_info: file.basic_rule_info,
-            basic_rule_relevance: file.basic_rule_relevance_score
-          },
-          query_related_metadata: [
-            ...(file.query_related_metadata ?? []),
-            {
-              file_query: fileQuery,
-              metadata: {
-                average_chunk_relevance: file.avg_chunk_relevance_score,
-                score: file.score,
-                chunk_ids: file.chunks.map(chunk => chunk.id),
-                summary: ""
+      let updateChatFiles: TablesUpdate<"chat_files">[] = filesFound.map(
+        file => {
+          return {
+            chat_id: chatId,
+            file_id: file.id,
+            // Don't update the creator/owner
+            user_id: file.already_queried ? undefined : profile.user_id,
+            // Update company rules
+            score_metadata: {
+              basic_rule_info: file.basic_rule_info,
+              basic_rule_relevance: file.basic_rule_relevance_score
+            },
+            // Add metadata of latest query
+            query_related_metadata: [
+              ...(file.query_related_metadata ?? []),
+              {
+                file_query: fileQuery,
+                metadata: {
+                  average_chunk_relevance: file.avg_chunk_relevance_score,
+                  score: file.score,
+                  chunk_ids: file.chunks.map(chunk => chunk.id),
+                  summary: ""
+                },
+                sequence_number: messages.length - 1
               }
-            }
-          ] as QueryRelatedMetadata[]
-        })
+            ] as QueryRelatedMetadata[],
+            // Don't update belonging message sequence number for delete
+            sequence_number: file.already_queried
+              ? undefined
+              : messages.length - 1
+          }
+        }
       )
 
       let currentChatCollectionCreator = await getChatCollectionCreator(
@@ -318,7 +348,8 @@ You are a friendly, helpful AI assistant.`
 
       const { error: updateChatFilesError } = await supabaseAdmin
         .from("chat_files")
-        .upsert(updateChatFiles)
+        // We are not actually inserting files without relevant keys, just update them
+        .upsert(updateChatFiles as any)
 
       const encoder = new TextEncoder()
       let decoder = new TextDecoder("utf-8")
@@ -359,9 +390,13 @@ You are a friendly, helpful AI assistant.`
                       duplicateReference: relevantFile.already_queried
                     }) +
                     `\n\`\`\`\n\n` +
-                    `Relevance Score: ${totalScore}% ` +
-                    `(Vector Search Score: ${avgChunkRelevance}%; Company Rules Score: ${basicRuleRelevance}%)\n\n` +
-                    `Company rule breakdown:\n\`\`\`json\n${JSON.stringify(relevantFile.basic_rule_info ?? {}, null, 4)}\n\`\`\`\n\n`
+                    `**Relevance Score**: ${totalScore}% ` +
+                    `(**Semantic Search Score**: ${avgChunkRelevance}%; **Company Rules Score**: ${basicRuleRelevance}%)\n\n` +
+                    "<details>\n" +
+                    "<summary>Company rule breakdown:</summary>\n\n" +
+                    `\`\`\`chatfilecompanyrules\n${JSON.stringify(relevantFile.basic_rule_info ?? {}, null, 4)}\n\`\`\`\n\n` +
+                    "</details>\n" +
+                    "<br/>\n"
                 )
               )
               // @ts-ignore
@@ -369,22 +404,45 @@ You are a friendly, helpful AI assistant.`
                 generatedText += decoder.decode(chunk)
                 controller.enqueue(chunk)
               }
-              if (
-                generatedText.includes("<details>") &&
-                !generatedText.includes("</details>")
-              ) {
-                generatedText += "\n</details>"
-                controller.enqueue(encoder.encode("\n</details>"))
+
+              let amountOfSummaryOpens = countOccurrences(
+                generatedText,
+                "<summary>"
+              )
+              let amountOfSummaryCloses = countOccurrences(
+                generatedText,
+                "</summary>"
+              )
+              if (amountOfSummaryOpens > amountOfSummaryCloses) {
+                for (
+                  let i = 0;
+                  i < amountOfSummaryOpens - amountOfSummaryCloses;
+                  i++
+                ) {
+                  generatedText += "\n</summary>"
+                  controller.enqueue(encoder.encode("\n</summary>"))
+                }
               }
-              if (
-                generatedText.includes("<summary>") &&
-                !generatedText.includes("</summary>")
-              ) {
-                generatedText += "\n</summary>"
-                controller.enqueue(encoder.encode("\n</summary>"))
+
+              let amountOfDetailOpens = countOccurrences(
+                generatedText,
+                "<details>"
+              )
+              let amountOfDetailCloses = countOccurrences(
+                generatedText,
+                "</details>"
+              )
+              if (amountOfDetailOpens > amountOfDetailCloses) {
+                for (
+                  let i = 0;
+                  i < amountOfDetailOpens - amountOfDetailCloses;
+                  i++
+                ) {
+                  generatedText += "\n</details>"
+                  controller.enqueue(encoder.encode("\n</details>"))
+                }
               }
-              const ok = "o"
-              console.log(ok)
+
               // Line end
               controller.enqueue(encoder.encode("\n\n******\n\n"))
               const { data, error } = await supabaseAdmin
@@ -400,7 +458,8 @@ You are a friendly, helpful AI assistant.`
                         score: relevantFile.score,
                         chunk_ids: relevantFile.chunks.map(chunk => chunk.id),
                         summary: generatedText
-                      }
+                      },
+                      sequence_number: messages.length - 1
                     }
                   ] as QueryRelatedMetadata[]
                 })
@@ -428,10 +487,10 @@ You are a friendly, helpful AI assistant.`
 
       if (errorMessage.toLowerCase().includes("api key not found")) {
         errorMessage =
-          "Groq API Key not found. Please set it in your profile settings."
+          "API Key not found. Please set it in your profile settings."
       } else if (errorCode === 401) {
         errorMessage =
-          "Groq API Key is incorrect. Please fix it in your profile settings."
+          "API Key is incorrect. Please fix it in your profile settings."
       }
 
       return new Response(JSON.stringify({ message: errorMessage }), {

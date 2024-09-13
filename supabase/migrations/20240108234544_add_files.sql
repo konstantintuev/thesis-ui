@@ -31,6 +31,9 @@ CREATE TABLE IF NOT EXISTS files (
 -- INDEXES --
 
 CREATE INDEX files_user_id_idx ON files(user_id);
+CREATE INDEX idx_files_id ON files (id);
+CREATE INDEX files_folder_idx ON files (folder_id);
+CREATE INDEX idx_files_user_id ON files (user_id);
 
 -- RLS --
 
@@ -139,6 +142,7 @@ CREATE TABLE IF NOT EXISTS file_workspaces (
 CREATE INDEX file_workspaces_user_id_idx ON file_workspaces(user_id);
 CREATE INDEX file_workspaces_file_id_idx ON file_workspaces(file_id);
 CREATE INDEX file_workspaces_workspace_id_idx ON file_workspaces(workspace_id);
+CREATE INDEX file_workspaces_user_idx ON file_workspaces (workspace_id, user_id);
 
 -- RLS --
 

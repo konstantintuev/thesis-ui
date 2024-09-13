@@ -263,7 +263,7 @@ export const handleHostedChat = async (
   const collectionData = await getCollectionWorkspacesByWorkspaceId(
     payload.workspaceId
   )
-  setCollections(collectionData.collections)
+  setCollections(collectionData ?? [])
 
   return await processResponse(
     response,

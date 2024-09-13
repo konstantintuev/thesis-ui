@@ -1,4 +1,4 @@
-import React, { FC } from "react"
+import React, { createContext, FC } from "react"
 import remarkGfm from "remark-gfm"
 import rehypeKatex from "rehype-katex"
 import remarkMath from "remark-math"
@@ -7,26 +7,53 @@ import "katex/dist/katex.min.css" // `rehype-katex` does not import the CSS for 
 import { MessageCodeBlock } from "./message-codeblock"
 import { MessageMarkdownMemoized } from "./message-markdown-memoized"
 import { jsonStringToRetrieverMessageFileHeader } from "@/components/messages/retriever-message-file-header"
+import ExpandableText from "@/components/messages/expandable-text"
+import InfoTable from "@/components/messages/retriever-company-rules"
 
 interface MessageMarkdownProps {
   content: string
+  enableReadMore: boolean
 }
 
-export const MessageMarkdown: FC<MessageMarkdownProps> = ({ content }) => {
+export const DetailsContext = createContext(false)
+
+export const MessageMarkdown: FC<MessageMarkdownProps> = ({
+  content,
+  enableReadMore
+}) => {
   return (
     <MessageMarkdownMemoized
       className="prose dark:prose-invert prose-p:leading-relaxed prose-pre:p-0 min-w-full space-y-6 break-words"
       remarkPlugins={[remarkGfm, remarkMath]}
       rehypePlugins={[rehypeKatex, rehypeRaw]}
       components={{
-        p({ children }) {
-          return <p className="mb-2 last:mb-0">{children}</p>
+        details: ({ node, children, ...props }) => (
+          <DetailsContext.Provider value={true}>
+            <details {...props}>{children}</details>
+          </DetailsContext.Provider>
+        ),
+        summary: ({ node, children, ...props }) => (
+          <summary {...props}>
+            <b>{children}</b>
+          </summary>
+        ),
+        p({ children, ...props }) {
+          return (
+            <p className="mb-2 mt-0 last:mb-0">
+              {enableReadMore ? (
+                <ExpandableText>{children}</ExpandableText>
+              ) : (
+                children
+              )}
+            </p>
+          )
         },
         img({ node, ...props }) {
           return <img className="max-w-[67%]" {...props} />
         },
         pre({ node, className, children, ...props }) {
           let chatFileMetadata = ""
+          let companyRules = ""
           if (
             node?.children.some(child => {
               if (
@@ -46,11 +73,24 @@ export const MessageMarkdown: FC<MessageMarkdownProps> = ({ content }) => {
                     )
                     .join("\n")
                   return true
+                } else if (
+                  ((match && match[1]) || "") === "chatfilecompanyrules"
+                ) {
+                  companyRules = child.children
+                    .map(childer =>
+                      childer.type === "text" ? childer.value : ""
+                    )
+                    .join("\n")
+                  return true
                 }
               }
             })
           ) {
-            return jsonStringToRetrieverMessageFileHeader(chatFileMetadata)
+            if (chatFileMetadata.length > 0) {
+              return jsonStringToRetrieverMessageFileHeader(chatFileMetadata)
+            } else if (companyRules.length > 0) {
+              return <InfoTable jsonData={companyRules} />
+            }
           }
           return (
             <pre className={className} {...props}>

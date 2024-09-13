@@ -178,9 +178,9 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
     const rulesLocal = await getRules()
 
     setChats(chats)
-    setCollections(collectionData.collections)
+    setCollections(collectionData ?? [])
     setFolders(folders)
-    setFiles(fileData.files)
+    setFiles(fileData ?? [])
     setPresets(presetData.presets)
     setPrompts(promptData.prompts)
     setTools(toolData.tools)

@@ -58,6 +58,7 @@ export const CreateAssistant: FC<CreateAssistantProps> = ({
   const handleRetrievalItemSelect = (
     item: Tables<"files"> | Tables<"collections">
   ) => {
+    // @ts-ignore
     setSelectedAssistantRetrievalItems(prevState => {
       const isItemAlreadySelected = prevState.find(
         selectedItem => selectedItem.id === item.id

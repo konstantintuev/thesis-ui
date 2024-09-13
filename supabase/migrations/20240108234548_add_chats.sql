@@ -36,6 +36,8 @@ CREATE TABLE IF NOT EXISTS chats (
 
 CREATE INDEX idx_chats_user_id ON chats (user_id);
 CREATE INDEX idx_chats_workspace_id ON chats (workspace_id);
+CREATE INDEX idx_chats_folder_id ON chats (folder_id);
+CREATE INDEX idx_chats_id ON chats (id);
 
 -- RLS --
 
@@ -72,12 +74,14 @@ CREATE TABLE IF NOT EXISTS chat_files (
 
     -- METADATA
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ
+    updated_at TIMESTAMPTZ,
+    sequence_number INT
 );
 
 -- INDEXES --
 
 CREATE INDEX idx_chat_files_chat_id ON chat_files (chat_id);
+CREATE INDEX idx_chat_files_file_id ON chat_files (file_id);
 
 -- RLS --
 

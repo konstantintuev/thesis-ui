@@ -6,32 +6,31 @@ export const getFoldersByWorkspaceId = async (
   workspaceId: string,
   userWorkspaces: Tables<"workspaces">[]
 ) => {
-  const { data: folders, error } = await supabase
-    .from("folders")
-    .select("*")
-    // either folder is in the workspace
-    .or(
-      `workspace_id.eq.${workspaceId},workspace_id.not.in.(${userWorkspaces.map(it => it.id).join(",")})`
-    )
-    .eq("workspace_id", workspaceId)
+  let { data: folders, error } = await supabase.from("folders").select("*")
 
-  const { data: teamFolders, error: teamError } = await supabase
-    .from("folders")
-    .select("*")
-    // ...or not in any user workspace as shared by team
-    .not("workspace_id", "in", `(${userWorkspaces.map(it => it.id).join(",")})`)
+  const ownWorkspaceIds = userWorkspaces.map(it => it.id)
+  folders =
+    folders
+      ?.map(folder => {
+        // either not in any (team folder)
+        if (!ownWorkspaceIds.includes(folder.workspace_id)) {
+          // @ts-ignore
+          folder.from_team = true
+          return folder
+          // ... or in the workspace or
+        } else if (folder.workspace_id === workspaceId) {
+          return folder
+        } else {
+          return undefined
+        }
+      })
+      .filter(item => !!item) ?? null
 
   if (!folders) {
-    throw new Error(error.message)
+    throw new Error(error?.message)
   }
 
-  return folders.concat(
-    teamFolders?.map(it => {
-      // @ts-ignore
-      it.from_team = true
-      return it
-    }) ?? []
-  )
+  return folders ?? []
 }
 
 export const createFolder = async (

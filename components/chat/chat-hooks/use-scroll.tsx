@@ -9,7 +9,7 @@ import { useMessageStore, useStore } from "@/context/context"
 import { useParams } from "next/navigation"
 
 export const useScroll = () => {
-  const { isGenerating, scrollHeight, setScrollHeight } = useStore()
+  const { isGenerating, scrollHeight } = useStore()
   const { chatMessages } = useMessageStore()
 
   const params = useParams()

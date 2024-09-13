@@ -21,12 +21,16 @@ CREATE TABLE IF NOT EXISTS collections (
 
     -- REQUIRED
     description TEXT NOT NULL CHECK (char_length(description) <= 500),
-    name TEXT NOT NULL CHECK (char_length(name) <= 100)
+    name TEXT NOT NULL CHECK (char_length(name) <= 100),
+    hidden BOOLEAN DEFAULT FALSE NOT NULL
 );
 
 -- INDEXES --
 
 CREATE INDEX collections_user_id_idx ON collections(user_id);
+CREATE INDEX collections_id_idx ON collections (id);
+CREATE INDEX collections_folder_id_idx ON collections (folder_id);
+CREATE INDEX collections_access_idx ON collections (id, hidden);
 
 -- RLS --
 
@@ -71,6 +75,7 @@ CREATE TABLE IF NOT EXISTS collection_workspaces (
 CREATE INDEX collection_workspaces_user_id_idx ON collection_workspaces(user_id);
 CREATE INDEX collection_workspaces_collection_id_idx ON collection_workspaces(collection_id);
 CREATE INDEX collection_workspaces_workspace_id_idx ON collection_workspaces(workspace_id);
+CREATE INDEX collection_workspaces_user_idx ON collection_workspaces (workspace_id, user_id);
 
 -- RLS --
 
@@ -78,14 +83,29 @@ ALTER TABLE collection_workspaces ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Allow full access to own collection_workspaces"
     ON collection_workspaces
-    USING (user_id = auth.uid())
-    WITH CHECK (user_id = auth.uid());
+    USING
+    ((user_id = auth.uid()) AND
+     (EXISTS (SELECT 1
+              FROM collections
+              WHERE (collections.id = collection_workspaces.collection_id
+                  AND
+                     collections.hidden = FALSE
+                        ))
+         ))
+    WITH CHECK ((user_id = auth.uid()) AND
+                (EXISTS (SELECT 1
+                         FROM collections
+                         WHERE (collections.id = collection_workspaces.collection_id
+                             AND
+                                collections.hidden = FALSE
+                                   ))
+                    ));
 
 -- TRIGGERS --
 
 CREATE TRIGGER update_collection_workspaces_updated_at
-BEFORE UPDATE ON collection_workspaces 
-FOR EACH ROW 
+BEFORE UPDATE ON collection_workspaces
+FOR EACH ROW
 EXECUTE PROCEDURE update_updated_at_column();
 
 --------------- COLLECTION FILES ---------------
@@ -129,8 +149,8 @@ CREATE POLICY "Allow view access to collection files for non-private collections
 -- TRIGGERS --
 
 CREATE TRIGGER update_collection_files_updated_at
-BEFORE UPDATE ON collection_files 
-FOR EACH ROW 
+BEFORE UPDATE ON collection_files
+FOR EACH ROW
 EXECUTE PROCEDURE update_updated_at_column();
 
 --------------- REFERS BACK TO FILES ---------------

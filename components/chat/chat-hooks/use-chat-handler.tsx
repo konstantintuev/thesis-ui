@@ -6,7 +6,13 @@ import { getCollectionFilesByCollectionId } from "@/db/collection-files"
 import { deleteMessagesIncludingAndAfter } from "@/db/messages"
 import { buildFinalMessages } from "@/lib/build-prompt"
 import { Tables } from "@/supabase/types"
-import { ChatMessage, ChatPayload, LLMID, ModelProvider } from "@/types"
+import {
+  ChatMessage,
+  ChatPayload,
+  isModelIdFileRetriever,
+  LLMID,
+  ModelProvider
+} from "@/types"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef } from "react"
 import { useMessageStore, useStore } from "@/context/context"
@@ -26,6 +32,7 @@ import {
   getChatCollectionCreator
 } from "@/db/collections"
 import { toast } from "sonner"
+import { deleteChatFilesIncludingAndAfter } from "@/db/chat-files"
 
 export const useChatHandler = () => {
   const router = useRouter()
@@ -518,6 +525,17 @@ export const useChatHandler = () => {
         selectedChat.id,
         sequenceNumber
       )
+
+      if (
+        isModelIdFileRetriever(selectedChat.model) &&
+        selectedChat.model === chatSettings?.model
+      ) {
+        await deleteChatFilesIncludingAndAfter(
+          profile?.user_id,
+          selectedChat.id,
+          sequenceNumber
+        )
+      }
 
       const filteredMessages = chatMessages.filter(
         chatMessage => chatMessage.message.sequence_number < sequenceNumber

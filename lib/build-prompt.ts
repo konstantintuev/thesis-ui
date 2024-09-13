@@ -1,6 +1,7 @@
 import { Tables } from "@/supabase/types"
 import { ChatPayload, isModelIdFileRetriever, MessageImage } from "@/types"
 import { encode } from "gpt-tokenizer"
+import { getFilesById } from "@/db/files"
 
 const buildBasePrompt = (
   prompt: string,
@@ -62,37 +63,39 @@ export async function buildFinalMessages(
   const addRAGTextToPreviousMsg = false
   let processedChatMessages = chatMessages
   if (addRAGTextToPreviousMsg) {
-    processedChatMessages = chatMessages.map((chatMessage, index) => {
-      const nextChatMessage = chatMessages[index + 1]
+    processedChatMessages = await Promise.all(
+      chatMessages.map(async (chatMessage, index) => {
+        const nextChatMessage = chatMessages[index + 1]
 
-      if (nextChatMessage === undefined) {
-        return chatMessage
-      }
-
-      const nextChatMessageFileItems = nextChatMessage.fileItems
-
-      if (nextChatMessageFileItems.length > 0) {
-        const findFileItems = nextChatMessageFileItems
-          .map(fileItemId =>
-            chatFileItems.find(chatFileItem => chatFileItem.id === fileItemId)
-          )
-          .filter(item => item !== undefined) as Tables<"file_items">[]
-
-        const retrievalText = buildRetrievalText(findFileItems)
-
-        return {
-          message: {
-            ...chatMessage.message,
-            content:
-              `${chatMessage.message.content}\n\n${retrievalText}` as string
-          },
-          profile: chatMessage.profile,
-          fileItems: []
+        if (nextChatMessage === undefined) {
+          return chatMessage
         }
-      }
 
-      return chatMessage
-    })
+        const nextChatMessageFileItems = nextChatMessage.fileItems
+
+        if (nextChatMessageFileItems.length > 0) {
+          const findFileItems = nextChatMessageFileItems
+            .map(fileItemId =>
+              chatFileItems.find(chatFileItem => chatFileItem.id === fileItemId)
+            )
+            .filter(item => item !== undefined) as Tables<"file_items">[]
+
+          const retrievalText = await buildRetrievalText(findFileItems)
+
+          return {
+            message: {
+              ...chatMessage.message,
+              content:
+                `${chatMessage.message.content}\n\n${retrievalText}` as string
+            },
+            profile: chatMessage.profile,
+            fileItems: []
+          }
+        }
+
+        return chatMessage
+      })
+    )
   }
 
   let finalMessages = []
@@ -174,7 +177,7 @@ export async function buildFinalMessages(
     !isModelIdFileRetriever(chatSettings.model) &&
     messageFileItems.length > 0
   ) {
-    const retrievalText = buildRetrievalText(messageFileItems)
+    const retrievalText = await buildRetrievalText(messageFileItems)
 
     finalMessages[finalMessages.length - 1] = {
       ...finalMessages[finalMessages.length - 1],
@@ -188,11 +191,51 @@ export async function buildFinalMessages(
 }
 
 const retrievalTextIntro =
-  "You may use the following sources if needed to answer the user's question. If you don't know the answer, say \"I don't know."
+  "You may use the following documents if needed to answer the user's question. If you don't know the answer, say \"I don't know.\""
 
-function buildRetrievalText(fileItems: Tables<"file_items">[]) {
-  const retrievalText = fileItems
-    .map(item => `<BEGIN SOURCE>\n${item.content}\n</END SOURCE>`)
+/* I have added info about the document segments' origin - which document they come from.
+ * This is because in cross-domain questions requiring multiple sources (e.g. which brakes work with the motor)
+ *   the LLM gets confused about the fused specs of brakes and motor in the same message and
+ *   assumes everything belongs together as weird motor/brake hybrid specification.
+ * */
+async function buildRetrievalText(fileItems: Tables<"file_items">[]) {
+  // Group by file name for cross domain questions
+  let groupedFiles = fileItems.reduce(
+    (result, item) => {
+      const groupKey = item.file_id
+      if (!result[groupKey]) {
+        result[groupKey] = []
+      }
+      result[groupKey].push(item)
+
+      return result
+    },
+    {} as Record<string, Tables<"file_items">[]>
+  )
+  const fileIds = Object.keys(groupedFiles)
+  let files = await getFilesById(fileIds)
+  for (const fileId of fileIds) {
+    let file = files.find(it => it.id === fileId)
+    // I can't use an index as sql reorders the files sometimes
+    if (file) {
+      groupedFiles[file.name] = groupedFiles[fileId]
+      delete groupedFiles[fileId]
+    }
+  }
+
+  const retrievalText = Object.entries(groupedFiles)
+    .map(
+      file =>
+        "<BEGIN DOCUMENT>\n\n" +
+        `<DOCUMENT TITLE>${file[0]}</DOCUMENT TITLE>\n\n` +
+        file[1]
+          .map(
+            item =>
+              `<BEGIN DOCUMENT SEGMENT>\n${item.content}\n</END DOCUMENT SEGMENT>`
+          )
+          .join("\n") +
+        "\n\n</END DOCUMENT>"
+    )
     .join("\n\n")
 
   return `${retrievalTextIntro}"\n\n${retrievalText}`

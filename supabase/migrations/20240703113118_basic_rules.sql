@@ -53,14 +53,13 @@ create table if not exists rules(
 
 alter table "public"."rules" enable row level security;
 
+-- Everyone authenticated read rules
 create policy "Enable read access to rule folders"
     on "public"."folders"
     as permissive
     for select
-    to public
-    using ((EXISTS (SELECT 1
-                    FROM rules
-                    WHERE (rules.folder_id = folders.id))));
+    to authenticated
+    using (type = 'rules');
 
 create policy "Enable delete for users based on user_id"
     on "public"."rules"

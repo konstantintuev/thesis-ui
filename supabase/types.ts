@@ -391,6 +391,7 @@ export type Database = {
           query_related_metadata: Json | null
           relevant: boolean | null
           score_metadata: Json | null
+          sequence_number: number | null
           updated_at: string | null
           user_id: string
         }
@@ -402,6 +403,7 @@ export type Database = {
           query_related_metadata?: Json | null
           relevant?: boolean | null
           score_metadata?: Json | null
+          sequence_number?: number | null
           updated_at?: string | null
           user_id: string
         }
@@ -413,6 +415,7 @@ export type Database = {
           query_related_metadata?: Json | null
           relevant?: boolean | null
           score_metadata?: Json | null
+          sequence_number?: number | null
           updated_at?: string | null
           user_id?: string
         }

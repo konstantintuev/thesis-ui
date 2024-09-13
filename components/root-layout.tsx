@@ -43,7 +43,7 @@ export function RootLayoutComponent({
   }
 
   return (
-    <Providers attribute="class" defaultTheme="dark">
+    <Providers attribute="class" defaultTheme="light">
       <TranslationsProvider
         namespaces={i18nNamespaces}
         locale={locale}

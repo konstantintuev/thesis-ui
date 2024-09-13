@@ -19,6 +19,8 @@ CREATE TABLE IF NOT EXISTS chat_collection_creator
 -- INDEXES --
 
 CREATE INDEX idx_chat_collection_creator_chat_id ON chat_collection_creator (chat_id);
+CREATE INDEX idx_chat_collection_creator_collection_id ON chat_collection_creator (collection_id);
+CREATE INDEX idx_chat_collection_creator_both_idx ON chat_collection_creator USING btree (chat_id, collection_id);
 
 -- RLS --
 
@@ -59,6 +61,8 @@ CREATE TABLE IF NOT EXISTS chat_collection_consumer
 -- INDEXES --
 
 CREATE INDEX idx_chat_collection_consumer_chat_id ON chat_collection_consumer (chat_id);
+CREATE INDEX idx_chat_collection_consumer_collection_id ON chat_collection_consumer (collection_id);
+CREATE INDEX idx_chat_collection_consumer_both_idx ON chat_collection_consumer USING btree (chat_id, collection_id);
 
 -- RLS --
 

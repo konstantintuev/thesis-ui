@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS assistants (
 -- INDEXES --
 
 CREATE INDEX assistants_user_id_idx ON assistants(user_id);
+CREATE INDEX assistants_id_idx ON assistants (id);
 
 -- RLS --
 
@@ -143,6 +144,7 @@ CREATE TABLE IF NOT EXISTS assistant_workspaces (
 CREATE INDEX assistant_workspaces_user_id_idx ON assistant_workspaces(user_id);
 CREATE INDEX assistant_workspaces_assistant_id_idx ON assistant_workspaces(assistant_id);
 CREATE INDEX assistant_workspaces_workspace_id_idx ON assistant_workspaces(workspace_id);
+CREATE INDEX assistant_workspaces_user_idx ON assistant_workspaces (workspace_id, user_id);
 
 -- RLS --
 

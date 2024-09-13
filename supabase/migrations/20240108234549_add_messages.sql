@@ -28,6 +28,8 @@ CREATE TABLE IF NOT EXISTS messages (
 -- INDEXES --
 
 CREATE INDEX idx_messages_chat_id ON messages (chat_id);
+CREATE INDEX idx_messages_user_id ON messages (user_id);
+CREATE INDEX idx_messages_chat_id_sequence_number ON messages (chat_id, sequence_number);
 
 -- RLS --
 

@@ -2,7 +2,13 @@ import { useChatHandler } from "@/components/chat/chat-hooks/use-chat-handler"
 import { LLM_LIST } from "@/lib/models/llm/llm-list"
 import { cn } from "@/lib/utils"
 import { Tables } from "@/supabase/types"
-import { LLM, LLMID, MessageImage, ModelProvider } from "@/types"
+import {
+  isModelIdFileRetriever,
+  LLM,
+  LLMID,
+  MessageImage,
+  ModelProvider
+} from "@/types"
 import {
   IconBolt,
   IconCaretDownFilled,
@@ -14,7 +20,7 @@ import {
 } from "@tabler/icons-react"
 import Image from "next/image"
 import { FC, useEffect, useRef, useState } from "react"
-import { useStore } from "@/context/context"
+import { useMessageStore, useStore } from "@/context/context"
 import { ModelIcon } from "../models/model-icon"
 import { Button } from "../ui/button"
 import { FileIcon } from "../ui/file-icon"
@@ -54,7 +60,6 @@ export const Message: FC<MessageProps> = ({
     firstTokenReceived,
     availableLocalModels,
     availableOpenRouterModels,
-    chatMessages,
     selectedAssistant,
     chatImages,
     assistantImages,
@@ -62,6 +67,8 @@ export const Message: FC<MessageProps> = ({
     files,
     models
   } = useStore()
+
+  const { chatMessages } = useMessageStore()
 
   const { handleSendMessage } = useChatHandler()
 
@@ -306,7 +313,10 @@ export const Message: FC<MessageProps> = ({
               maxRows={20}
             />
           ) : (
-            <MessageMarkdown content={message.content} />
+            <MessageMarkdown
+              content={message.content}
+              enableReadMore={isModelIdFileRetriever(message.model)}
+            />
           )}
         </div>
 

@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS models (
 -- INDEXES --
 
 CREATE INDEX models_user_id_idx ON models(user_id);
+CREATE INDEX models_id_idx ON models (id);
 
 -- RLS --
 
@@ -74,6 +75,7 @@ CREATE TABLE IF NOT EXISTS model_workspaces (
 CREATE INDEX model_workspaces_user_id_idx ON model_workspaces(user_id);
 CREATE INDEX model_workspaces_model_id_idx ON model_workspaces(model_id);
 CREATE INDEX model_workspaces_workspace_id_idx ON model_workspaces(workspace_id);
+CREATE INDEX model_workspaces_user_idx ON assistant_workspaces (workspace_id, user_id);
 
 -- RLS --
 

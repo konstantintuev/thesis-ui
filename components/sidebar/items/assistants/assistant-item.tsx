@@ -164,140 +164,153 @@ export const AssistantItem: FC<AssistantItemProps> = ({ assistant }) => {
         setSelectedAssistantTools: React.Dispatch<
           React.SetStateAction<Tables<"tools">[]>
         >
-      }) => (
-        <>
-          <div className="space-y-1">
-            <Label>Name</Label>
+      }) => {
+        const {
+          selectedAssistantFiles,
+          selectedAssistantCollections,
+          startingAssistantFiles,
+          startingAssistantCollections
+        } = renderState
 
-            <Input
-              placeholder="Assistant name..."
-              value={name}
-              onChange={e => setName(e.target.value)}
-              maxLength={ASSISTANT_NAME_MAX}
+        const hasNoSelections =
+          selectedAssistantFiles.length === 0 &&
+          selectedAssistantCollections.length === 0
+
+        const filteredStartingFiles = startingAssistantFiles.filter(
+          startingFile =>
+            ![...selectedAssistantFiles, ...selectedAssistantCollections].some(
+              selectedFile => selectedFile.id === startingFile.id
+            )
+        )
+
+        const filteredSelectedFiles = selectedAssistantFiles.filter(
+          selectedFile =>
+            !startingAssistantFiles.some(
+              startingFile => startingFile.id === selectedFile.id
+            )
+        )
+
+        const filteredStartingCollections = startingAssistantCollections.filter(
+          startingCollection =>
+            ![...selectedAssistantFiles, ...selectedAssistantCollections].some(
+              selectedCollection =>
+                selectedCollection.id === startingCollection.id
+            )
+        )
+
+        const filteredSelectedCollections = selectedAssistantCollections.filter(
+          selectedCollection =>
+            !startingAssistantCollections.some(
+              startingCollection =>
+                startingCollection.id === selectedCollection.id
+            )
+        )
+        return (
+          <>
+            <div className="space-y-1">
+              <Label>Name</Label>
+
+              <Input
+                placeholder="Assistant name..."
+                value={name}
+                onChange={e => setName(e.target.value)}
+                maxLength={ASSISTANT_NAME_MAX}
+              />
+            </div>
+
+            <div className="space-y-1 pt-2">
+              <Label>Description</Label>
+
+              <Input
+                placeholder="Assistant description..."
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                maxLength={ASSISTANT_DESCRIPTION_MAX}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label>Image</Label>
+
+              <ImagePicker
+                src={imageLink}
+                image={selectedImage}
+                onSrcChange={setImageLink}
+                onImageChange={setSelectedImage}
+                width={100}
+                height={100}
+              />
+            </div>
+
+            <ChatSettingsForm
+              chatSettings={assistantChatSettings as any}
+              onChangeChatSettings={setAssistantChatSettings}
+              useAdvancedDropdown={true}
             />
-          </div>
 
-          <div className="space-y-1 pt-2">
-            <Label>Description</Label>
+            <div className="space-y-1 pt-2">
+              <Label>Files & Collections</Label>
 
-            <Input
-              placeholder="Assistant description..."
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              maxLength={ASSISTANT_DESCRIPTION_MAX}
-            />
-          </div>
-
-          <div className="space-y-1">
-            <Label>Image</Label>
-
-            <ImagePicker
-              src={imageLink}
-              image={selectedImage}
-              onSrcChange={setImageLink}
-              onImageChange={setSelectedImage}
-              width={100}
-              height={100}
-            />
-          </div>
-
-          <ChatSettingsForm
-            chatSettings={assistantChatSettings as any}
-            onChangeChatSettings={setAssistantChatSettings}
-            useAdvancedDropdown={true}
-          />
-
-          <div className="space-y-1 pt-2">
-            <Label>Files & Collections</Label>
-
-            <AssistantRetrievalSelect
-              selectedAssistantRetrievalItems={
-                [
-                  ...renderState.selectedAssistantFiles,
-                  ...renderState.selectedAssistantCollections
-                ].length === 0
-                  ? [
-                      ...renderState.startingAssistantFiles,
-                      ...renderState.startingAssistantCollections
-                    ]
-                  : [
-                      ...renderState.startingAssistantFiles.filter(
-                        startingFile =>
-                          ![
-                            ...renderState.selectedAssistantFiles,
-                            ...renderState.selectedAssistantCollections
-                          ].some(
-                            selectedFile => selectedFile.id === startingFile.id
-                          )
-                      ),
-                      ...renderState.selectedAssistantFiles.filter(
-                        selectedFile =>
-                          !renderState.startingAssistantFiles.some(
-                            startingFile => startingFile.id === selectedFile.id
-                          )
-                      ),
-                      ...renderState.startingAssistantCollections.filter(
-                        startingCollection =>
-                          ![
-                            ...renderState.selectedAssistantFiles,
-                            ...renderState.selectedAssistantCollections
-                          ].some(
-                            selectedCollection =>
-                              selectedCollection.id === startingCollection.id
-                          )
-                      ),
-                      ...renderState.selectedAssistantCollections.filter(
-                        selectedCollection =>
-                          !renderState.startingAssistantCollections.some(
-                            startingCollection =>
-                              startingCollection.id === selectedCollection.id
-                          )
+              <AssistantRetrievalSelect
+                selectedAssistantRetrievalItems={
+                  hasNoSelections
+                    ? [
+                        ...startingAssistantFiles,
+                        ...startingAssistantCollections
+                      ]
+                    : [
+                        ...filteredStartingFiles,
+                        ...filteredSelectedFiles,
+                        ...filteredStartingCollections,
+                        ...filteredSelectedCollections
+                      ]
+                }
+                onAssistantRetrievalItemsSelect={item =>
+                  "type" in item
+                    ? handleFileSelect(
+                        item,
+                        renderState.setSelectedAssistantFiles
                       )
-                    ]
-              }
-              onAssistantRetrievalItemsSelect={item =>
-                "type" in item
-                  ? handleFileSelect(
-                      item,
-                      renderState.setSelectedAssistantFiles
-                    )
-                  : handleCollectionSelect(
-                      item,
-                      renderState.setSelectedAssistantCollections
-                    )
-              }
-            />
-          </div>
-
-          <div className="space-y-1">
-            <Label>Tools</Label>
-
-            <AssistantToolSelect
-              selectedAssistantTools={
-                renderState.selectedAssistantTools.length === 0
-                  ? renderState.startingAssistantTools
-                  : [
-                      ...renderState.startingAssistantTools.filter(
-                        startingTool =>
-                          !renderState.selectedAssistantTools.some(
-                            selectedTool => selectedTool.id === startingTool.id
-                          )
-                      ),
-                      ...renderState.selectedAssistantTools.filter(
-                        selectedTool =>
-                          !renderState.startingAssistantTools.some(
-                            startingTool => startingTool.id === selectedTool.id
-                          )
+                    : handleCollectionSelect(
+                        item,
+                        renderState.setSelectedAssistantCollections
                       )
-                    ]
-              }
-              onAssistantToolsSelect={tool =>
-                handleToolSelect(tool, renderState.setSelectedAssistantTools)
-              }
-            />
-          </div>
-        </>
-      )}
+                }
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label>Tools</Label>
+
+              <AssistantToolSelect
+                selectedAssistantTools={
+                  renderState.selectedAssistantTools.length === 0
+                    ? renderState.startingAssistantTools
+                    : [
+                        ...renderState.startingAssistantTools.filter(
+                          startingTool =>
+                            !renderState.selectedAssistantTools.some(
+                              selectedTool =>
+                                selectedTool.id === startingTool.id
+                            )
+                        ),
+                        ...renderState.selectedAssistantTools.filter(
+                          selectedTool =>
+                            !renderState.startingAssistantTools.some(
+                              startingTool =>
+                                startingTool.id === selectedTool.id
+                            )
+                        )
+                      ]
+                }
+                onAssistantToolsSelect={tool =>
+                  handleToolSelect(tool, renderState.setSelectedAssistantTools)
+                }
+              />
+            </div>
+          </>
+        )
+      }}
     />
   )
 }

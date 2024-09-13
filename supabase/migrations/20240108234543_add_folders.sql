@@ -24,6 +24,8 @@ CREATE TABLE IF NOT EXISTS folders (
 
 CREATE INDEX folders_user_id_idx ON folders(user_id);
 CREATE INDEX folders_workspace_id_idx ON folders(workspace_id);
+CREATE INDEX folders_type_idx ON folders (type);
+CREATE INDEX folders_type_user_id_idx ON folders (type, user_id);
 
 -- RLS --
 

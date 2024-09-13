@@ -19,59 +19,46 @@ export const getCollectionById = async (collectionId: string) => {
 export const getCollectionWorkspacesByWorkspaceId = async (
   workspaceId: string
 ) => {
-  const { data: workspace, error } = await supabase
-    .from("workspaces")
+  const { data: collectionWorkspace, error } = await supabase
+    .from("collection_workspaces")
     .select(
       `
-      id,
-      name,
-      collections!inner (
-       *
-      )
+      *
     `
     )
-    .eq("id", workspaceId)
-    .eq("collections.hidden", false)
-    .maybeSingle()
-
-  const { data: teamCollections, error: teamError } = await supabase
+  let { data: collections, error: collectionsError } = await supabase
     .from("collections")
     .select(
       `
       *
     `
     )
-    .not(
-      "id",
-      "in",
-      `(${(workspace?.collections.map(it => it.id) ?? []).join(",")})`
-    )
     .eq("hidden", false)
 
-  if (!workspace) {
-    return {
-      id: workspaceId,
-      name: "",
-      collections:
-        teamCollections?.map(it => {
-          // @ts-ignore
-          it.from_team = true
-          return it
-        }) ?? []
-    }
+  if (error || collectionsError) {
+    throw new Error((error ?? collectionsError)?.message)
   }
 
-  return {
-    id: workspace.id,
-    name: workspace.name,
-    collections: workspace.collections.concat(
-      teamCollections?.map(it => {
-        // @ts-ignore
-        it.from_team = true
-        return it
-      }) ?? []
-    )
-  }
+  collections =
+    collections
+      ?.map(item => {
+        let workspacesForCollection = collectionWorkspace
+          ?.filter(fw => fw.collection_id === item.id)
+          ?.map(it => it.workspace_id)
+        // collection is not know to the user
+        if (workspacesForCollection.length === 0) {
+          // @ts-ignore
+          item.from_team = true
+          return item
+          // ... or is in the right workspace
+        } else if (workspacesForCollection.includes(workspaceId)) {
+          return item
+        }
+        return undefined
+      })
+      ?.filter(item => !!item) ?? null
+
+  return collections
 }
 
 export const getCollectionWorkspacesByCollectionId = async (

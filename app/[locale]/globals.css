@@ -102,3 +102,45 @@
     @apply bg-background text-foreground;
   }
 }
+
+details {
+  @apply flex flex-col space-x-0 rounded-xl no-underline border-2 hover:border-opacity-50 border-gray-200 hover:dark:border-opacity-50 dark:border-gray-500 transition-all duration-300 ease-in-out;
+  overflow: hidden;
+}
+
+summary {
+  @apply -mx-4 -mb-3 px-4 py-3 cursor-pointer font-semibold text-gray-800 dark:text-white flex items-center justify-between;
+}
+
+summary::after {
+  content: "▼";
+  @apply transition-transform duration-300 ease-in-out;
+}
+
+details[open] summary::after {
+  transform: rotate(-180deg);
+}
+
+details[open] summary {
+  @apply pb-7;
+}
+
+details:has(> table) {
+  @apply m-0 p-0;
+
+  summary {
+    @apply m-0;
+  }
+}
+
+details[open]:has(> table) summary {
+  @apply pb-3;
+}
+
+details {
+  @apply px-4 pb-3;
+}
+
+details > :not([hidden]) ~ :not([hidden]) {
+  @apply m-0;
+}

@@ -62,7 +62,7 @@ export const DocumentSidebar: FC<Props> = ({
       // Marking file relevant/irrelevant changes the corresponding retrieval chat collection
       const collectionData =
         await getCollectionWorkspacesByWorkspaceId(workspaceid)
-      setCollections(collectionData.collections)
+      setCollections(collectionData ?? [])
     }
   }
 
@@ -75,7 +75,7 @@ export const DocumentSidebar: FC<Props> = ({
       // Marking file relevant/irrelevant changes the corresponding retrieval chat collection
       const collectionData =
         await getCollectionWorkspacesByWorkspaceId(workspaceid)
-      setCollections(collectionData.collections)
+      setCollections(collectionData ?? [])
     }
   }
 
