@@ -24,6 +24,7 @@ import {
   handleHostedChat,
   handleLocalChat,
   handleRetrieval,
+  handleRewriteQueryClient,
   processResponse,
   validateChatSettings
 } from "../chat-helpers"
@@ -335,6 +336,30 @@ export const useChatHandler = () => {
         })
       }
 
+      let rewrittenQuery: string | undefined
+
+      //TODO: option to disable query rewrite
+      if (isModelIdFileRetriever(currentChat?.model)) {
+        setToolInUse("query-rewrite")
+
+        rewrittenQuery = await handleRewriteQueryClient(
+          messageContent,
+          chatMessages.filter(msg => msg.message.role === "user")
+        )
+
+        tempUserChatMessage.message.rewritten_message = rewrittenQuery
+
+        if (!isRegeneration) {
+          let newMessages = []
+          newMessages = [
+            ...chatMessages,
+            tempUserChatMessage,
+            tempAssistantChatMessage
+          ]
+          setChatMessages(newMessages)
+        }
+      }
+
       let retrievedFileItems: Tables<"file_items">[] = []
 
       /* We either have:
@@ -352,7 +377,7 @@ export const useChatHandler = () => {
           useRetrieval) ||
           //... or we are chatting with verified files from chat
           selectedCollectionCreatorChat) &&
-        currentChat?.model !== "file_retriever"
+        !isModelIdFileRetriever(currentChat?.model)
       ) {
         setToolInUse("retrieval")
 
@@ -364,6 +389,10 @@ export const useChatHandler = () => {
           sourceCount,
           currentChat?.id
         )
+      }
+      if (isModelIdFileRetriever(currentChat?.model)) {
+        // this all this chat does
+        setToolInUse("retrieval")
       }
 
       setSelectedCollectionCreatorChat(null)
@@ -478,7 +507,8 @@ export const useChatHandler = () => {
         setChatMessages,
         setChatFileItems,
         setChatImages,
-        selectedAssistant
+        selectedAssistant,
+        rewrittenQuery
       )
 
       setIsGenerating(false)

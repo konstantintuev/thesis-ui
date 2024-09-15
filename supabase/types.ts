@@ -1001,6 +1001,7 @@ export type Database = {
           id: string
           image_paths: string[]
           model: string
+          rewritten_message: string | null
           role: string
           sequence_number: number
           updated_at: string | null
@@ -1014,6 +1015,7 @@ export type Database = {
           id?: string
           image_paths: string[]
           model: string
+          rewritten_message?: string | null
           role: string
           sequence_number: number
           updated_at?: string | null
@@ -1027,6 +1029,7 @@ export type Database = {
           id?: string
           image_paths?: string[]
           model?: string
+          rewritten_message?: string | null
           role?: string
           sequence_number?: number
           updated_at?: string | null

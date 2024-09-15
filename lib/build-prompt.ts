@@ -128,7 +128,8 @@ export async function buildFinalMessages(
     role: "system",
     sequence_number: processedChatMessages.length,
     updated_at: "",
-    user_id: ""
+    user_id: "",
+    rewritten_message: null
   }
 
   finalMessages.unshift(tempSystemMessage)
@@ -169,7 +170,8 @@ export async function buildFinalMessages(
 
     return {
       role: message.role,
-      content
+      content,
+      rewrittenMessage: message.rewritten_message
     }
   })
 
@@ -311,7 +313,8 @@ export async function buildGoogleGeminiFinalMessages(
     role: "system",
     sequence_number: chatMessages.length,
     updated_at: "",
-    user_id: ""
+    user_id: "",
+    rewritten_message: null
   }
 
   finalMessages.unshift(tempSystemMessage)

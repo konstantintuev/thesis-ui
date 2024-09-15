@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS messages (
     model TEXT NOT NULL CHECK (char_length(model) <= 1000),
     role TEXT NOT NULL CHECK (char_length(role) <= 1000),
     sequence_number INT NOT NULL,
+    rewritten_message text null,
 
     -- CONSTRAINTS
     CONSTRAINT check_image_paths_length CHECK (array_length(image_paths, 1) <= 16)

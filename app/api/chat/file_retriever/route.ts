@@ -74,6 +74,7 @@ export async function POST(request: Request) {
     messages: Array<{
       content: string
       role: string
+      rewrittenMessage?: string
     }>
     chatId: string
     workspaceId: string
@@ -91,8 +92,13 @@ export async function POST(request: Request) {
         status: 500
       })
     }
+    let userMessages = messages.filter(msg => msg.role === "user")
+    let lastMessage =
+      userMessages[userMessages.length - 1] ?? messages[messages.length - 1]
+
     // The whole message history is passed every time
-    const fileQuery = messages[messages.length - 1].content
+    const fileQuery = lastMessage?.rewrittenMessage ?? lastMessage?.content
+
     /* What is the plan:
      * Rewrite the latest user message based on the theme of the corpus + previous user messages.
      * Use the last user message to retrieve filesRaw
@@ -221,7 +227,6 @@ export async function POST(request: Request) {
                   metadata.sequence_number >= messages.length - 1
                 )
             )
-          console.log("")
         }
       })
     }
@@ -318,7 +323,7 @@ export async function POST(request: Request) {
         supabaseAdmin
       )
       if (!currentChatCollectionCreator) {
-        const firstUserMessage = messages.find(msg => msg.role === "user")
+        const firstUserMessage = userMessages[0]
 
         let shortTitle = (firstUserMessage?.content ?? fileQuery).substring(
           0,

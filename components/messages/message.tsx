@@ -15,6 +15,7 @@ import {
   IconCaretRightFilled,
   IconCircleFilled,
   IconFileText,
+  IconInputAi,
   IconMoodSmile,
   IconPencil
 } from "@tabler/icons-react"
@@ -33,11 +34,17 @@ import { MessageMarkdown } from "./message-markdown"
 const ICON_SIZE = 32
 
 interface MessageProps {
-  message: Tables<"messages">
+  message: Omit<Tables<"messages">, "rewritten_message"> & {
+    rewritten_message?: string | null
+  }
   fileItems: Tables<"file_items">[]
   isEditing: boolean
   isLast: boolean
-  onStartEdit: (message: Tables<"messages">) => void
+  onStartEdit: (
+    message: Omit<Tables<"messages">, "rewritten_message"> & {
+      rewritten_message?: string | null
+    }
+  ) => void
   onCancelEdit: () => void
   onSubmitEdit: (value: string, sequenceNumber: number) => void
   profile: Tables<"profiles_public_view">
@@ -293,6 +300,14 @@ export const Message: FC<MessageProps> = ({
                         <div>Searching files...</div>
                       </div>
                     )
+                  case "query-rewrite":
+                    return (
+                      <div className="flex animate-pulse items-center space-x-2">
+                        <IconInputAi size={20} />
+
+                        <div>Rewriting query for better retrieval...</div>
+                      </div>
+                    )
                   default:
                     return (
                       <div className="flex animate-pulse items-center space-x-2">
@@ -313,10 +328,17 @@ export const Message: FC<MessageProps> = ({
               maxRows={20}
             />
           ) : (
-            <MessageMarkdown
-              content={message.content}
-              enableReadMore={isModelIdFileRetriever(message.model)}
-            />
+            <div>
+              <MessageMarkdown
+                content={message.content}
+                enableReadMore={isModelIdFileRetriever(message.model)}
+              />
+              {message.rewritten_message && (
+                <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400">
+                  Rewritten: {`"${message.rewritten_message}"`}
+                </p>
+              )}
+            </div>
           )}
         </div>
 

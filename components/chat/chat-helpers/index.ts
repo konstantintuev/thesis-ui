@@ -89,6 +89,24 @@ export const handleRetrieval = async (
   return results
 }
 
+export const handleRewriteQueryClient = async (
+  userInput: string,
+  previousUserMessages: ChatMessage[]
+) => {
+  const response = await fetch("/api/query/rewrite", {
+    method: "POST",
+    body: JSON.stringify({
+      userInput,
+      previousUserMessages: previousUserMessages.map(msg => msg.message.content)
+    })
+  })
+
+  if (!response.ok) {
+    console.error("Error rewriting query:", response)
+  }
+  return await response.text()
+}
+
 export const createTempMessages = (
   messageContent: string,
   chatMessages: ChatMessage[],
@@ -435,7 +453,8 @@ export const handleCreateMessages = async (
     React.SetStateAction<Tables<"file_items">[]>
   >,
   setChatImages: React.Dispatch<React.SetStateAction<MessageImage[]>>,
-  selectedAssistant: Tables<"assistants"> | null
+  selectedAssistant: Tables<"assistants"> | null,
+  rewrittenQuery?: string
 ) => {
   const finalUserMessage: TablesInsert<"messages"> = {
     chat_id: currentChat.id,
@@ -445,7 +464,8 @@ export const handleCreateMessages = async (
     model: modelData.modelId,
     role: "user",
     sequence_number: chatMessages.length,
-    image_paths: []
+    image_paths: [],
+    rewritten_message: rewrittenQuery
   }
 
   const finalAssistantMessage: TablesInsert<"messages"> = {

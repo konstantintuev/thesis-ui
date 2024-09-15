@@ -13,7 +13,11 @@ export const ChatMessages: FC<ChatMessagesProps> = ({}) => {
 
   const { handleSendEdit } = useChatHandler()
 
-  const [editingMessage, setEditingMessage] = useState<Tables<"messages">>()
+  const [editingMessage, setEditingMessage] = useState<
+    Omit<Tables<"messages">, "rewritten_message"> & {
+      rewritten_message?: string | null
+    }
+  >()
 
   return chatMessages
     .sort((a, b) => a.message.sequence_number - b.message.sequence_number)
