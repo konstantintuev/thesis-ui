@@ -342,7 +342,6 @@ export const useChatHandler = () => {
       if (!isRegeneration && isModelIdFileRetriever(currentChat?.model)) {
         const prevUserMessages = chatMessages
           .filter(msg => msg.message.role === "user")
-          .toSpliced(-1, 1)
 
         if (prevUserMessages.length > 0) {
           setToolInUse("query-rewrite")

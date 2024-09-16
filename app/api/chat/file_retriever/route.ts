@@ -314,6 +314,16 @@ export async function POST(request: Request) {
       const encoder = new TextEncoder()
       let decoder = new TextDecoder("utf-8")
       let index = 0
+
+      let advRuleAppliedFiles: {
+        [fileId: string]: ExtendedFileForSearch | Promise<{ [fileId: string]: ExtendedFileForSearch}>
+      } = await applyAdvancedFilters(
+        chatSettings.embeddingsProvider,
+        supabaseAdmin,
+        profile,
+        filesFound.slice(0, 2).map(it => it.id)
+      )
+
       const readableStream = new ReadableStream<Uint8Array>({
         async start(controller) {
           controller.enqueue(
@@ -334,20 +344,34 @@ export async function POST(request: Request) {
             for await (const stream of generator) {
               let relevantFile = filesFound[index]
 
-              // We can do that for all files, but better do it file by file
-              //  as it invokes an LLM and takes time
-              let advRuleAppliedFiles = await applyAdvancedFilters(
-                chatSettings.embeddingsProvider,
-                supabaseAdmin,
-                profile,
-                [relevantFile.id]
-              )
-
-              let advRuleFile = advRuleAppliedFiles[relevantFile.id]
+              let advRuleFile = await Promise.resolve(advRuleAppliedFiles[relevantFile.id])
               if (advRuleFile) {
-                relevantFile.advanced_rule_info = advRuleFile.advanced_rule_info
-                relevantFile.advanced_rules_relevance_score =
-                  advRuleFile.advanced_rules_relevance_score // format: 0.343523
+                if (relevantFile.id in advRuleFile) {
+                  relevantFile.advanced_rule_info = (advRuleFile as any)[relevantFile.id].advanced_rule_info
+                  relevantFile.advanced_rules_relevance_score =
+                    (advRuleFile as any)[relevantFile.id].advanced_rules_relevance_score // format: 0.343523
+                } else {
+                  relevantFile.advanced_rule_info = (advRuleFile as any).advanced_rule_info
+                  relevantFile.advanced_rules_relevance_score =
+                    (advRuleFile as any).advanced_rules_relevance_score // format: 0.343523
+                }
+              }
+
+              console.log("j")
+
+              // index: 1, 3 files => (2+1) =< 3 is ok
+              if ((index + 2) < filesFound.length) {
+                // We can do that for all files, but better do it file by file
+                //  as it invokes an LLM and takes time
+                advRuleAppliedFiles = {
+                  ...advRuleAppliedFiles,
+                  [filesFound[index + 2].id]: applyAdvancedFilters(
+                    chatSettings.embeddingsProvider,
+                    supabaseAdmin,
+                    profile,
+                    [filesFound[index + 2].id]
+                  )
+                }
               }
 
               let avgChunkRelevance = (
@@ -390,10 +414,15 @@ export async function POST(request: Request) {
                     "<br/>\n"
                 )
               )
+              let chunkCollector = ""
               // @ts-ignore
               for await (const chunk of stream) {
-                generatedText += decoder.decode(chunk)
-                controller.enqueue(chunk)
+                chunkCollector += decoder.decode(chunk)
+                if (chunkCollector.length > 150) {
+                  generatedText += chunkCollector
+                  controller.enqueue(encoder.encode(chunkCollector))
+                  chunkCollector = ""
+                }
               }
 
               let amountOfSummaryOpens = countOccurrences(
