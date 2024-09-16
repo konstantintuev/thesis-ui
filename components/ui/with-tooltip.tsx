@@ -12,6 +12,8 @@ interface WithTooltipProps {
 
   delayDuration?: number
   side?: "left" | "right" | "top" | "bottom"
+
+  triggerClass?: string
 }
 
 export const WithTooltip: FC<WithTooltipProps> = ({
@@ -19,15 +21,19 @@ export const WithTooltip: FC<WithTooltipProps> = ({
   trigger,
 
   delayDuration = 500,
-  side = "right"
+  side = "right",
+  triggerClass
 }) => {
-  return (
-    <TooltipProvider delayDuration={delayDuration}>
-      <Tooltip>
-        <TooltipTrigger>{trigger}</TooltipTrigger>
+  if (display) {
+    return (
+      <TooltipProvider delayDuration={delayDuration}>
+        <Tooltip>
+          <TooltipTrigger className={triggerClass}>{trigger}</TooltipTrigger>
 
-        <TooltipContent side={side}>{display}</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  )
+          <TooltipContent side={side}>{display}</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    )
+  }
+  return <>{trigger}</>
 }

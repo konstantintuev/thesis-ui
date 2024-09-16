@@ -339,17 +339,21 @@ export const useChatHandler = () => {
       let rewrittenQuery: string | undefined
 
       //TODO: option to disable query rewrite
-      if (isModelIdFileRetriever(currentChat?.model)) {
-        setToolInUse("query-rewrite")
+      if (!isRegeneration && isModelIdFileRetriever(currentChat?.model)) {
+        const prevUserMessages = chatMessages
+          .filter(msg => msg.message.role === "user")
+          .toSpliced(-1, 1)
 
-        rewrittenQuery = await handleRewriteQueryClient(
-          messageContent,
-          chatMessages.filter(msg => msg.message.role === "user")
-        )
+        if (prevUserMessages.length > 0) {
+          setToolInUse("query-rewrite")
 
-        tempUserChatMessage.message.rewritten_message = rewrittenQuery
+          rewrittenQuery = await handleRewriteQueryClient(
+            messageContent,
+            prevUserMessages
+          )
 
-        if (!isRegeneration) {
+          tempUserChatMessage.message.rewritten_message = rewrittenQuery
+
           let newMessages = []
           newMessages = [
             ...chatMessages,

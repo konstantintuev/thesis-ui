@@ -97,7 +97,9 @@ export const handleRewriteQueryClient = async (
     method: "POST",
     body: JSON.stringify({
       userInput,
-      previousUserMessages: previousUserMessages.map(msg => msg.message.content)
+      previousUserMessages: previousUserMessages.map(
+        msg => msg.message.rewritten_message ?? msg.message.content
+      )
     })
   })
 

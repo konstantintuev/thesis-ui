@@ -174,7 +174,8 @@ export const searchFilesMLServer = async (
   supabaseAdmin: SupabaseClient<Database>,
   query: string,
   uniqueFileIds?: string[],
-  sourceCount?: number
+  sourceCount?: number,
+  noReranking?: boolean
 ): Promise<FileItemSearchResult[]> => {
   let uniqueChunkIds = new Set<string>()
   if (uniqueFileIds) {
@@ -193,7 +194,8 @@ export const searchFilesMLServer = async (
         query: query,
         unique_file_ids:
           uniqueChunkIds.size > 0 ? Array.from(uniqueChunkIds) : undefined,
-        source_count: sourceCount
+        source_count: sourceCount,
+        no_reranking: noReranking
       })
     }
   )

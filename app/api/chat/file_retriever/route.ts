@@ -1,35 +1,25 @@
-import { CHAT_SETTING_LIMITS } from "@/lib/chat-setting-limits"
 import { checkApiKey, getServerProfile } from "@/lib/server/server-chat-helpers"
 import { ChatSettings, LLMID } from "@/types"
-import { OpenAIStream, StreamingTextResponse } from "ai"
+import { OpenAIStream } from "ai"
 import OpenAI from "openai"
 import { createClient } from "@supabase/supabase-js"
-import {
-  Database,
-  Json,
-  Tables,
-  TablesInsert,
-  TablesUpdate
-} from "@/supabase/types"
-import { generateBgeLocalEmbedding } from "@/lib/generate-local-embedding"
+import { Database, TablesUpdate } from "@/supabase/types"
 import { NextResponse } from "next/server"
-import { searchFilesMLServer } from "@/lib/retrieval/processing/multiple"
-import { FileItemSearchResult } from "@/types/ml-server-communication"
 import {
-  BasicRuleComparisonResults,
   ExtendedFileForSearch,
-  QueryRelatedMetadata
+  QueryRelatedMetadata,
+  FilterInfo
 } from "@/types/retriever"
 import {
   createChatCollectionCreator,
   createCollection,
   getChatCollectionCreator
 } from "@/db/collections"
-import {
-  addUuidObjectToString,
-  uuidPattern
-} from "@/lib/retrieval/attachable-content"
+import { addAttachableContent } from "@/lib/retrieval/attachable-content"
 import { refinedPrompt } from "@/app/api/chat/file_retriever/retriever-prompts"
+import { groupChunks, retrieveFiles } from "@/lib/retrieval/retrieve-files"
+import { applyAdvancedFilters } from "@/app/api/chat/file_retriever/apply-advanced-filters"
+import { countOccurrences } from "@/lib/string-utils"
 
 export const runtime = "edge"
 
@@ -56,15 +46,6 @@ async function* getStreamingResponses(
     const stream: ReadableStream<Uint8Array> = OpenAIStream(response)
     yield stream
   }
-}
-
-const countOccurrences = (str_: string, subStr: string) => {
-  let occurrenceCount = 0
-  let pos = -subStr.length
-  while ((pos = str_.indexOf(subStr, pos + subStr.length)) > -1) {
-    occurrenceCount++
-  }
-  return occurrenceCount
 }
 
 export async function POST(request: Request) {
@@ -106,96 +87,70 @@ export async function POST(request: Request) {
 
     // Use local embeddings for file retrieval
 
-    let localFileItems: FileItemSearchResult[]
+    let localFileItems = await retrieveFiles(
+      chatSettings.embeddingsProvider,
+      fileQuery,
+      supabaseAdmin,
+      profile
+    )
 
-    if (chatSettings.embeddingsProvider === "local") {
-      const localEmbedding = await generateBgeLocalEmbedding(fileQuery)
-
-      const { data: embeddingsFileItems, error: localFileItemsError } =
-        await supabaseAdmin.rpc("match_file_items_any_bge", {
-          query_embedding: localEmbedding as any
-          // TODO: maybe make dynamic?
-          //min_layer_number: 1
-        })
-
-      if (localFileItemsError) {
-        throw localFileItemsError
-      }
-      localFileItems = embeddingsFileItems.map(it => {
-        let ret = it as any as FileItemSearchResult
-        ret.score = it.similarity
-        return ret
-      })
-    } else if (chatSettings.embeddingsProvider === "colbert") {
-      localFileItems = await searchFilesMLServer(supabaseAdmin, fileQuery)
-    } else {
-      throw Error("OpenAI not supported for file retriever!")
-    }
-
-    let mostSimilarChunks = localFileItems?.sort((a, b) => b.score - a.score)
-    mostSimilarChunks = await Promise.all(
-      mostSimilarChunks?.map(async chunk => {
-        if (chunk.chunk_attachable_content) {
-          let { data } = await supabaseAdmin
-            .from("file_items_attachable_content")
-            .select("*")
-            .eq("id", chunk.chunk_attachable_content)
-            .single()
-
-          if (data?.content) {
-            chunk.content = chunk.content.replace(uuidPattern, match =>
-              addUuidObjectToString(match, data.content as any)
-            )
-          }
-        }
-        return chunk
-      })
+    let mostSimilarChunks = await addAttachableContent(
+      supabaseAdmin,
+      localFileItems
     )
 
     let filesFound: ExtendedFileForSearch[]
-    // Map chunks to filesRaw
-    const { data: filesRaw, error: filesError } = await supabaseAdmin
-      .from("files")
-      .select("*")
-      .in(
-        "id",
-        mostSimilarChunks?.map(chunk => chunk.file_id)
-      )
+    const filesRaw = await groupChunks(supabaseAdmin, mostSimilarChunks)
 
     const { data: basicRulesData, error: basicRulesError } =
       await supabaseAdmin.rpc("rank_files", {
         file_ids: filesRaw?.map(file => file.id)
       })
-    filesFound =
-      filesRaw?.map((file, index) => {
-        let relevantFile = file as ExtendedFileForSearch
-        if (!basicRulesError && basicRulesData) {
-          // Add basic rules info
-          let basicRulesFile = basicRulesData.find(item => item.id === file.id)
-          if (basicRulesFile) {
-            relevantFile.basic_rule_info =
-              basicRulesFile.comparison_results as any
-            relevantFile.basic_rule_relevance_score = basicRulesFile.total_score // format: 0.343523
-          }
+
+    filesFound = filesRaw.map((file, index) => {
+      let relevantFile = file as ExtendedFileForSearch
+
+      if (!basicRulesError && basicRulesData) {
+        // Add basic rules info
+        let basicRulesFile = basicRulesData.find(item => item.id === file.id)
+        if (
+          basicRulesFile &&
+          basicRulesFile.comparison_results &&
+          basicRulesFile.total_score
+        ) {
+          relevantFile.basic_rule_info = Object.fromEntries(
+            Object.entries(
+              basicRulesFile.comparison_results as { [it: string]: boolean }
+            ).map(([key, value]) => [
+              key, // retain the key
+              { score: value } as FilterInfo
+            ])
+          )
+          relevantFile.basic_rule_relevance_score = basicRulesFile.total_score // format: 0.343523
         }
-        // TODO: Add advanced filters
-        // Reverse sort file chunks
-        const fileChunks = mostSimilarChunks
-          ?.filter(chunk => chunk.file_id === file.id)
-          .sort((a, b) => b.score - a.score)
-        // Add the first 5 chunks of a file to filesRaw
-        relevantFile.chunks = fileChunks?.slice(0, 5) ?? []
-        relevantFile.avg_chunk_relevance_score =
-          relevantFile.chunks.length > 0
-            ? relevantFile.chunks.reduce((acc, cur) => acc + cur.score, 0) /
-              relevantFile.chunks.length
-            : 0 // format: 0.343523
-        relevantFile.score = relevantFile.avg_chunk_relevance_score
-        if (relevantFile.basic_rule_relevance_score) {
-          //relevantFile.score = relevantFile.score * 0.5 + relevantFile.basic_rule_relevance_score * 0.5
-        }
-        return relevantFile
-      }) ?? []
+      }
+
+      // Reverse sort file chunks
+      const fileChunks = mostSimilarChunks
+        ?.filter(chunk => chunk.file_id === file.id)
+        .sort((a, b) => b.score - a.score)
+
+      // Add the first 5 chunks of a file to filesRaw
+      relevantFile.chunks = fileChunks?.slice(0, 5) ?? []
+
+      relevantFile.avg_chunk_relevance_score =
+        relevantFile.chunks.length > 0
+          ? relevantFile.chunks.reduce((acc, cur) => acc + cur.score, 0) /
+            relevantFile.chunks.length
+          : 0 // format: 0.343523
+      relevantFile.score = relevantFile.avg_chunk_relevance_score
+
+      if (relevantFile.basic_rule_relevance_score) {
+        //relevantFile.score = relevantFile.score * 0.5 + relevantFile.basic_rule_relevance_score * 0.5
+      }
+      return relevantFile
+    })
+
     filesFound = filesFound
       // At least 9% relevance
       .filter(file => file.score > 0.09)
@@ -378,12 +333,36 @@ export async function POST(request: Request) {
             let generatedText = ""
             for await (const stream of generator) {
               let relevantFile = filesFound[index]
+
+              // We can do that for all files, but better do it file by file
+              //  as it invokes an LLM and takes time
+              let advRuleAppliedFiles = await applyAdvancedFilters(
+                chatSettings.embeddingsProvider,
+                supabaseAdmin,
+                profile,
+                [relevantFile.id]
+              )
+
+              let advRuleFile = advRuleAppliedFiles[relevantFile.id]
+              if (advRuleFile) {
+                relevantFile.advanced_rule_info = advRuleFile.advanced_rule_info
+                relevantFile.advanced_rules_relevance_score =
+                  advRuleFile.advanced_rules_relevance_score // format: 0.343523
+              }
+
               let avgChunkRelevance = (
                 relevantFile.avg_chunk_relevance_score * 100
               ).toFixed(1) // format: 13.5%
+
               let basicRuleRelevance = (
                 (relevantFile.basic_rule_relevance_score ?? 0) * 100
               ).toFixed(1) // format: 13.5%
+
+              let advRuleRelevance = (
+                (relevantFile.advanced_rules_relevance_score ?? 0) * 100
+              ).toFixed(1) // format: 13.5%
+
+              // TODO: Weight all scores available
               let totalScore = (relevantFile.score * 100).toFixed(1) // format: 13.5%
 
               controller.enqueue(
@@ -396,10 +375,17 @@ export async function POST(request: Request) {
                     }) +
                     `\n\`\`\`\n\n` +
                     `**Relevance Score**: ${totalScore}% ` +
-                    `(**Semantic Search Score**: ${avgChunkRelevance}%; **Company Rules Score**: ${basicRuleRelevance}%)\n\n` +
+                    `(**Semantic Search Score**: ${avgChunkRelevance}%; **Metadata Rules Score**: ${basicRuleRelevance}%; **Advanced Rules Score**: ${advRuleRelevance}%)\n\n` +
                     "<details>\n" +
                     "<summary>Company rule breakdown:</summary>\n\n" +
-                    `\`\`\`chatfilecompanyrules\n${JSON.stringify(relevantFile.basic_rule_info ?? {}, null, 4)}\n\`\`\`\n\n` +
+                    `\`\`\`chatfilecompanyrules\n${JSON.stringify(
+                      {
+                        ...(relevantFile.advanced_rule_info ?? {}),
+                        ...(relevantFile.basic_rule_info ?? {})
+                      },
+                      null,
+                      4
+                    )}\n\`\`\`\n\n` +
                     "</details>\n" +
                     "<br/>\n"
                 )

@@ -8,7 +8,7 @@ interface ExpandableTextProps {
 
 const ExpandableText: React.FC<ExpandableTextProps> = ({
   children,
-  maxChars = 100
+  maxChars = 112
 }) => {
   const getPlainText = (node: React.ReactNode): string => {
     if (typeof node === "string") {
