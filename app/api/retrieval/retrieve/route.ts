@@ -6,6 +6,7 @@ import { getCollectionFilesByCollectionId } from "@/db/collection-files"
 import { addAttachableContent } from "@/lib/retrieval/attachable-content"
 import { FileItemSearchResult } from "@/types/ml-server-communication"
 import { retrieveFiles } from "@/lib/retrieval/retrieve-files"
+import {rerankFilesMLServer} from "@/lib/retrieval/processing/multiple";
 
 export async function POST(request: Request) {
   const json = await request.json()
@@ -64,6 +65,8 @@ export async function POST(request: Request) {
       supabaseAdmin,
       localFileItems
     )
+
+    mostSimilarChunks = await rerankFilesMLServer(userInput, mostSimilarChunks)
 
     let maxLength = 12_000
 

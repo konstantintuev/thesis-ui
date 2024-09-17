@@ -27,19 +27,20 @@ export type MultipleFilesQueueResult = [
 }
 */
 
-export type SearchResults = [
-  {
-    score: number
-    rank: number
-    passage_id: number
-    document_metadata: {
-      doc_id: number
-      chunk_id: number
-      children: string[]
-      layer: number
-    }
+export type SearchResult = {
+  content?: string
+  score: number
+  rank: number
+  passage_id: number
+  document_metadata: {
+    doc_id: string
+    chunk_id: string
+    children: string[]
+    layer: number
   }
-]
+}
+
+export type SearchResults = SearchResult[]
 
 export type FileItemSearchResult = Tables<"file_items"> & {
   score: number

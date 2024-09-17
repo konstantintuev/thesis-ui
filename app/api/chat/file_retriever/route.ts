@@ -20,6 +20,7 @@ import { refinedPrompt } from "@/app/api/chat/file_retriever/retriever-prompts"
 import { groupChunks, retrieveFiles } from "@/lib/retrieval/retrieve-files"
 import { applyAdvancedFilters } from "@/app/api/chat/file_retriever/apply-advanced-filters"
 import { countOccurrences } from "@/lib/string-utils"
+import {rerankFilesMLServer} from "@/lib/retrieval/processing/multiple";
 
 export const runtime = "edge"
 
@@ -85,8 +86,6 @@ export async function POST(request: Request) {
      * Use the last user message to retrieve filesRaw
      * */
 
-    // Use local embeddings for file retrieval
-
     let localFileItems = await retrieveFiles(
       chatSettings.embeddingsProvider,
       fileQuery,
@@ -98,6 +97,8 @@ export async function POST(request: Request) {
       supabaseAdmin,
       localFileItems
     )
+
+    mostSimilarChunks = await rerankFilesMLServer(fileQuery, mostSimilarChunks)
 
     let filesFound: ExtendedFileForSearch[]
     const filesRaw = await groupChunks(supabaseAdmin, mostSimilarChunks)

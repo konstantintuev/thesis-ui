@@ -14,6 +14,7 @@ import { Database, Tables, TablesInsert } from "@/supabase/types"
 import {
   FileItemSearchResult,
   MultipleFilesQueueResult,
+  SearchResult,
   SearchResults
 } from "@/types/ml-server-communication"
 import { TargetApiTypeBasicRules } from "@/app/api/rules/route"
@@ -241,4 +242,53 @@ export const transformTextToBasicRules = async (
   let res = await response.json()
 
   return res
+}
+
+
+// DO AFTER ADDING ATTACHABLE CONTENT!!!
+export const rerankFilesMLServer = async (
+  query: string,
+  fileItems: FileItemSearchResult[],
+): Promise<FileItemSearchResult[]> => {
+  let res = fileItems.map(file => ({
+    content: file.content,
+    passage_id: 0,
+    score: file.score,
+    rank: file.rank,
+    document_metadata: {
+      doc_id: file.file_id,
+      chunk_id: file.id,
+      children: [],
+      layer: file.layer_number ?? 0
+    }
+  } as SearchResult))
+  const response = await fetch(
+    `http://127.0.0.1:8000/file_processing/rerank_results`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        query: query,
+        res,
+        reorder: false
+      })
+    }
+  )
+  let resOut = (await response.json()) as SearchResults
+  fileItems.forEach((file, index) => {
+    if (file.id !== resOut[index].document_metadata.chunk_id) {
+      console.error("BAD RERANKING")
+      throw {
+        message: `Bad reranking for ${file.id}, given ${resOut[index].document_metadata.chunk_id}`
+      }
+    }
+    file.score = resOut[index].score
+    file.rank = resOut[index].rank
+  })
+  fileItems.sort((a, b) => b.score - a.score)
+  if (fileItems.length > 100) {
+    fileItems.splice(100)
+  } else if (fileItems.length > 8) {
+    fileItems.splice(4)
+  }
+  return fileItems
 }
