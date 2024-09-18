@@ -119,7 +119,7 @@ export function register() {
     (async function checkQueueInitially() {
         const {data: files, error} = await supabaseAdmin.from("file_upload_queue").select("*")
         for (let file of files ?? []) {
-            getMultipleFileUploadFromMLServer(supabaseAdmin as any, file.target_collection_id!, file.id)
+            getMultipleFileUploadFromMLServer(supabaseAdmin, file.target_collection_id!, file.id)
         }
     })();
 

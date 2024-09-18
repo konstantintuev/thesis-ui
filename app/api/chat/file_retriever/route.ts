@@ -90,7 +90,9 @@ export async function POST(request: Request) {
       chatSettings.embeddingsProvider,
       fileQuery,
       supabaseAdmin,
-      profile
+      profile,
+      // Get more if we need to rerank
+      chatSettings.embeddingsProvider === "colbert" ? 100 : 180
     )
 
     let mostSimilarChunks = await addAttachableContent(
@@ -98,7 +100,9 @@ export async function POST(request: Request) {
       localFileItems
     )
 
-    mostSimilarChunks = await rerankFilesMLServer(fileQuery, mostSimilarChunks)
+    if (chatSettings.embeddingsProvider !== "colbert") {
+      mostSimilarChunks = await rerankFilesMLServer(fileQuery, mostSimilarChunks)
+    }
 
     let filesFound: ExtendedFileForSearch[]
     const filesRaw = await groupChunks(supabaseAdmin, mostSimilarChunks)
@@ -357,8 +361,6 @@ export async function POST(request: Request) {
                     (advRuleFile as any).advanced_rules_relevance_score // format: 0.343523
                 }
               }
-
-              console.log("j")
 
               // index: 1, 3 files => (2+1) =< 3 is ok
               if ((index + 2) < filesFound.length) {

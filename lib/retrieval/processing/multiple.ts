@@ -206,7 +206,7 @@ export const searchFilesMLServer = async (
       let { data } = await supabaseAdmin
         .from("file_items")
         .select("*")
-        .eq("id", searchResult.document_metadata.chunk_id)
+        .eq("id", searchResult.passage_id)
         .single()
       if (data) {
         let ret = data as FileItemSearchResult
@@ -252,15 +252,9 @@ export const rerankFilesMLServer = async (
 ): Promise<FileItemSearchResult[]> => {
   let res = fileItems.map(file => ({
     content: file.content,
-    passage_id: 0,
+    passage_id: file.id,
     score: file.score,
-    rank: file.rank,
-    document_metadata: {
-      doc_id: file.file_id,
-      chunk_id: file.id,
-      children: [],
-      layer: file.layer_number ?? 0
-    }
+    rank: file.rank
   } as SearchResult))
   const response = await fetch(
     `http://127.0.0.1:8000/file_processing/rerank_results`,
@@ -275,10 +269,10 @@ export const rerankFilesMLServer = async (
   )
   let resOut = (await response.json()) as SearchResults
   fileItems.forEach((file, index) => {
-    if (file.id !== resOut[index].document_metadata.chunk_id) {
+    if (file.id !== resOut[index].passage_id) {
       console.error("BAD RERANKING")
       throw {
-        message: `Bad reranking for ${file.id}, given ${resOut[index].document_metadata.chunk_id}`
+        message: `Bad reranking for ${file.id}, given ${resOut[index].passage_id}`
       }
     }
     file.score = resOut[index].score
