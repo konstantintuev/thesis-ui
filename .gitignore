@@ -46,3 +46,5 @@ workbox-*.js
 workbox-*.js.map
 /.idea/
 /supabase/migrations/20240909142613_bullshit.sql
+/.env.self-host
+/.env.hosted

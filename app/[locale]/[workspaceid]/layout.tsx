@@ -22,6 +22,7 @@ import { useMessageStore, useStore } from "@/context/context"
 import Loading from "../loading"
 import { Tables } from "@/supabase/types"
 import { getRules } from "@/db/rules"
+import {profileBroken} from "@/lib/handle-bad-user";
 
 interface WorkspaceLayoutProps {
   children: ReactNode
@@ -102,112 +103,116 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
     workspaceId: string,
     workspaces: Tables<"workspaces">[]
   ) => {
-    if (!workspaceId || workspaces.length === 0) {
-      return
-    }
-    // We have lost state - rules is usually > 0
-    if (rules.length === 0) {
-      workspaceLoaded.current = null
-    }
-    if (
-      workspaceLoaded.current === workspaceId ||
-      workspaceFetching.current === workspaceId
-    ) {
-      return
-    }
-    workspaceFetching.current = workspaceId
-    setLoading(true)
+    try {
+      if (!workspaceId || workspaces.length === 0) {
+        return
+      }
+      // We have lost state - rules is usually > 0
+      if (rules.length === 0) {
+        workspaceLoaded.current = null
+      }
+      if (
+        workspaceLoaded.current === workspaceId ||
+        workspaceFetching.current === workspaceId
+      ) {
+        return
+      }
+      workspaceFetching.current = workspaceId
+      setLoading(true)
 
-    const workspace = await getWorkspaceById(workspaceId)
-    setSelectedWorkspace(workspace)
+      const workspace = await getWorkspaceById(workspaceId)
+      setSelectedWorkspace(workspace)
 
-    const assistantData = await getAssistantWorkspacesByWorkspaceId(workspaceId)
-    setAssistants(assistantData.assistants)
+      const assistantData = await getAssistantWorkspacesByWorkspaceId(workspaceId)
+      setAssistants(assistantData.assistants)
 
-    for (const assistant of assistantData.assistants) {
-      let url = ""
+      for (const assistant of assistantData.assistants) {
+        let url = ""
 
-      if (assistant.image_path) {
-        url = (await getAssistantImageFromStorage(assistant.image_path)) || ""
+        if (assistant.image_path) {
+          url = (await getAssistantImageFromStorage(assistant.image_path)) || ""
+        }
+
+        if (url) {
+          const response = await fetch(url)
+          const blob = await response.blob()
+          const base64 = await convertBlobToBase64(blob)
+
+          setAssistantImages(prev => [
+            ...prev,
+            {
+              assistantId: assistant.id,
+              path: assistant.image_path,
+              base64,
+              url
+            }
+          ])
+        } else {
+          setAssistantImages(prev => [
+            ...prev,
+            {
+              assistantId: assistant.id,
+              path: assistant.image_path,
+              base64: "",
+              url
+            }
+          ])
+        }
       }
 
-      if (url) {
-        const response = await fetch(url)
-        const blob = await response.blob()
-        const base64 = await convertBlobToBase64(blob)
+      const chats = await getChatsByWorkspaceId(workspaceId, workspaces)
 
-        setAssistantImages(prev => [
-          ...prev,
-          {
-            assistantId: assistant.id,
-            path: assistant.image_path,
-            base64,
-            url
-          }
-        ])
-      } else {
-        setAssistantImages(prev => [
-          ...prev,
-          {
-            assistantId: assistant.id,
-            path: assistant.image_path,
-            base64: "",
-            url
-          }
-        ])
+      const collectionData =
+        await getCollectionWorkspacesByWorkspaceId(workspaceId)
+
+      const folders = await getFoldersByWorkspaceId(workspaceId, workspaces)
+
+      const fileData = await getFileWorkspacesByWorkspaceId(workspaceId)
+
+      const presetData = await getPresetWorkspacesByWorkspaceId(workspaceId)
+
+      const promptData = await getPromptWorkspacesByWorkspaceId(workspaceId)
+
+      const toolData = await getToolWorkspacesByWorkspaceId(workspaceId)
+
+      const modelData = await getModelWorkspacesByWorkspaceId(workspaceId)
+
+      const rulesLocal = await getRules()
+
+      setChats(chats)
+      setCollections(collectionData ?? [])
+      setFolders(folders)
+      setFiles(fileData ?? [])
+      setPresets(presetData.presets)
+      setPrompts(promptData.prompts)
+      setTools(toolData.tools)
+      setModels(modelData.models)
+      setRules(rulesLocal)
+
+      // Really important as async functions are out of state
+      if (!chatSettings?.model && !useStore.getState().chatSettings?.model) {
+        setChatSettings({
+          model: (workspace?.default_model || "gpt-4-1106-preview") as LLMID,
+          prompt:
+            workspace?.default_prompt ||
+            "You are a friendly, helpful AI assistant.",
+          temperature: workspace?.default_temperature || 0.5,
+          contextLength: workspace?.default_context_length || 4096,
+          includeProfileContext: workspace?.include_profile_context || true,
+          includeWorkspaceInstructions:
+            workspace?.include_workspace_instructions || true,
+          embeddingsProvider:
+            (workspace?.embeddings_provider as "openai" | "local" | "colbert") ||
+            "openai"
+        })
       }
+
+      setLoading(false)
+      workspaceLoaded.current = workspaceId
+      workspaceFetching.current = null
+    } catch (e) {
+      void profileBroken(router)
     }
-
-    const chats = await getChatsByWorkspaceId(workspaceId, workspaces)
-
-    const collectionData =
-      await getCollectionWorkspacesByWorkspaceId(workspaceId)
-
-    const folders = await getFoldersByWorkspaceId(workspaceId, workspaces)
-
-    const fileData = await getFileWorkspacesByWorkspaceId(workspaceId)
-
-    const presetData = await getPresetWorkspacesByWorkspaceId(workspaceId)
-
-    const promptData = await getPromptWorkspacesByWorkspaceId(workspaceId)
-
-    const toolData = await getToolWorkspacesByWorkspaceId(workspaceId)
-
-    const modelData = await getModelWorkspacesByWorkspaceId(workspaceId)
-
-    const rulesLocal = await getRules()
-
-    setChats(chats)
-    setCollections(collectionData ?? [])
-    setFolders(folders)
-    setFiles(fileData ?? [])
-    setPresets(presetData.presets)
-    setPrompts(promptData.prompts)
-    setTools(toolData.tools)
-    setModels(modelData.models)
-    setRules(rulesLocal)
-
-    // Really important as async functions are out of state
-    if (!chatSettings?.model && !useStore.getState().chatSettings?.model) {
-      setChatSettings({
-        model: (workspace?.default_model || "gpt-4-1106-preview") as LLMID,
-        prompt:
-          workspace?.default_prompt ||
-          "You are a friendly, helpful AI assistant.",
-        temperature: workspace?.default_temperature || 0.5,
-        contextLength: workspace?.default_context_length || 4096,
-        includeProfileContext: workspace?.include_profile_context || true,
-        includeWorkspaceInstructions:
-          workspace?.include_workspace_instructions || true,
-        embeddingsProvider:
-          (workspace?.embeddings_provider as "openai" | "local" | "colbert") ||
-          "openai"
-      })
-    }
-
-    setLoading(false)
-    workspaceLoaded.current = workspaceId
-    workspaceFetching.current = null
   }
 
   if (loading) {

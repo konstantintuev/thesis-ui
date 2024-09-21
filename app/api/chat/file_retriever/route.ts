@@ -3,7 +3,7 @@ import { ChatSettings, LLMID } from "@/types"
 import { OpenAIStream } from "ai"
 import OpenAI from "openai"
 import { createClient } from "@supabase/supabase-js"
-import { Database, TablesUpdate } from "@/supabase/types"
+import {Database, TablesInsert, TablesUpdate} from "@/supabase/types"
 import { NextResponse } from "next/server"
 import {
   ExtendedFileForSearch,
@@ -191,6 +191,12 @@ export async function POST(request: Request) {
       })
     }
 
+    //TODO: sometimes files are not added to chat_files - e.g.
+    /*
+```chatfilemetadata
+{"fileName":"dm_br0005_16_eng.pdf","fileId":"f2f68bd4-b644-4ae0-aa88-d8cee0ba2fee","duplicateReference":false}
+``` */
+
     /* The idea is to save:
      * 1. Rule compliance for the file - basic and advanced
      * 2. Highlights given the search in jsonObject[]
@@ -244,9 +250,14 @@ export async function POST(request: Request) {
         }
       ])
 
-      let updateChatFiles: TablesUpdate<"chat_files">[] = filesFound.map(
+      let updateChatFiles: TablesUpdate<"chat_files">[] = []
+      let insertChatFiles: TablesInsert<"chat_files">[] = []
+
+      filesFound.forEach(
         file => {
-          return {
+          let arrToUpdate =
+            file.already_queried ? updateChatFiles : insertChatFiles
+          arrToUpdate.push({
             chat_id: chatId,
             file_id: file.id,
             // Don't update the creator/owner
@@ -274,9 +285,32 @@ export async function POST(request: Request) {
             sequence_number: file.already_queried
               ? undefined
               : messages.length - 1
-          }
+          })
         }
       )
+
+      if (insertChatFiles.length > 0) {
+        const {error: insertChatFilesError} = await supabaseAdmin
+          .from("chat_files")
+          .insert(insertChatFiles)
+        if (insertChatFilesError) {
+          console.error(`Error inserting files: ${insertChatFiles} ->`, insertChatFilesError)
+        }
+      }
+
+      if (updateChatFiles.length > 0) {
+        await Promise.allSettled(updateChatFiles.map(async it => {
+          const {error: updateChatFilesError} = await supabaseAdmin
+            .from("chat_files")
+            .update(it)
+            .eq("chat_id", it.chat_id!)
+            .eq("file_id", it.file_id!)
+          if (updateChatFilesError) {
+            console.error(`Error updating file: ${JSON.stringify(it, null, 2)} ->`, updateChatFilesError)
+          }
+        }))
+
+      }
 
       let currentChatCollectionCreator = await getChatCollectionCreator(
         chatId,
@@ -310,11 +344,6 @@ export async function POST(request: Request) {
           )
         }
       }
-
-      const { error: updateChatFilesError } = await supabaseAdmin
-        .from("chat_files")
-        // We are not actually inserting files without relevant keys, just update them
-        .upsert(updateChatFiles as any)
 
       const encoder = new TextEncoder()
       let decoder = new TextDecoder("utf-8")
@@ -375,6 +404,10 @@ export async function POST(request: Request) {
                     [filesFound[index + 2].id]
                   )
                 }
+              }
+
+              if (!relevantFile.basic_rule_info || !relevantFile.advanced_rule_info) {
+                console.error("Problem with rules!")
               }
 
               let avgChunkRelevance = (

@@ -16,21 +16,21 @@ export interface Metadata {
   keywords: string
   creator: string
   producer: string
-  creationDate: number
-  modDate: number
+  creation_date: number
+  mod_date: number
   trapped: string
   encryption: string
-  fileName: string
-  addedDate: number
-  numPages: number
-  pageDimensions: {
+  file_name: string
+  added_date: number
+  num_pages: number
+  page_dimensions: {
     width: number
     height: number
     measure: string
   }
-  fileSize: number
-  avgWordsPerPage: number
-  wordCount: number
+  file_size: number
+  avg_words_per_page: number
+  word_count: number
 }
 
 export interface ExtractedItemHtml {

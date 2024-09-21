@@ -145,6 +145,7 @@ function getMultipleFileUploadFromMLServer(supabaseAdmin: SupabaseClient<Databas
 
             const responseData = await response.json() as any
             if (responseData["files"]) {
+                console.info(`Importing files from upload queue (${multiple_file_uuid})`)
                 const parsed = responseData["files"] as MultipleFilesQueueResult
                 await processMultipleResult(supabaseAdmin, targetCollectionID, parsed);
                 await supabaseAdmin.from("file_upload_queue").delete().eq("id", multiple_file_uuid)
