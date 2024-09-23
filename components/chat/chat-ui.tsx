@@ -205,6 +205,7 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
 
     messageFileItems = await Promise.all(messageFileItemPromises)
 
+    //TODO: add attachable content to source to replace UUIDs -> add RLS for attachable content
     uniqueFileItems = messageFileItems.flatMap(item => item.file_items)
 
     chatFiles = await getChatFilesByChatId(chatID as string)

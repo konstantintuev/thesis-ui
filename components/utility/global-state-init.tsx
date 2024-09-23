@@ -16,7 +16,7 @@ import { supabase } from "@/lib/supabase/browser-client"
 import { Tables } from "@/supabase/types"
 import { useRouter } from "next/navigation"
 import { FC, useEffect, useMemo, useRef, useState } from "react"
-import { fetchFileProcessors } from "@/lib/retrieval/fetch-file-processors"
+import { fetchFileProcessorsClient } from "@/lib/retrieval/fetch-file-processors-client"
 import { getTeams } from "@/db/teams"
 import { profileBroken } from "@/lib/handle-bad-user"
 
@@ -72,7 +72,7 @@ export const GlobalStateInit: FC<GlobalStateProps> = ({ children }) => {
         }
       }
 
-      const fileProcessorsRes = await fetchFileProcessors()
+      const fileProcessorsRes = await fetchFileProcessorsClient()
       if (fileProcessorsRes) {
         setAvailableFileProcessors(fileProcessorsRes)
       }

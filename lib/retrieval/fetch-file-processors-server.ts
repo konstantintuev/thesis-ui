@@ -1,6 +1,6 @@
 import { FileProcessor } from "@/types/file-processing"
 
-export const fetchFileProcessors = async () => {
+export const fetchFileProcessorsMLServer = async () => {
   try {
     const response = await fetch(
       `http://127.0.0.1:8000/file_processing/available_processors`,

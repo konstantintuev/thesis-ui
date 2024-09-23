@@ -1,11 +1,16 @@
+"use client"
+
 import { FC } from "react"
+import {useTheme} from "next-themes";
 
 interface ChatbotUISVGProps {
-  theme: "dark" | "light"
   scale?: number
 }
 
-export const ChatbotUISVG: FC<ChatbotUISVGProps> = ({ theme, scale = 1 }) => {
+export const ChatbotUISVG: FC<ChatbotUISVGProps> = ({ scale = 1 }) => {
+  let {theme} = useTheme()
+  theme = theme ?? "light"
+
   return (
     <svg
       width={189 * scale}
