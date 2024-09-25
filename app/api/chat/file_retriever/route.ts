@@ -120,8 +120,7 @@ export async function POST(request: Request) {
         let basicRulesFile = basicRulesData.find(item => item.id === file.id)
         if (
           basicRulesFile &&
-          basicRulesFile.comparison_results &&
-          basicRulesFile.total_score
+          basicRulesFile.comparison_results
         ) {
           relevantFile.basic_rule_info = Object.fromEntries(
             Object.entries(
@@ -131,7 +130,7 @@ export async function POST(request: Request) {
               { score: value } as FilterInfo
             ])
           )
-          relevantFile.basic_rule_relevance_score = basicRulesFile.total_score // format: 0.343523
+          relevantFile.basic_rule_relevance_score = basicRulesFile.total_score ?? 0 // format: 0.343523
         }
       }
 

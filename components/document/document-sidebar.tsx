@@ -103,7 +103,7 @@ export const DocumentSidebar: FC<Props> = ({
         <p className="mb-4 text-sm">
           Given the general theme of the file retrieval task:
           <br />
-          <span className="font-bold">NONE_SO_FAR_PART_OF_QUERY_REWRITING</span>
+          <span className="font-bold">{documentIsInQueries[0]?.file_query ?? "Unknown"}</span>
           <br />
           The file was retrieved based on the following queries, each with an
           associated relevance score:

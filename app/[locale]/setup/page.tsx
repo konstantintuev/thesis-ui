@@ -84,6 +84,10 @@ export default function SetupPage() {
           setEnvKeyMap(data.envKeyMap)
           setAvailableHostedModels(data.hostedModels)
 
+          if (data.envKeyMap["azure_openai_endpoint"]) {
+            setUseAzureOpenai(true)
+          }
+
           if (profile["openrouter_api_key"] || data.envKeyMap["openrouter"]) {
             const openRouterModels = await fetchOpenRouterModels()
             if (!openRouterModels) return

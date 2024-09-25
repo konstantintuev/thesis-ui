@@ -25,7 +25,7 @@ create table if not exists rules(
     id         uuid                     not null default uuid_generate_v4(),
     weight     double precision         not null,
     name       text                     not null,
-    comparison json                     not null,
+    comparison jsonb                    not null,
     user_id    uuid                     not null default auth.uid(),
     type       text                     not null default 'basic'::text,
     created_at timestamp with time zone not null default now(),
@@ -77,29 +77,29 @@ create policy "Select for authenticated and change for own"
     using (true)
     with check ((user_id = auth.uid()));
 
--- Helper function to generate proper JSONB access for nested attributes
-CREATE OR REPLACE FUNCTION jsonb_access(attribute TEXT) RETURNS TEXT AS
+
+CREATE OR REPLACE FUNCTION attribute_to_jsonpath(attribute TEXT) RETURNS TEXT AS
 $$
 DECLARE
-    keys   TEXT[];
-    access TEXT := '';
-    i      INT;
+    keys     TEXT[];
+    jsonpath TEXT := '$';
+    i        INT;
 BEGIN
-    -- Split the attribute by dots (e.g., file_metadata.avgWordsPerPage becomes an array)
+    -- Split the attribute by dots
     keys := string_to_array(attribute, '.');
 
-    -- Loop through each key and construct the proper access operator
-    FOR i IN 1..array_length(keys, 1)
+    -- Append recursive descent to the last key
+    jsonpath := jsonpath || '.';
+
+    FOR i IN 1..array_length(keys, 1) - 1
         LOOP
-            IF i < array_length(keys, 1) THEN
-                access := access || format('->%L', keys[i]);
-            ELSE
-                -- Last key gets '->>' to extract text
-                access := access || format('->>%L', keys[i]);
-            END IF;
+            jsonpath := jsonpath || keys[i] || '.';
         END LOOP;
 
-    RETURN access;
+    -- Add recursive descent before the last key
+    jsonpath := jsonpath || '**.' || keys[array_length(keys, 1)];
+
+    RETURN jsonpath;
 END
 $$ LANGUAGE plpgsql;
 
@@ -132,6 +132,17 @@ DECLARE
     dynamic_sql       TEXT  := '';
     comparison_json   TEXT  := '';
 
+    -- Variables for constructing conditions
+    attr              TEXT;
+    comp_op           TEXT;
+    comp_value        TEXT;
+    jsonpath          TEXT;
+    condition_part    TEXT;
+    operator          TEXT;
+    pattern           TEXT;
+    values_array      TEXT[];
+    conditions        TEXT;
+    i                 INT;
 BEGIN
     -- Loop through each comparison batch and build the scoring logic dynamically
     FOR comp IN SELECT * FROM rules WHERE rules.type = 'basic' AND
@@ -147,131 +158,131 @@ BEGIN
             -- Loop through each comparison in the comparison JSONB array
             FOR comparison_detail IN SELECT * FROM jsonb_array_elements(comp.comparison::jsonb) AS elem
                 LOOP
-                    -- Generate the JSONB access based on whether the attribute is nested or not
-                    condition_sql := condition_sql || CASE
-                        -- For equality check (eq)
-                                                          WHEN (comparison_detail ->> 'comparator')::text = 'eq' THEN
-                                                              format('metadata%s = %L AND ',
-                                                                     jsonb_access((comparison_detail ->> 'attribute')::text),
-                                                                     (comparison_detail ->> 'value')::text)
+                    -- Extract comparison details
+                    attr := comparison_detail ->> 'attribute';
+                    comp_op := comparison_detail ->> 'comparator';
+                    comp_value := comparison_detail ->> 'value';
+                    jsonpath := attribute_to_jsonpath(attr);
+                    condition_part := '';
 
-                        -- For inequality check (ne)
-                                                          WHEN (comparison_detail ->> 'comparator')::text = 'ne' THEN
-                                                              format('metadata%s != %L AND ',
-                                                                     jsonb_access((comparison_detail ->> 'attribute')::text),
-                                                                     (comparison_detail ->> 'value')::text)
-
-                        -- For greater than (gt)
-                                                          WHEN (comparison_detail ->> 'comparator')::text = 'gt' THEN
-                                                              format('(metadata%s)::double precision > %L AND ',
-                                                                     jsonb_access((comparison_detail ->> 'attribute')::text),
-                                                                     (comparison_detail ->> 'value')::text)
-
-                        -- For greater than or equal (gte)
-                                                          WHEN (comparison_detail ->> 'comparator')::text = 'gte' THEN
-                                                              format('(metadata%s)::double precision >= %L AND ',
-                                                                     jsonb_access((comparison_detail ->> 'attribute')::text),
-                                                                     (comparison_detail ->> 'value')::text)
-
-                        -- For less than (lt)
-                                                          WHEN (comparison_detail ->> 'comparator')::text = 'lt' THEN
-                                                              format('(metadata%s)::double precision < %L AND ',
-                                                                     jsonb_access((comparison_detail ->> 'attribute')::text),
-                                                                     (comparison_detail ->> 'value')::text)
-
-                        -- For less than or equal (lte)
-                                                          WHEN (comparison_detail ->> 'comparator')::text = 'lte' THEN
-                                                              format('(metadata%s)::double precision <= %L AND ',
-                                                                     jsonb_access((comparison_detail ->> 'attribute')::text),
-                                                                     (comparison_detail ->> 'value')::text)
-
-                        -- For string contains (contain)
-                                                          WHEN (comparison_detail ->> 'comparator')::text = 'contain'
-                                                              THEN
-                                                              format('metadata%s ILIKE ''%%%s%%'' AND ',
-                                                                     jsonb_access((comparison_detail ->> 'attribute')::text),
-                                                                     (comparison_detail ->> 'value')::text)
-
-                        -- For string does not contain (not_contain)
-                                                          WHEN (comparison_detail ->> 'comparator')::text = 'not_contain'
-                                                              THEN
-                                                              format('metadata%s NOT ILIKE ''%%%s%%'' AND ',
-                                                                     jsonb_access((comparison_detail ->> 'attribute')::text),
-                                                                     (comparison_detail ->> 'value')::text)
-
-                        -- For "like" comparison
-                                                          WHEN (comparison_detail ->> 'comparator')::text = 'like' THEN
-                                                              format('metadata%s ILIKE ''%s'' AND ',
-                                                                     jsonb_access((comparison_detail ->> 'attribute')::text),
-                                                                     (comparison_detail ->> 'value')::text)
-
-                        -- For "not like" comparison
-                                                          WHEN (comparison_detail ->> 'comparator')::text = 'not_like'
-                                                              THEN
-                                                              format('metadata%s NOT ILIKE ''%s'' AND ',
-                                                                     jsonb_access((comparison_detail ->> 'attribute')::text),
-                                                                     (comparison_detail ->> 'value')::text)
-                        -- For regular expression match (regex_match)
-                                                          WHEN (comparison_detail ->> 'comparator')::text = 'regex_match'
-                                                              THEN
-                                                              format('metadata%s ~* %L AND ',
-                                                                     jsonb_access((comparison_detail ->> 'attribute')::text),
-                                                                     (comparison_detail ->> 'value')::text)
-
-                        -- For regular expression not match (regex_not_match)
-                                                          WHEN (comparison_detail ->> 'comparator')::text = 'not_regex_match'
-                                                              THEN
-                                                              format('metadata%s !~* %L AND ',
-                                                                     jsonb_access((comparison_detail ->> 'attribute')::text),
-                                                                     (comparison_detail ->> 'value')::text)
-
-                        -- For "in" array comparison (works for comma-separated values)
-                                                          WHEN (comparison_detail ->> 'comparator')::text = 'in' THEN
-                                                              format(
-                                                                      'metadata%s = ANY (string_to_array(%L, '','')) AND ',
-                                                                      jsonb_access((comparison_detail ->> 'attribute')::text),
-                                                                      (comparison_detail ->> 'value')::text)
-
-                        -- For "not in" array comparison
-                                                          WHEN (comparison_detail ->> 'comparator')::text = 'nin' THEN
-                                                              format(
-                                                                      'metadata%s != ALL (string_to_array(%L, '','')) AND ',
-                                                                      jsonb_access((comparison_detail ->> 'attribute')::text),
-                                                                      (comparison_detail ->> 'value')::text)
+                    -- Build condition based on comparator
+                    IF comp_op IN ('eq', 'ne', 'gt', 'gte', 'lt', 'lte') THEN
+                        -- Map comparators to JSONPath operators
+                        DECLARE
+                            op_mapping  JSONB := jsonb_build_object(
+                                    'eq', '==',
+                                    'ne', '!=',
+                                    'gt', '>',
+                                    'gte', '>=',
+                                    'lt', '<',
+                                    'lte', '<='
+                                                 );
+                            jsonpath_op TEXT  := op_mapping ->> comp_op;
+                        BEGIN
+                            -- Determine if value is numeric
+                            IF comp_value ~ '^\d+(\.\d+)?$' THEN
+                                -- Numeric comparison
+                                condition_part := format(
+                                        'jsonb_path_exists(metadata, %L)',
+                                        jsonpath || format(' ? (@ %s %s)', jsonpath_op, comp_value)
+                                                  );
+                            ELSE
+                                -- String comparison
+                                condition_part := format(
+                                        'jsonb_path_exists(metadata, %L)',
+                                        jsonpath || format(' ? (@ %s "%s")', jsonpath_op, comp_value)
+                                                  );
+                            END IF;
                         END;
+                    ELSIF comp_op IN ('contain', 'not_contain') THEN
+                        operator := CASE WHEN comp_op = 'contain' THEN 'like_regex' ELSE '!like_regex' END;
+                        pattern := '.*' || regexp_replace(comp_value, '(["\\])', '\\\1', 'g') || '.*';
+                        condition_part := format(
+                                'jsonb_path_exists(metadata, %L)',
+                                jsonpath || format(' ? (@ %s "%s" flag "i")', operator, pattern)
+                                          );
+                    ELSIF comp_op IN ('like', 'not_like') THEN
+                        operator := CASE WHEN comp_op = 'like' THEN 'like_regex' ELSE '!like_regex' END;
+                        pattern := regexp_replace(comp_value, '(["\\%_])', '\\\1', 'g');
+                        pattern := '^' || pattern || '$';
+                        condition_part := format(
+                                'jsonb_path_exists(metadata, %L)',
+                                jsonpath || format(' ? (@ %s "%s" flag "i")', operator, pattern)
+                                          );
+                    ELSIF comp_op IN ('regex_match', 'not_regex_match') THEN
+                        operator := CASE WHEN comp_op = 'regex_match' THEN 'like_regex' ELSE '!like_regex' END;
+                        condition_part := format(
+                                'jsonb_path_exists(metadata, %L)',
+                                jsonpath || format(' ? (@ %s "%s" flag "i")', operator, comp_value)
+                                          );
+                    ELSIF comp_op IN ('in', 'nin') THEN
+                        values_array := string_to_array(comp_value, ',');
+                        conditions := '';
+                        operator := CASE WHEN comp_op = 'in' THEN '==' ELSE '!=' END;
+                        FOR i IN array_lower(values_array, 1)..array_upper(values_array, 1)
+                            LOOP
+                                conditions := conditions || format('@ %s "%s"', operator, trim(values_array[i]));
+                                IF i < array_upper(values_array, 1) THEN
+                                    conditions := conditions || ' || ';
+                                END IF;
+                            END LOOP;
+                        condition_part := format(
+                                'jsonb_path_exists(metadata, %L)',
+                                jsonpath || format(' ? (%s)', conditions)
+                                          );
+                    ELSE
+                        RAISE EXCEPTION 'Unsupported comparator: %', comp_op;
+                    END IF;
+
+                    -- Append the condition part
+                    condition_sql := condition_sql || condition_part || ' AND ';
                 END LOOP;
 
             -- Remove the last ' AND ' from condition_sql
-            condition_sql := left(condition_sql, length(condition_sql) - 5);
+            IF condition_sql <> '' THEN
+                condition_sql := left(condition_sql, length(condition_sql) - 5);
+            END IF;
 
-            -- Add the batch condition to the dynamic SQL
-            dynamic_sql := dynamic_sql || format('CASE WHEN %s THEN %s ELSE 0 END + ', condition_sql, comp.weight);
+            -- Add the condition to the dynamic SQL
+            IF condition_sql <> '' THEN
+                dynamic_sql := dynamic_sql || format('CASE WHEN %s THEN %s ELSE 0 END + ', condition_sql, comp.weight);
 
-            -- Build the JSONB for each comparison
-            comparison_json := comparison_json ||
-                               format('''%s'', CASE WHEN %s THEN true ELSE false END, ', comp.name,
-                                      condition_sql);
+                -- Build the comparison_results JSONB
+                comparison_json := comparison_json ||
+                                   format('''%s'', CASE WHEN %s THEN true ELSE false END, ', comp.name, condition_sql);
 
-            -- Add to total weight if condition_sql is valid
-            IF condition_sql IS NOT NULL AND condition_sql <> '' THEN
+                -- Update total_weight
                 total_weight := total_weight + comp.weight;
             END IF;
+
         END LOOP;
 
-    -- Remove the last ' + ' from dynamic_sql
-    dynamic_sql := left(dynamic_sql, length(dynamic_sql) - 3);
+    -- Finalize dynamic SQL
+    IF dynamic_sql <> '' THEN
+        dynamic_sql := left(dynamic_sql, length(dynamic_sql) - 3);
+    ELSE
+        dynamic_sql := '0';
+    END IF;
 
-    -- Remove the last ', ' from comparison_json
-    comparison_json := left(comparison_json, length(comparison_json) - 2);
+    -- Finalize comparison_results JSONB
+    IF comparison_json <> '' THEN
+        comparison_json := left(comparison_json, length(comparison_json) - 2);
+    ELSE
+        comparison_json := '''''';
+    END IF;
 
     -- Construct the final SQL query
     IF file_ids IS NOT NULL THEN
         dynamic_sql := format(
-                'SELECT *, ((%s) / NULLIF(%s, 0))::double precision AS total_score, jsonb_build_object(%s) AS comparison_results FROM files WHERE id = ANY ($1) ORDER BY total_score DESC;',
+                'SELECT *, ((%s) / NULLIF(%s, 0))::double precision AS total_score,
+                jsonb_build_object(%s) AS comparison_results
+                FROM files WHERE id = ANY ($1) ORDER BY total_score DESC;',
                 dynamic_sql, total_weight, comparison_json);
     ELSE
         dynamic_sql := format(
-                'SELECT *, ((%s) / NULLIF(%s, 0))::double precision AS total_score, jsonb_build_object(%s) AS comparison_results FROM files ORDER BY total_score DESC;',
+                'SELECT *, ((%s) / NULLIF(%s, 0))::double precision AS total_score,
+                jsonb_build_object(%s) AS comparison_results
+                FROM files ORDER BY total_score DESC;',
                 dynamic_sql, total_weight, comparison_json);
     END IF;
 
@@ -300,7 +311,10 @@ BEGIN
         FOR json_pair IN SELECT * FROM jsonb_each(json_data)
             LOOP
                 key := json_pair.key;
-                new_path := CASE WHEN parent_path = '' THEN key ELSE parent_path || '.' || key END;
+                new_path := CASE
+                                WHEN parent_path = '' THEN key
+                                ELSE parent_path || '.' || key
+                    END;
 
                 -- Recurse if the value is an object or array
                 IF jsonb_typeof(json_pair.value) = 'object' OR jsonb_typeof(json_pair.value) = 'array' THEN
@@ -310,12 +324,20 @@ BEGIN
                     flattened_metadata := flattened_metadata || jsonb_build_object(new_path, json_pair.value);
                 END IF;
             END LOOP;
+
         -- Handle JSON arrays
     ELSIF jsonb_typeof(json_data) = 'array' THEN
         FOR i IN 0 .. jsonb_array_length(json_data) - 1
             LOOP
-                new_path := parent_path || '[' || i || ']';
-                flattened_metadata := flattened_metadata || flatten_json(json_data -> i, new_path);
+                -- Check if the element in the array is an object
+                IF jsonb_typeof(json_data -> i) = 'object' THEN
+                    -- Recurse into the object with the index included in the path
+                    flattened_metadata := flattened_metadata || flatten_json(json_data -> i, parent_path);
+                ELSE
+                    -- Handle non-object values in arrays
+                    new_path := parent_path || '[' || i || ']';
+                    flattened_metadata := flattened_metadata || flatten_json(json_data -> i, new_path);
+                END IF;
             END LOOP;
     ELSE
         -- It's a primitive value (string, number, boolean, etc.)
@@ -339,6 +361,7 @@ DECLARE
     samples            JSONB := '{}';
     types              JSONB := '{}';
     path               TEXT;
+    simplified_path    TEXT; -- To hold the path without array indices
     value              JSONB; -- Keeping value as JSONB to preserve type
     current_occurrence INT;
     value_type         TEXT;
@@ -352,34 +375,37 @@ BEGIN
             -- Loop through each key-value pair in the flattened metadata (preserving types)
             FOR path, value IN SELECT * FROM jsonb_each(flattened_metadata)
                 LOOP
+                    -- Remove array indices from the path
+                    simplified_path := regexp_replace(path, '\[\d+\]', '', 'g');
+
                     -- Skip empty paths
-                    IF path IS NOT NULL AND path <> '' THEN
+                    IF simplified_path IS NOT NULL AND simplified_path <> '' THEN
                         -- Infer the type of the value and store it in `types`
                         value_type := jsonb_typeof(value);
 
-                        -- Count occurrences of each path
-                        IF occurrence_counter ? path THEN
+                        -- Count occurrences of each simplified path
+                        IF occurrence_counter ? simplified_path THEN
                             -- Get current occurrence count, cast to integer, increment, and set back
-                            current_occurrence := (occurrence_counter ->> path)::INT;
-                            occurrence_counter :=
-                                    jsonb_set(occurrence_counter, array [path], to_jsonb(current_occurrence + 1));
+                            current_occurrence := (occurrence_counter ->> simplified_path)::INT;
+                            occurrence_counter := jsonb_set(occurrence_counter, array [simplified_path],
+                                                            to_jsonb(current_occurrence + 1));
                         ELSE
-                            occurrence_counter := jsonb_set(occurrence_counter, array [path], '1'::jsonb);
+                            occurrence_counter := jsonb_set(occurrence_counter, array [simplified_path], '1'::jsonb);
                             -- Store the first occurrence of the type
-                            types := jsonb_set(types, array [path], to_jsonb(value_type));
+                            types := jsonb_set(types, array [simplified_path], to_jsonb(value_type));
                         END IF;
 
-                        -- Store a sample of up to 2 unique values for each path
-                        IF samples ? path THEN
+                        -- Store a sample of up to 2 unique values for each simplified path
+                        IF samples ? simplified_path THEN
                             -- Add value to sample array if not already present and if there are fewer than 2 values
-                            IF jsonb_array_length(samples -> path) < 2 AND
-                               NOT (samples -> path @> jsonb_build_array(value)) THEN
-                                samples := jsonb_set(samples, array [path],
-                                                     (samples -> path || jsonb_build_array(value))::jsonb);
+                            IF jsonb_array_length(samples -> simplified_path) < 2 AND
+                               NOT (samples -> simplified_path @> jsonb_build_array(value)) THEN
+                                samples := jsonb_set(samples, array [simplified_path],
+                                                     (samples -> simplified_path || jsonb_build_array(value))::jsonb);
                             END IF;
                         ELSE
                             -- Initialize the sample with the first value
-                            samples := jsonb_set(samples, array [path], jsonb_build_array(value));
+                            samples := jsonb_set(samples, array [simplified_path], jsonb_build_array(value));
                         END IF;
                     END IF;
                 END LOOP;

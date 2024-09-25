@@ -23,6 +23,7 @@ import {
   getChatCollectionCreatorByCollection
 } from "@/db/collections"
 import { getPublicProfileByUserId } from "@/db/profile"
+import {toast} from "sonner";
 
 interface ChatUIProps {}
 
@@ -107,43 +108,51 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
         computationally more demanding as we are building the state for a single
         cohesive UI - chat
       */
-      let messagesFetched = await fetchMessages(chatID)
-      if (chatID !== (params.chatid ?? useStore.getState().selectedChat?.id)) {
-        // Outdated chat fetch
-        return
+      try {
+        let messagesFetched = await fetchMessages(chatID)
+        if (chatID !== (params.chatid ?? useStore.getState().selectedChat?.id)) {
+          // Outdated chat fetch
+          return
+        }
+        let chatFetched = await fetchChat(chatID)
+        if (
+          !chatFetched ||
+          chatID !== (params.chatid ?? useStore.getState().selectedChat?.id)
+        ) {
+          // Outdated chat fetch
+          return
+        }
+
+        setChatImages(messagesFetched.images)
+        setChatFileItems(messagesFetched.uniqueFileItems ?? [])
+        setChatFiles(
+          messagesFetched.chatFiles
+            ? createChatFilesState(messagesFetched.chatFiles)
+            : []
+        )
+        setShowFilesDisplay(messagesFetched.filesDisplay)
+        setChatMessages(messagesFetched.fetchedChatMessages)
+
+        setSelectedChat(chatFetched.selectedChat)
+        setChatSettings(chatFetched.chatSettings)
+        setUseRetrieval(chatFetched.useRetrieval)
+        setSelectedAssistant(chatFetched.selectedAssistant)
+        setSelectedTools(chatFetched.selectedTools)
+        setSelectedCollectionCreatorChat(
+          chatFetched.selectedCollectionCreatorChat
+        )
+        setCollectionRetrievalActive(chatFetched.collectionRetrievalActive)
+        setCollectionCreatorChat(chatFetched.collectionCreatorChat)
+
+        scrollToBottom()
+        setIsAtBottom(true)
+      } catch (e) {
+        console.log("Error loading chat:", e)
+        toast.error(
+          `Chat not found!`
+        )
+        void handleNewChat()
       }
-      let chatFetched = await fetchChat(chatID)
-      if (
-        !chatFetched ||
-        chatID !== (params.chatid ?? useStore.getState().selectedChat?.id)
-      ) {
-        // Outdated chat fetch
-        return
-      }
-
-      setChatImages(messagesFetched.images)
-      setChatFileItems(messagesFetched.uniqueFileItems ?? [])
-      setChatFiles(
-        messagesFetched.chatFiles
-          ? createChatFilesState(messagesFetched.chatFiles)
-          : []
-      )
-      setShowFilesDisplay(messagesFetched.filesDisplay)
-      setChatMessages(messagesFetched.fetchedChatMessages)
-
-      setSelectedChat(chatFetched.selectedChat)
-      setChatSettings(chatFetched.chatSettings)
-      setUseRetrieval(chatFetched.useRetrieval)
-      setSelectedAssistant(chatFetched.selectedAssistant)
-      setSelectedTools(chatFetched.selectedTools)
-      setSelectedCollectionCreatorChat(
-        chatFetched.selectedCollectionCreatorChat
-      )
-      setCollectionRetrievalActive(chatFetched.collectionRetrievalActive)
-      setCollectionCreatorChat(chatFetched.collectionCreatorChat)
-
-      scrollToBottom()
-      setIsAtBottom(true)
     }
 
     if (chatID) {

@@ -1,6 +1,6 @@
-import { Database } from "@/supabase/types"
-import { createClient as createClientAdmin } from "@supabase/supabase-js"
-import { transformTextToBasicRules } from "@/lib/retrieval/processing/multiple"
+import {Database} from "@/supabase/types"
+import {createClient as createClientAdmin} from "@supabase/supabase-js"
+import {transformTextToBasicRules} from "@/lib/retrieval/processing/multiple"
 
 /* In python it is:
 AttributeInfo(
@@ -43,15 +43,18 @@ export async function POST(request: Request) {
       }
     }
 
-    let apiCallObject = metadataInfo.data.map(item => {
-      return {
-        name: item.path,
-        description: `Here are some sample values for ${item.path}: ${item.sample
-          .filter(it => it.length > 0)
-          .join(", ")}`,
-        type: item.type
-      } as TargetApiTypeBasicRules
-    })
+
+    let apiCallObject = metadataInfo.data
+      .filter(item => item.occurrence > 1)
+      .map(item => {
+        return {
+          name: item.path,
+          description: `Here are some sample values for ${item.path}: ${item.sample
+            .filter(it => it && it.length > 0)
+            .join(", ")}`,
+          type: item.type
+        } as TargetApiTypeBasicRules
+      })
 
     let res = await transformTextToBasicRules(
       basicRuleGenerationRequest.comparisonText,
@@ -72,7 +75,7 @@ export async function POST(request: Request) {
     const errorMessage =
       error.error?.message || error?.message || "An unexpected error occurred"
     const errorCode = error.status || 500
-    return new Response(JSON.stringify({ message: errorMessage }), {
+    return new Response(JSON.stringify({message: errorMessage}), {
       status: errorCode
     })
   }

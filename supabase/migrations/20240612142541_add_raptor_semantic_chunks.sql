@@ -68,4 +68,4 @@ grant truncate on table "public"."file_items_attachable_content" to "service_rol
 
 grant update on table "public"."file_items_attachable_content" to "service_role";
 
-alter table "public"."files" add column "metadata" json;
+alter table "public"."files" add column "metadata" jsonb;

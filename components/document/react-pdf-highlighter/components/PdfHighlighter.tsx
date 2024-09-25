@@ -243,6 +243,9 @@ export class PdfHighlighter<T_HT extends IHighlight> extends PureComponent<
   }
 
   findOrCreateHighlightLayer(page: number) {
+    if (!this.viewer) {
+      return null
+    }
     const { textLayer } = this.viewer.getPageView(page - 1) || {}
 
     if (!textLayer) {
@@ -599,7 +602,7 @@ export class PdfHighlighter<T_HT extends IHighlight> extends PureComponent<
   debouncedAfterSelection: () => void = debounce(this.afterSelection, 500)
 
   toggleTextSelection(flag: boolean) {
-    if (!this.viewer.viewer) {
+    if (!this.viewer?.viewer) {
       return
     }
     this.viewer.viewer.classList.toggle(

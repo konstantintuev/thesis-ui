@@ -14,12 +14,6 @@ export const fetchHostedModels = async (profile: Tables<"profiles">) => {
       "file_retriever"
     ]
 
-    if (profile.use_azure_openai) {
-      providers.push("azure")
-    } else {
-      providers.push("openai")
-    }
-
     const response = await fetch("/api/keys")
 
     if (!response.ok) {
@@ -27,6 +21,12 @@ export const fetchHostedModels = async (profile: Tables<"profiles">) => {
     }
 
     const data = await response.json()
+
+    if (profile.use_azure_openai || data.isUsingEnvKeyMap["azure"]) {
+      providers.push("azure")
+    } else {
+      providers.push("openai")
+    }
 
     let modelsToAdd: LLM[] = []
 

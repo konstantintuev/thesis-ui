@@ -65,10 +65,13 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
 
   const { setChatMessages } = useMessageStore()
 
-  const [loading, setLoading] = useState(true)
-
   const workspaceLoaded = useRef<string | null>(null)
   const workspaceFetching = useRef<string | null>(null)
+
+  const [loading, setLoading] = useState(
+    workspaceLoaded.current !== workspaceId &&
+    workspaceFetching.current !== workspaceId
+  )
 
   useEffect(() => {
     ;(async () => {
@@ -109,7 +112,7 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
       }
       // We have lost state - rules is usually > 0
       if (rules.length === 0) {
-        workspaceLoaded.current = null
+        //workspaceLoaded.current = null
       }
       if (
         workspaceLoaded.current === workspaceId ||
