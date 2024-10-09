@@ -179,6 +179,7 @@ export const BasicRuleInput: FC<{
               <Label>{`Rule ${comparisonIsJson ? "JSON" : "Plain Text"}`}</Label>
 
               <TextareaAutosize
+                disableAutocorrect={true}
                 placeholder={`Rule ${comparisonIsJson ? "json" : "plain text"}...`}
                 value={comparison}
                 onValueChange={val => !isLoading && setComparison(val)}

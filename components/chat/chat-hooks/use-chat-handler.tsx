@@ -9,6 +9,7 @@ import { Tables } from "@/supabase/types"
 import {
   ChatMessage,
   ChatPayload,
+  ChatSettings,
   isModelIdFileRetriever,
   LLMID,
   ModelProvider
@@ -98,7 +99,7 @@ export const useChatHandler = () => {
     }
   }, [isPromptPickerOpen, isFilePickerOpen, isToolPickerOpen])
 
-  const handleNewChat = async (reuseChatSettings: any = false) => {
+  const handleNewChat = async (chatSettingsToUse?: any) => {
     if (!selectedWorkspace) return
 
     setUserInput("")
@@ -183,15 +184,9 @@ export const useChatHandler = () => {
           | "colbert"
       })
     } else if (selectedWorkspace) {
-      // We passed something random -> reuseChatSettings is false
-      if (typeof reuseChatSettings !== "boolean") {
-        reuseChatSettings = false
-      }
-      // We passed boolean now for sure -> use the boolean
-      if (!reuseChatSettings) {
-        // We reset the chat settings to file retriever as this is the default usage
-        //    ...otherwise the last chat settings will be used again
-        setChatSettings({
+      // We passed something random -> use default chat settings
+      if (!(chatSettingsToUse as ChatSettings)?.model) {
+        chatSettingsToUse = {
           model: (selectedWorkspace?.default_model ||
             "file_retriever") as LLMID,
           prompt:
@@ -208,8 +203,11 @@ export const useChatHandler = () => {
               | "openai"
               | "local"
               | "colbert") || "local"
-        })
+        }
       }
+      // We reset the chat settings to file retriever as this is the default usage
+      //    ...otherwise the last chat settings will be used again
+      setChatSettings(chatSettingsToUse)
     }
 
     return router.push(`/${selectedWorkspace.id}/chat`)

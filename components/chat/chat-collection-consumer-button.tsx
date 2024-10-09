@@ -68,9 +68,7 @@ export const ChatCollectionConsumerButton: FC<
               "group relative flex size-[30px] items-center justify-between overflow-hidden rounded p-0 py-1 transition-all duration-300 ease-in-out hover:w-[154px] hover:px-2"
             }
             onClick={async () => {
-              void chatHandler.handleNewChat(true)
-              setSelectedCollectionCreatorChat(selectedChat)
-              setChatSettings({
+              await chatHandler.handleNewChat({
                 model: (selectedWorkspace?.default_chat_model ||
                   "gpt-4-vision-preview") as LLMID,
                 prompt:
@@ -89,6 +87,7 @@ export const ChatCollectionConsumerButton: FC<
                     | "local"
                     | "colbert") || "local"
               })
+              setSelectedCollectionCreatorChat(selectedChat)
             }}
           >
             <IconFileImport

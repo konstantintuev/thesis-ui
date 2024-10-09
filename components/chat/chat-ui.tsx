@@ -71,8 +71,6 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
   //   as noNeedToUpdateData is activated!
   const chatID = (params.chatid as string) ?? selectedChat?.id
 
-  const noNeedToUpdateData =
-    chatMessages.length > 0 && chatMessages[0].message.chat_id === chatID
   const [loading, setLoading] = useState(false)
 
   const initialFetchState = useRef<{
@@ -81,9 +79,9 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
   }>({})
 
   useEffect(() => {
-    if (noNeedToUpdateData) {
-      chatMessages
-      chatSettings
+    console.log(`Loading for chatId(${chatID}) param: ${params.chatid}, selectedChat: ${selectedChat?.id}`)
+    if (chatID && chatMessages[0]?.message?.chat_id === chatID) {
+      console.log(`NoNeedToUpdateData for chat ${chatID}`)
       return
     }
 
@@ -92,9 +90,11 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
       initialFetchState.current.loaded === chatID ||
       initialFetchState.current.fetching === chatID
     ) {
+      console.log(`Skipped reloading chat ${chatID}`)
       return
     }
     setLoading(true)
+    console.log(`Loading chat ${chatID}`)
     initialFetchState.current.loaded = undefined
     initialFetchState.current.fetching = chatID
 
@@ -112,6 +112,7 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
         let messagesFetched = await fetchMessages(chatID)
         if (chatID !== (params.chatid ?? useStore.getState().selectedChat?.id)) {
           // Outdated chat fetch
+          console.log("Outdated chat fetch 1")
           return
         }
         let chatFetched = await fetchChat(chatID)
@@ -120,6 +121,7 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
           chatID !== (params.chatid ?? useStore.getState().selectedChat?.id)
         ) {
           // Outdated chat fetch
+          console.log("Outdated chat fetch 2")
           return
         }
 
@@ -165,7 +167,7 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
     }
     initialFetchState.current.loaded = chatID
     initialFetchState.current.fetching = undefined
-  }, [chatSettings])
+  }, [chatID])
 
   const fetchMessages = async (chatID: string) => {
     const fetchedMessages = await getMessagesByChatId(chatID)

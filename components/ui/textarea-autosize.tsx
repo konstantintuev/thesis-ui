@@ -17,6 +17,7 @@ interface TextareaAutosizeProps {
   onPaste?: (event: React.ClipboardEvent) => void
   onCompositionStart?: (event: React.CompositionEvent) => void
   onCompositionEnd?: (event: React.CompositionEvent) => void
+  disableAutocorrect?: boolean
 }
 
 export const TextareaAutosize: FC<TextareaAutosizeProps> = ({
@@ -31,7 +32,8 @@ export const TextareaAutosize: FC<TextareaAutosizeProps> = ({
   onKeyDown = () => {},
   onPaste = () => {},
   onCompositionStart = () => {},
-  onCompositionEnd = () => {}
+  onCompositionEnd = () => {},
+  disableAutocorrect
 }) => {
   return (
     <ReactTextareaAutosize
@@ -50,6 +52,10 @@ export const TextareaAutosize: FC<TextareaAutosizeProps> = ({
       onPaste={onPaste}
       onCompositionStart={onCompositionStart}
       onCompositionEnd={onCompositionEnd}
+      autoComplete={disableAutocorrect ? "off" : "on"}
+      autoCorrect={disableAutocorrect ? "off" : "on"}
+      autoCapitalize={disableAutocorrect ? "off" : "on"}
+      spellCheck={!disableAutocorrect}
     />
   )
 }
