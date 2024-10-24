@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { FC } from "react"
-import { ChatbotUISVG } from "../icons/chatbotui-svg"
+import { DokuHarmonieSVG } from "../icons/doku-harmonie-s-v-g"
 
 interface BrandProps {
   theme?: "dark" | "light"
@@ -17,10 +17,10 @@ export const Brand: FC<BrandProps> = ({ theme = "dark" }) => {
       rel="noopener noreferrer"
     >
       <div className="mb-2">
-        <ChatbotUISVG scale={0.3} />
+        <DokuHarmonieSVG scale={0.6} />
       </div>
 
-      <div className="text-4xl font-bold tracking-wide">Chatbot UI</div>
+      <div className="text-4xl font-bold tracking-wide">DokuHarmonie</div>
     </Link>
   )
 }
