@@ -1,4 +1,4 @@
-import { ChatbotUISVG } from "@/components/icons/chatbotui-svg"
+import { DokuHarmonieSVG } from "@/components/icons/doku-harmonie-s-v-g"
 import { IconArrowRight } from "@tabler/icons-react"
 import Link from "next/link"
 import {redirect} from "next/navigation"
@@ -8,7 +8,7 @@ import {Database} from "@/supabase/types";
 
 export default async function HomePage() {
 
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -40,7 +40,7 @@ export default async function HomePage() {
   return (
     <div className="flex size-full flex-col items-center justify-center">
       <div>
-        <ChatbotUISVG scale={0.3} />
+        <DokuHarmonieSVG scale={0.3} />
       </div>
 
       <div className="mt-2 text-4xl font-bold">Chatbot UI</div>
