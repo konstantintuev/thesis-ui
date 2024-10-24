@@ -84,6 +84,7 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
   }, [])
 
   useEffect(() => {
+    console.log("LOAD WORKSPACE STATE")
     ;(async () => await fetchWorkspaceData(workspaceId, workspaces))()
   }, [workspaceId, workspaces])
 
@@ -108,11 +109,12 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
   ) => {
     try {
       if (!workspaceId || workspaces.length === 0) {
+        console.log("workspaceId:", workspaceId, "workspaces:", workspaces)
         return
       }
       // We have lost state - rules is usually > 0
       if (rules.length === 0) {
-        //workspaceLoaded.current = null
+        workspaceLoaded.current = null
       }
       if (
         workspaceLoaded.current === workspaceId ||
@@ -125,6 +127,32 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
 
       const workspace = await getWorkspaceById(workspaceId)
       setSelectedWorkspace(workspace)
+
+      const chats = await getChatsByWorkspaceId(workspaceId, workspaces)
+      const folders = await getFoldersByWorkspaceId(workspaceId, workspaces)
+      const modelData = await getModelWorkspacesByWorkspaceId(workspaceId)
+      setFolders(folders)
+      setChats(chats)
+      setModels(modelData.models)
+      // Really important as async functions are out of state
+      if (!chatSettings?.model && !useStore.getState().chatSettings?.model) {
+        setChatSettings({
+          model: (workspace?.default_model || "gpt-4-1106-preview") as LLMID,
+          prompt:
+            workspace?.default_prompt ||
+            "You are a friendly, helpful AI assistant.",
+          temperature: workspace?.default_temperature || 0.5,
+          contextLength: workspace?.default_context_length || 4096,
+          includeProfileContext: workspace?.include_profile_context || true,
+          includeWorkspaceInstructions:
+            workspace?.include_workspace_instructions || true,
+          embeddingsProvider:
+            (workspace?.embeddings_provider as "openai" | "local" | "colbert") ||
+            "openai"
+        })
+      }
+
+      setLoading(false)
 
       const assistantData = await getAssistantWorkspacesByWorkspaceId(workspaceId)
       setAssistants(assistantData.assistants)
@@ -163,12 +191,8 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
         }
       }
 
-      const chats = await getChatsByWorkspaceId(workspaceId, workspaces)
-
       const collectionData =
         await getCollectionWorkspacesByWorkspaceId(workspaceId)
-
-      const folders = await getFoldersByWorkspaceId(workspaceId, workspaces)
 
       const fileData = await getFileWorkspacesByWorkspaceId(workspaceId)
 
@@ -178,37 +202,14 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
 
       const toolData = await getToolWorkspacesByWorkspaceId(workspaceId)
 
-      const modelData = await getModelWorkspacesByWorkspaceId(workspaceId)
-
       const rulesLocal = await getRules()
 
-      setChats(chats)
       setCollections(collectionData ?? [])
-      setFolders(folders)
       setFiles(fileData ?? [])
       setPresets(presetData.presets)
       setPrompts(promptData.prompts)
       setTools(toolData.tools)
-      setModels(modelData.models)
       setRules(rulesLocal)
-
-      // Really important as async functions are out of state
-      if (!chatSettings?.model && !useStore.getState().chatSettings?.model) {
-        setChatSettings({
-          model: (workspace?.default_model || "gpt-4-1106-preview") as LLMID,
-          prompt:
-            workspace?.default_prompt ||
-            "You are a friendly, helpful AI assistant.",
-          temperature: workspace?.default_temperature || 0.5,
-          contextLength: workspace?.default_context_length || 4096,
-          includeProfileContext: workspace?.include_profile_context || true,
-          includeWorkspaceInstructions:
-            workspace?.include_workspace_instructions || true,
-          embeddingsProvider:
-            (workspace?.embeddings_provider as "openai" | "local" | "colbert") ||
-            "openai"
-        })
-      }
 
       setLoading(false)
       workspaceLoaded.current = workspaceId

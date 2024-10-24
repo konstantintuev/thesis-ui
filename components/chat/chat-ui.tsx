@@ -93,7 +93,6 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
       console.log(`Skipped reloading chat ${chatID}`)
       return
     }
-    setLoading(true)
     console.log(`Loading chat ${chatID}`)
     initialFetchState.current.loaded = undefined
     initialFetchState.current.fetching = chatID
@@ -113,6 +112,11 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
         if (chatID !== (params.chatid ?? useStore.getState().selectedChat?.id)) {
           // Outdated chat fetch
           console.log("Outdated chat fetch 1")
+          return
+        }
+        if (messagesFetched.fetchedChatMessages.length === 0) {
+          // new chat
+          setLoading(false)
           return
         }
         let chatFetched = await fetchChat(chatID)
@@ -171,6 +175,16 @@ export const ChatUI: FC<ChatUIProps> = ({}) => {
 
   const fetchMessages = async (chatID: string) => {
     const fetchedMessages = await getMessagesByChatId(chatID)
+    if (fetchedMessages.length === 0) {
+      return {
+        images: [] as any[],
+        uniqueFileItems: [] as any[],
+        chatFiles: undefined,
+        filesDisplay: false,
+        fetchedChatMessages: [] as any[]
+      }
+    }
+    setLoading(true)
     let chatFiles = null
     let uniqueFileItems = null
     let images: MessageImage[] = []

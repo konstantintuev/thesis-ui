@@ -6,16 +6,16 @@ import "./globals.css"
 import { RootLayoutComponent } from "@/components/root-layout"
 
 const inter = Inter({ subsets: ["latin"] })
-const APP_NAME = "Chatbot UI"
-const APP_DEFAULT_TITLE = "Chatbot UI"
-const APP_TITLE_TEMPLATE = "%s - Chatbot UI"
-const APP_DESCRIPTION = "Chabot UI PWA!"
+const APP_NAME = "DokuHarmonie"
+const APP_DEFAULT_TITLE = "DokuHarmonie"
+const APP_TITLE_TEMPLATE = "%s - DokuHarmonie"
+const APP_DESCRIPTION = "DokuHarmonie PWA!"
 
 interface RootLayoutProps {
   children: ReactNode
-  params: {
+  params: Promise<{
     locale: string
-  }
+  }>
 }
 
 export const metadata: Metadata = {
@@ -57,10 +57,13 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: "#000000"
 }
-export default function RootLayout({
+export default async function RootLayout({
   children,
-  params: { locale }
+  params
 }: RootLayoutProps) {
+  const {
+    locale
+  } = await params
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
