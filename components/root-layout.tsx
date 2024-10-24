@@ -1,6 +1,6 @@
-"use client"
+"use server"
 
-import { ReactNode, useEffect, useState } from "react"
+import { ReactNode } from "react"
 
 import initTranslations from "@/lib/i18n"
 import { Providers } from "@/components/utility/providers"
@@ -8,6 +8,9 @@ import TranslationsProvider from "@/components/utility/translations-provider"
 import { Toaster } from "@/components/ui/sonner"
 import Loading from "@/app/[locale]/loading"
 import { GlobalStateInit } from "@/components/utility/global-state-init"
+import {cookies} from "next/headers";
+import {createServerClient} from "@supabase/ssr";
+import { Database } from "@/supabase/types"
 
 interface RootLayoutProps {
   children: ReactNode
@@ -18,21 +21,11 @@ interface RootLayoutProps {
 
 const i18nNamespaces = ["translation"]
 
-export function RootLayoutComponent({
+export async function RootLayoutComponent({
   children,
   params: { locale }
 }: RootLayoutProps) {
-  const [translations, setTranslations] = useState<any>(undefined)
-
-  useEffect(() => {
-    ;(async function () {
-      try {
-        setTranslations(await initTranslations(locale, i18nNamespaces))
-      } catch (e) {
-        console.log(e)
-      }
-    })()
-  }, [])
+  const translations = await initTranslations(locale, i18nNamespaces)
 
   if (!translations) {
     return (
@@ -41,6 +34,20 @@ export function RootLayoutComponent({
       </div>
     )
   }
+
+  const cookieStore = await cookies()
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value
+        }
+      }
+    }
+  )
+  const session = (await supabase.auth.getSession()).data.session
 
   return (
     <Providers attribute="class" defaultTheme="light">
@@ -51,7 +58,7 @@ export function RootLayoutComponent({
       >
         <Toaster richColors position="top-center" duration={3000} />
         <div className="bg-background text-foreground flex h-dvh flex-col items-center overflow-x-auto">
-          <GlobalStateInit>{children}</GlobalStateInit>
+          {session ? <GlobalStateInit>{children}</GlobalStateInit> : children}
         </div>
       </TranslationsProvider>
     </Providers>
