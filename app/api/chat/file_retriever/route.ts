@@ -435,7 +435,7 @@ export async function POST(request: Request) {
                     `\n\`\`\`\n\n` +
                     `**Relevance Score**: ${totalScore}% ` +
                     `(**Semantic Search Score**: ${avgChunkRelevance}%; **Metadata Rules Score**: ${basicRuleRelevance}%; **Advanced Rules Score**: ${advRuleRelevance}%)\n\n` +
-                    "<details>\n" +
+                    `<details id="${crypto.randomUUID()}">\n` +
                     "<summary>Company rule breakdown:</summary>\n\n" +
                     `\`\`\`chatfilecompanyrules\n${JSON.stringify(
                       {

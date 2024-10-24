@@ -44,6 +44,7 @@ export const GlobalStateInit: FC<GlobalStateProps> = ({ children }) => {
   const startDataFetching = useRef<boolean>(false)
 
   useEffect(() => {
+    console.log("LOAD GLOBAL STATE")
     ;(async () => {
       // Profile usually is defined -> we might have lost state
       if (!profile) {

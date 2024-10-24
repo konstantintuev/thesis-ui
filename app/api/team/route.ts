@@ -39,7 +39,7 @@ export async function GET(request: Request) {
     const requestUrl = new URL(request.url)
     const teamID = requestUrl.searchParams.get("teamID")
 
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const supabase = createClient(cookieStore)
 
     let userTeams = await getTeams(supabase)
@@ -94,7 +94,7 @@ export async function POST(request: Request) {
     const teamChangeRequest = (await request.json()) as TeamApiUpdate
     const newEmailList = splitEmails(teamChangeRequest.emails)
 
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const supabase = createClient(cookieStore)
     const user = (await supabase.auth.getUser()).data.user
     if (!user) {
@@ -231,7 +231,7 @@ export async function PUT(request: Request) {
     const teamAddRequest = (await request.json()) as TeamApiUpdate
     const newEmailList = splitEmails(teamAddRequest.emails)
 
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const supabase = createClient(cookieStore)
     const user = (await supabase.auth.getUser()).data.user
     if (!user) {
