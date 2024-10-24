@@ -1,4 +1,4 @@
-import React, { createContext, FC } from "react"
+import React, {createContext, FC, useMemo, useState} from "react"
 import remarkGfm from "remark-gfm"
 import rehypeKatex from "rehype-katex"
 import remarkMath from "remark-math"
@@ -9,18 +9,23 @@ import { MessageMarkdownMemoized } from "./message-markdown-memoized"
 import { jsonStringToRetrieverMessageFileHeader } from "@/components/messages/retriever-message-file-header"
 import ExpandableText from "@/components/messages/expandable-text"
 import InfoTable from "@/components/messages/retriever-company-rules"
+import ExpandableDetails from "@/components/messages/expandable-details";
 
 interface MessageMarkdownProps {
   content: string
   enableReadMore: boolean
 }
 
-export const DetailsContext = createContext(false)
-
 export const MessageMarkdown: FC<MessageMarkdownProps> = ({
   content,
   enableReadMore
 }) => {
+  const openItems = useMemo(() => {
+    return {} as {
+      [key: string]: boolean
+    }
+  }, [])
+
   return (
     <MessageMarkdownMemoized
       className="prose dark:prose-invert prose-p:leading-relaxed prose-pre:p-0 min-w-full space-y-6 break-words"
@@ -28,9 +33,7 @@ export const MessageMarkdown: FC<MessageMarkdownProps> = ({
       rehypePlugins={[rehypeKatex, rehypeRaw]}
       components={{
         details: ({ node, children, ...props }) => (
-          <DetailsContext.Provider value={true}>
-            <details {...props}>{children}</details>
-          </DetailsContext.Provider>
+          <ExpandableDetails openItems={openItems} {...props}>{children}</ExpandableDetails>
         ),
         summary: ({ node, children, ...props }) => (
           <summary {...props}>
@@ -38,10 +41,16 @@ export const MessageMarkdown: FC<MessageMarkdownProps> = ({
           </summary>
         ),
         p({ children, ...props }) {
+          let key= children?.toString() ?? ""
+          if (key.length === 0) {
+            return undefined
+          }
           return (
             <p className="mb-2 mt-0 last:mb-0">
               {enableReadMore ? (
-                <ExpandableText>{children}</ExpandableText>
+                <ExpandableText
+                  openItems={openItems}
+                >{children}</ExpandableText>
               ) : (
                 children
               )}

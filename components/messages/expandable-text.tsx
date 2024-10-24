@@ -1,34 +1,52 @@
 import React, { useContext, useMemo, useState } from "react"
-import { DetailsContext } from "@/components/messages/message-markdown"
+import {DetailsContext} from "@/components/messages/expandable-details";
 
 interface ExpandableTextProps {
   children: React.ReactNode
   maxChars?: number
+  openItems: {
+    [key: string]: boolean
+  }
 }
+
+export const getPlainText = (node: React.ReactNode): string => {
+  if (typeof node === "string") {
+    return node
+  }
+  if (React.isValidElement(node)) {
+    return getPlainText(node.props.children)
+  }
+  if (Array.isArray(node)) {
+    return node.map(getPlainText).join("")
+  }
+  return ""
+}
+
+// Thank you https://gist.github.com/jlevy/c246006675becc446360a798e2b2d781
+export const simpleHash = (str: string): string => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+  }
+  // Convert to 32bit unsigned integer in base 36 and pad with "0" to ensure length is 7.
+  return (hash >>> 0).toString(36).padStart(7, '0');
+};
 
 const ExpandableText: React.FC<ExpandableTextProps> = ({
   children,
+  openItems,
   maxChars = 112
 }) => {
-  const getPlainText = (node: React.ReactNode): string => {
-    if (typeof node === "string") {
-      return node
-    }
-    if (React.isValidElement(node)) {
-      return getPlainText(node.props.children)
-    }
-    if (Array.isArray(node)) {
-      return node.map(getPlainText).join("")
-    }
-    return ""
-  }
 
   const [isExpanded, setIsExpanded] = useState(false)
   const isInsideDetails = useContext(DetailsContext)
 
   const saveTruncationInfo = useMemo(() => {
+    const text = isInsideDetails ? "" : getPlainText(children)
     return {
-      plainText: isInsideDetails ? "" : getPlainText(children)
+      plainText: text,
+      key: simpleHash(text)
     }
   }, [children, isInsideDetails])
 
@@ -73,12 +91,13 @@ const ExpandableText: React.FC<ExpandableTextProps> = ({
   }
 
   const toggleExpansion = () => {
+    openItems[saveTruncationInfo.key] = !openItems[saveTruncationInfo.key]
     setIsExpanded(!isExpanded)
   }
 
   return (
     <div>
-      {isExpanded || !isTruncated ? children : truncateText(children, maxChars)}
+      {openItems[saveTruncationInfo.key] || !isTruncated ? children : truncateText(children, maxChars)}
 
       {isTruncated && " "}
       {isTruncated && (
@@ -86,7 +105,7 @@ const ExpandableText: React.FC<ExpandableTextProps> = ({
           onClick={toggleExpansion}
           className="mt-0 text-blue-500 hover:underline"
         >
-          {isExpanded ? "Show less" : "Read more"}
+          {openItems[saveTruncationInfo.key] ? "Show less" : "Read more"}
         </button>
       )}
     </div>
