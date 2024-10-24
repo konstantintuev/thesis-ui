@@ -127,10 +127,10 @@ details[open] summary {
 
 details:has(> table) {
   @apply m-0 p-0;
+}
 
-  summary {
-    @apply m-0;
-  }
+details:has(> table) summary {
+  @apply m-0;
 }
 
 details[open]:has(> table) summary {
