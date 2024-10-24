@@ -2,7 +2,6 @@
 
 import React, { Component } from "react"
 
-import { GlobalWorkerOptions, getDocument, version } from "pdfjs-dist"
 import type { PDFDocumentProxy } from "pdfjs-dist"
 
 interface Props {
@@ -32,7 +31,7 @@ export class PdfLoader extends Component<Props, State> {
   documentRef = React.createRef<HTMLElement>()
 
   componentDidMount() {
-    this.load()
+    this.loadPdfJs()
   }
 
   componentWillUnmount() {
@@ -42,8 +41,80 @@ export class PdfLoader extends Component<Props, State> {
     }
   }
 
+  loadPdfJs = () => {
+    const isLegacy = this.isOldWebkit()
+    const pdfJsUrl = isLegacy
+      ? 'https://unpkg.com/pdfjs-dist@3.10.111/legacy/build/pdf.js'  // Safari < 17 (legacy version)
+      : 'https://unpkg.com/pdfjs-dist@4.7.76/build/pdf.mjs'          // Latest version for other browsers
+
+    const workerUrl = isLegacy
+      ? 'https://unpkg.com/pdfjs-dist@3.10.111/legacy/build/pdf.worker.js'
+      : 'https://unpkg.com/pdfjs-dist@4.7.76/build/pdf.worker.mjs'
+
+    const viewerUrl = isLegacy
+      ? 'https://unpkg.com/pdfjs-dist@3.10.111/web/pdf_viewer.js'
+      : 'https://unpkg.com/pdfjs-dist@4.7.76/web/pdf_viewer.mjs'
+
+    if (window.pdfjsLib) {
+      this.load()
+      console.log("Skipped loading pdfjs...")
+      return
+    }
+    const scriptExists = document.querySelector(`script[src="${pdfJsUrl}"]`)
+    if (scriptExists) {
+      this.load()
+      console.log("Skipped loading pdfjs...")
+      return
+    }
+
+    const script: HTMLScriptElement = document.createElement('script')
+    script.src = pdfJsUrl;
+    if (!isLegacy) {
+      script.type = "module"
+      script.async = true
+    }
+
+    script.onload = () => {
+      console.log("LOADED pdfjs")
+      const pdfjsLib = window.pdfjsLib
+
+      pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+
+      const viewerScript: HTMLScriptElement = document.createElement('script')
+      viewerScript.src = viewerUrl
+      if (!isLegacy) {
+        viewerScript.type = "module"
+        viewerScript.async = true
+      }
+
+      viewerScript.onload = () => {
+        console.log("LOADED pdf viewer")
+        this.load()
+      };
+
+      document.body.appendChild(viewerScript)
+    };
+
+    document.body.appendChild(script)
+
+    // Add the css for the viewer before other css so we can override it
+    const link = document.createElement('link')
+    link.rel = 'stylesheet'
+    // Old css of pdf_viewer have issues (svg images to be loaded don't exist)
+    link.href = isLegacy
+      ? 'https://unpkg.com/pdfjs-dist@4.7.76/web/pdf_viewer.css'
+      : 'https://unpkg.com/pdfjs-dist@4.7.76/web/pdf_viewer.css';
+    const firstCss = document.head.querySelector('link[rel="stylesheet"]')
+
+    if (firstCss) {
+      document.head.insertBefore(link, firstCss)
+    } else {
+      document.head.appendChild(link)
+    }
+  };
+
   componentDidUpdate({ url }: Props) {
-    if (this.props.url !== url) {
+    if (this.props.url !== url && window.pdfjsLib) {
       this.load()
     }
   }
@@ -77,15 +148,6 @@ export class PdfLoader extends Component<Props, State> {
     const { pdfDocument: discardedDocument } = this.state
     this.setState({ pdfDocument: null, error: null })
 
-    GlobalWorkerOptions.workerSrc =
-      workerSrc ??
-      // TODO: next.js doesn't allow this for now - check in the future
-      // We want it as it allows you to use local pdfjs and is better for security
-      //new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString()
-      `//unpkg.com/pdfjs-dist@${version}/build/pdf.worker.min.mjs`
-
-    console.log("workerSrc", GlobalWorkerOptions.workerSrc)
-
     Promise.resolve()
       .then(() => discardedDocument?.destroy())
       .then(() => {
@@ -100,7 +162,7 @@ export class PdfLoader extends Component<Props, State> {
           cMapPacked
         }
 
-        return getDocument(document).promise.then(pdfDocument => {
+        return window.pdfjsLib.getDocument(document).promise.then(pdfDocument => {
           this.setState({ pdfDocument })
         })
       })
@@ -129,6 +191,27 @@ export class PdfLoader extends Component<Props, State> {
     }
 
     return null
+  }
+
+  // iOS 17 minimum for new PdfJS
+  // Thanks https://github.com/mdn/browser-compat-data/blob/main/browsers/safari.json
+  isOldWebkit() {
+    const userAgent = navigator.userAgent
+    const isWebKit = /AppleWebKit/.test(userAgent)
+
+    if (!isWebKit) {
+      return false
+    }
+
+    const webkitVersionMatch = userAgent.match(/AppleWebKit\/([\d.]+)/);
+    if (webkitVersionMatch && webkitVersionMatch[1]) {
+      const webkitVersion = webkitVersionMatch[1]
+      const majorVersion = parseInt(webkitVersion.split('.')[0], 10)
+
+      return majorVersion < 616
+    }
+
+    return false
   }
 }
 

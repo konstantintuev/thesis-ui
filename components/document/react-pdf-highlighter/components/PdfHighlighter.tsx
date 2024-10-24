@@ -1,11 +1,10 @@
 "use client"
 
-import "pdfjs-dist/web/pdf_viewer.css"
 import "../style/pdf_viewer.css"
 import "../style/PdfHighlighter.css"
 
 import debounce from "debounce"
-import type { PDFDocumentProxy } from "pdfjs-dist"
+import type { PDFDocumentProxy } from "pdfjs-dist/legacy/build/pdf.mjs"
 import type { EventBus, PDFViewer } from "pdfjs-dist/legacy/web/pdf_viewer.mjs"
 import React, {
   type PointerEventHandler,
@@ -170,7 +169,7 @@ export class PdfHighlighter<T_HT extends IHighlight> extends PureComponent<
 
   async init() {
     const { pdfDocument } = this.props
-    const pdfjs = await import("pdfjs-dist/web/pdf_viewer.mjs")
+    const pdfjs = window.pdfjsViewer
 
     const eventBus = new pdfjs.EventBus()
     const linkService = new pdfjs.PDFLinkService({
