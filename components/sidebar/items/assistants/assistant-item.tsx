@@ -29,7 +29,8 @@ export const AssistantItem: FC<AssistantItemProps> = ({ assistant }) => {
     temperature: assistant.temperature,
     contextLength: assistant.context_length,
     includeProfileContext: assistant.include_profile_context,
-    includeWorkspaceInstructions: assistant.include_workspace_instructions
+    includeWorkspaceInstructions: assistant.include_workspace_instructions,
+    embeddingsProvider: assistant.embeddings_provider
   })
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
   const [imageLink, setImageLink] = useState("")
@@ -137,7 +138,8 @@ export const AssistantItem: FC<AssistantItemProps> = ({ assistant }) => {
         model: assistantChatSettings.model,
         image_path: assistant.image_path,
         prompt: assistantChatSettings.prompt,
-        temperature: assistantChatSettings.temperature
+        temperature: assistantChatSettings.temperature,
+        embeddingsProvider: assistantChatSettings.embeddingsProvider
       }}
       renderInputs={(renderState: {
         startingAssistantFiles: Tables<"files">[]

@@ -89,6 +89,10 @@ export const SidebarCreateItem: FC<SidebarCreateItemProps> = ({
 
       const { file, ...rest } = createState
 
+      toast.error("Adding single files is not supported! Upload to collection!")
+
+      return false
+
       // TODO: create single file
       /*const createdFile = await createFileBasedOnExtension(
         file,

@@ -78,6 +78,12 @@ create policy "Select for authenticated and change for own"
     with check ((user_id = auth.uid()));
 
 
+-- Thank you o1 for helping me understand the different functions of jsonb in PosgreSQL,
+--   helping me with the recursive approach to the problem of aggregation,
+--   helping me formulate some of the comparators,
+--   helping me understand the concept of dynamic SQL,
+--   helping me restructure certain elements
+--   helping me find and fix certain errors
 CREATE OR REPLACE FUNCTION attribute_to_jsonpath(attribute TEXT) RETURNS TEXT AS
 $$
 DECLARE

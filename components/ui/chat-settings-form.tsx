@@ -322,9 +322,9 @@ const AdvancedContent: FC<AdvancedContentProps> = ({
               {profile?.use_azure_openai ? "Azure OpenAI" : "OpenAI"}
             </SelectItem>
 
-            {window.location.hostname === "localhost" && (
-              <SelectItem value="local">Local</SelectItem>
-            )}
+
+            <SelectItem value="local">Local - BGE-M3</SelectItem>
+
 
             <SelectItem value="colbert">Colbert</SelectItem>
           </SelectContent>
