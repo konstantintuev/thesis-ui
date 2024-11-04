@@ -5,6 +5,14 @@
   opacity: 1;
   mix-blend-mode: multiply;
   display: flex;
+
+  /* Disable default menu */
+  -webkit-touch-callout: none;
+  /* Allow text selection */
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
 }
 
 /* This requires clicking highlights twice to activate*/

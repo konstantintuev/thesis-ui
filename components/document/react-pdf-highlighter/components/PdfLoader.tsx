@@ -43,17 +43,21 @@ export class PdfLoader extends Component<Props, State> {
 
   loadPdfJs = () => {
     const isLegacy = this.isOldWebkit()
+    const newPdfJsVersion = "4.8.69"
+    const oldPdfJsVersion = "3.10.111"
     const pdfJsUrl = isLegacy
-      ? 'https://unpkg.com/pdfjs-dist@3.10.111/legacy/build/pdf.js'  // Safari < 17 (legacy version)
-      : 'https://unpkg.com/pdfjs-dist@4.7.76/build/pdf.mjs'          // Latest version for other browsers
+      ? `https://unpkg.com/pdfjs-dist@${oldPdfJsVersion}/legacy/build/pdf.js`  // Safari < 17 (legacy version)
+      : `https://unpkg.com/pdfjs-dist@${newPdfJsVersion}/build/pdf.mjs`          // Latest version for other browsers
+
+    console.log(`Loading ${isLegacy ? "legacy" : "new"} pdf.js -> ${pdfJsUrl}`)
 
     const workerUrl = isLegacy
-      ? 'https://unpkg.com/pdfjs-dist@3.10.111/legacy/build/pdf.worker.js'
-      : 'https://unpkg.com/pdfjs-dist@4.7.76/build/pdf.worker.mjs'
+      ? `https://unpkg.com/pdfjs-dist@${oldPdfJsVersion}/legacy/build/pdf.worker.js`
+      : `https://unpkg.com/pdfjs-dist@${newPdfJsVersion}/build/pdf.worker.mjs`
 
     const viewerUrl = isLegacy
-      ? 'https://unpkg.com/pdfjs-dist@3.10.111/web/pdf_viewer.js'
-      : 'https://unpkg.com/pdfjs-dist@4.7.76/web/pdf_viewer.mjs'
+      ? `https://unpkg.com/pdfjs-dist@${oldPdfJsVersion}/web/pdf_viewer.js`
+      : `https://unpkg.com/pdfjs-dist@${newPdfJsVersion}/web/pdf_viewer.mjs`
 
     if (window.pdfjsLib) {
       this.load()
@@ -102,8 +106,8 @@ export class PdfLoader extends Component<Props, State> {
     link.rel = 'stylesheet'
     // Old css of pdf_viewer have issues (svg images to be loaded don't exist)
     link.href = isLegacy
-      ? 'https://unpkg.com/pdfjs-dist@4.7.76/web/pdf_viewer.css'
-      : 'https://unpkg.com/pdfjs-dist@4.7.76/web/pdf_viewer.css';
+      ? `https://unpkg.com/pdfjs-dist@${newPdfJsVersion}/web/pdf_viewer.css`
+      : `https://unpkg.com/pdfjs-dist@${newPdfJsVersion}/web/pdf_viewer.css`;
     const firstCss = document.head.querySelector('link[rel="stylesheet"]')
 
     if (firstCss) {
@@ -197,7 +201,7 @@ export class PdfLoader extends Component<Props, State> {
   // Thanks https://github.com/mdn/browser-compat-data/blob/main/browsers/safari.json
   isOldWebkit() {
     const userAgent = navigator.userAgent
-    const isWebKit = /AppleWebKit/.test(userAgent)
+    const isWebKit = /AppleWebKit/.test(userAgent) && !/Edge|Edg|OPR|Chrome/.test(userAgent);
 
     if (!isWebKit) {
       return false

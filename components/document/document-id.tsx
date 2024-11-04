@@ -131,6 +131,32 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
     })()
   }, [chatid, documentid, setChatFileHighlights, workspaceid])
 
+  const getSelectedText = () => {
+    const selection = window.getSelection()
+    if (!selection?.rangeCount) return ''
+
+    return selection.toString()
+  }
+
+  const selectedText = useMemo(() => ({
+    text: ""
+  }), [])
+
+  const getTextSelection = useCallback(() => {
+    selectedText.text = getSelectedText()
+  }, [selectedText])
+
+
+  useEffect(() => {
+    document.addEventListener('mouseup', getTextSelection)
+    document.addEventListener('touchend', getTextSelection)
+
+    return () => {
+      document.removeEventListener('mouseup', getTextSelection)
+      document.removeEventListener('touchend', getTextSelection)
+    }
+  }, [getTextSelection, selectedText]);
+
   const getHighlightById = useCallback(
     (id: string) => {
       return chatFileHighlights[documentid]?.find(
@@ -258,6 +284,7 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
                 transformSelection
               ) => (
                 <Tip
+                  selectedText={selectedText.text}
                   onOpen={() => {
                     editingCommentTooltipOpen.open = true
                     transformSelection()
@@ -302,6 +329,7 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
                       editingCommentTooltipOpen.open = true
                       setTip(highlight, highlight => (
                         <Tip
+                          selectedText={selectedText.text}
                           text={highlight?.comment?.text}
                           emoji={highlight?.comment?.emoji}
                           onOpen={() => {}}
@@ -345,6 +373,7 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
                       editingCommentTooltipOpen.open = true
                       setTip(highlight, highlight => (
                         <Tip
+                          selectedText={selectedText.text}
                           text={highlight?.comment?.text}
                           emoji={highlight?.comment?.emoji}
                           onOpen={() => {}}

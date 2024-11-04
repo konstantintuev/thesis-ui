@@ -12,6 +12,7 @@ interface State {
 }
 
 interface Props {
+  selectedText: string
   onConfirm: (comment: { text: string; emoji: string }) => void
   onOpen: () => void
   onUpdate?: () => void
@@ -61,20 +62,30 @@ export class Tip extends Component<Props, State> {
       <div className="Tip">
         {compact ? (
           <div
-            className="Tip__compact"
-            onClick={() => {
-              onOpen()
-              this.setState({ compact: false })
-            }}
-          >
-            Add highlight
+            className="Tip__compact">
+            <span
+              onClick={() => {
+                onOpen()
+                this.setState({compact: false})
+              }}>
+              Add highlight
+            </span>
+            <div className="mx-[5px] border-l border-gray-200"></div>
+            <span onClick={() => {
+              this.props?.closeTip?.()
+              console.log(`Copying "${this.props.selectedText}"`)
+              if (!this.props.selectedText) return
+              navigator.clipboard.writeText(this.props.selectedText)
+            }}>
+              Copy
+            </span>
           </div>
         ) : (
           <form
             className="Tip__card dark:bg-white dark:text-black"
             onSubmit={event => {
               event.preventDefault()
-              onConfirm({ text, emoji })
+              onConfirm({text, emoji})
             }}
           >
             <h2

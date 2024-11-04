@@ -258,6 +258,14 @@ export class PdfHighlighter<T_HT extends IHighlight> extends PureComponent<
       e.clipboardData.setData("text/plain", selectedText)
     })
 
+    const isMobileDevice = /Mobi/i.test(window.navigator.userAgent)
+    if (isMobileDevice) {
+      // disable context menu on mobile to support highlights
+      textLayer.div.addEventListener('contextmenu', function (e: any) {
+        e.preventDefault()
+      }, false)
+    }
+
     return findOrCreateContainerLayer(
       textLayer.div,
       "PdfHighlighter__highlight-layer"
