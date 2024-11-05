@@ -144,18 +144,17 @@ export const DocumentUI: FC<DocumentUIProps> = ({}) => {
 
   const getTextSelection = useCallback(() => {
     selectedText.text = getSelectedText()
+    // console.log(`Selected: ${selectedText.text}`)
   }, [selectedText])
 
 
   useEffect(() => {
-    document.addEventListener('mouseup', getTextSelection)
-    document.addEventListener('touchend', getTextSelection)
+    document.addEventListener('selectionchange', getTextSelection)
 
     return () => {
-      document.removeEventListener('mouseup', getTextSelection)
-      document.removeEventListener('touchend', getTextSelection)
+      document.removeEventListener('selectionchange', getTextSelection)
     }
-  }, [getTextSelection, selectedText]);
+  }, [getTextSelection, selectedText])
 
   const getHighlightById = useCallback(
     (id: string) => {
