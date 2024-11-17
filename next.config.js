@@ -27,6 +27,13 @@ module.exports = withBundleAnalyzer(
         }
       ]
     },
-    serverExternalPackages: ["sharp", "onnxruntime-node"]
+    serverExternalPackages: ["sharp", "onnxruntime-node"],
+    webpack(config, {isServer}) {
+      if (isServer) {
+        // Disable minification for server-side code
+        config.optimization.minimize = false;
+      }
+      return config;
+    },
   })
 )

@@ -171,7 +171,7 @@ export async function buildFinalMessages(
     return {
       role: message.role,
       content,
-      rewrittenMessage: message.rewritten_message
+      rewrittenMessage: isModelIdFileRetriever(chatSettings.model) ? message.rewritten_message : undefined
     }
   })
 

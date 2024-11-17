@@ -1,5 +1,5 @@
 import { checkApiKey, getServerProfile } from "@/lib/server/server-chat-helpers"
-import { ChatSettings, LLMID } from "@/types"
+import {ChatSettings, isModelIdGroq, LLMID} from "@/types"
 import { OpenAIStream } from "ai"
 import OpenAI from "openai"
 import { createClient } from "@supabase/supabase-js"
@@ -21,6 +21,7 @@ import { groupChunks, retrieveFiles } from "@/lib/retrieval/retrieve-files"
 import { applyAdvancedFilters } from "@/app/api/chat/file_retriever/apply-advanced-filters"
 import { countOccurrences } from "@/lib/string-utils"
 import {rerankFilesMLServer} from "@/lib/retrieval/processing/multiple";
+import {getWorkspaceById} from "@/db/workspaces";
 
 export const runtime = "edge"
 
@@ -204,29 +205,44 @@ export async function POST(request: Request) {
 
     try {
       const profile = await getServerProfile()
+      const selectedWorkspace = await getWorkspaceById(workspaceId, supabaseAdmin)
 
-      checkApiKey(profile.azure_openai_api_key, "Azure OpenAI")
+      const selectedModel = (selectedWorkspace?.default_chat_model ||
+        "gpt-4-vision-preview") as LLMID
 
-      const ENDPOINT = profile.azure_openai_endpoint
-      const KEY = profile.azure_openai_api_key
-      const DEPLOYMENT_ID = profile.azure_openai_45_vision_id || ""
-      const model: LLMID = "gpt-4o"
+      let chatInstance: OpenAI
 
-      if (!ENDPOINT || !KEY || !DEPLOYMENT_ID) {
-        return new Response(
-          JSON.stringify({ message: "Azure resources not found" }),
-          {
-            status: 400
-          }
-        )
+      if (isModelIdGroq(selectedModel)) {
+        checkApiKey(profile.groq_api_key, "G")
+
+        // Groq is compatible with the OpenAI SDK
+        chatInstance = new OpenAI({
+          apiKey: profile.groq_api_key || "",
+          baseURL: "https://api.groq.com/openai/v1"
+        })
+      } else {
+        checkApiKey(profile.azure_openai_api_key, "Azure OpenAI")
+
+        const ENDPOINT = profile.azure_openai_endpoint
+        const KEY = profile.azure_openai_api_key
+        const DEPLOYMENT_ID = profile.azure_openai_45_vision_id || ""
+
+        if (!ENDPOINT || !KEY || !DEPLOYMENT_ID) {
+          return new Response(
+            JSON.stringify({message: "Azure resources not found"}),
+            {
+              status: 400
+            }
+          )
+        }
+
+        chatInstance = new OpenAI({
+          apiKey: KEY,
+          baseURL: `${ENDPOINT}/openai/deployments/${DEPLOYMENT_ID}`,
+          defaultQuery: {"api-version": "2023-12-01-preview"},
+          defaultHeaders: {"api-key": KEY}
+        })
       }
-
-      const azureOpenai = new OpenAI({
-        apiKey: KEY,
-        baseURL: `${ENDPOINT}/openai/deployments/${DEPLOYMENT_ID}`,
-        defaultQuery: { "api-version": "2023-12-01-preview" },
-        defaultHeaders: { "api-key": KEY }
-      })
 
       // for each file run summary and return streaming text response
       //  -> when the stream ends, replace with new stream of next file
@@ -366,8 +382,8 @@ export async function POST(request: Request) {
           )
 
           const generator = getStreamingResponses(
-            azureOpenai,
-            model,
+            chatInstance,
+            selectedModel,
             chatSettings,
             messagesArray
           )

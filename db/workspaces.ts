@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase/browser-client"
-import { TablesInsert, TablesUpdate } from "@/supabase/types"
+import {Database, TablesInsert, TablesUpdate} from "@/supabase/types"
+import {SupabaseClient} from "@supabase/supabase-js";
 
 export const getHomeWorkspaceByUserId = async (userId: string) => {
   const { data: homeWorkspace, error } = await supabase
@@ -16,8 +17,13 @@ export const getHomeWorkspaceByUserId = async (userId: string) => {
   return homeWorkspace.id
 }
 
-export const getWorkspaceById = async (workspaceId: string) => {
-  const { data: workspace, error } = await supabase
+export const getWorkspaceById = async (
+  workspaceId: string,
+  supabaseInstance?: SupabaseClient<Database>
+) => {
+  const { data: workspace, error } = await (
+    supabaseInstance ?? supabase
+  )
     .from("workspaces")
     .select("*")
     .eq("id", workspaceId)
