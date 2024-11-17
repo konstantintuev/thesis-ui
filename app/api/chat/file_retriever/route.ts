@@ -102,7 +102,7 @@ export async function POST(request: Request) {
     )
 
     if (chatSettings.embeddingsProvider !== "colbert") {
-      mostSimilarChunks = await rerankFilesMLServer(fileQuery, mostSimilarChunks)
+      //mostSimilarChunks = await rerankFilesMLServer(fileQuery, mostSimilarChunks)
     }
 
     let filesFound: ExtendedFileForSearch[]
@@ -212,7 +212,23 @@ export async function POST(request: Request) {
 
       let chatInstance: OpenAI
 
-      if (isModelIdGroq(selectedModel)) {
+      // custom check
+      if (selectedModel.includes("/")) {
+        const {data: customModel, error} = await supabaseAdmin
+          .from("models")
+          .select("*")
+          .eq("model_id", selectedModel)
+          .single()
+
+        if (!customModel) {
+          throw new Error(error.message)
+        }
+
+        chatInstance = new OpenAI({
+          apiKey: customModel.api_key || "",
+          baseURL: customModel.base_url
+        })
+      } else if (isModelIdGroq(selectedModel)) {
         checkApiKey(profile.groq_api_key, "G")
 
         // Groq is compatible with the OpenAI SDK
@@ -569,6 +585,8 @@ export async function POST(request: Request) {
       })
     }
   } catch (error: any) {
+    console.error("File retriever error:", error)
+    console.trace()
     const errorMessage =
       error.error?.message || error?.message || "An unexpected error occurred"
     const errorCode = error.status || 500
