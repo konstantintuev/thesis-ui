@@ -3,7 +3,7 @@ export const handleRewriteQueryMLServer = async (
   previousUserMessages: string[]
 ) => {
   const response = await fetch(
-    "http://127.0.0.1:8000/file_processing/rewrite_query",
+    `${process.env["ML_SERVER_URL"]}/query_processor/rewrite_query`,
     {
       method: "POST",
       body: JSON.stringify({

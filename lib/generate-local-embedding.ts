@@ -19,7 +19,7 @@ export async function generateLocalEmbedding(content: string) {
 
 export async function generateBgeLocalEmbedding(content: string) {
   let openai = new OpenAI({
-    baseURL: `http://127.0.0.1:8000/file_processing`
+    baseURL: `${process.env["ML_SERVER_URL"]}/file_processing`
   })
   const response = await openai.embeddings.create({
     model: "default",

@@ -63,7 +63,7 @@ export const applyAdvancedFilters = async (
           relevantFile.chunks = fileChunks.slice(0, 4) ?? []
 
           const response = await fetch(
-            `http://127.0.0.1:8000/file_processing/ask_file`,
+            `${process.env["ML_SERVER_URL"]}/query_processor/ask_file`,
             {
               method: "POST",
               body: JSON.stringify({

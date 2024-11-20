@@ -20,7 +20,6 @@ import { refinedPrompt } from "@/app/api/chat/file_retriever/retriever-prompts"
 import { groupChunks, retrieveFiles } from "@/lib/retrieval/retrieve-files"
 import { applyAdvancedFilters } from "@/app/api/chat/file_retriever/apply-advanced-filters"
 import { countOccurrences } from "@/lib/string-utils"
-import {rerankFilesMLServer} from "@/lib/retrieval/processing/multiple";
 import {getWorkspaceById} from "@/db/workspaces";
 
 export const runtime = "edge"
@@ -93,7 +92,7 @@ export async function POST(request: Request) {
       supabaseAdmin,
       profile,
       // Get more if we need to rerank
-      chatSettings.embeddingsProvider === "colbert" ? 100 : 180
+      chatSettings.embeddingsProvider === "colbert" ? 100 : 120
     )
 
     let mostSimilarChunks = await addAttachableContent(
@@ -161,6 +160,7 @@ export async function POST(request: Request) {
       .filter(file => file.score > 0.09)
       // Reverse sort whole file relevance score
       .sort((a, b) => b.score - a.score)
+      .slice(0, 5)
 
     const { data: currentChatFiles } = await supabaseAdmin
       .from("chat_files")
@@ -191,7 +191,7 @@ export async function POST(request: Request) {
       })
     }
 
-    //TODO: sometimes files are not added to chat_files - e.g.
+    // FIXED: sometimes files are not added to chat_files - e.g.
     /*
 ```chatfilemetadata
 {"fileName":"dm_br0005_16_eng.pdf","fileId":"f2f68bd4-b644-4ae0-aa88-d8cee0ba2fee","duplicateReference":false}
@@ -386,7 +386,7 @@ export async function POST(request: Request) {
         chatSettings.embeddingsProvider,
         supabaseAdmin,
         profile,
-        filesFound.slice(0, 2).map(it => it.id)
+        filesFound.slice(0, 1).map(it => it.id)
       )
 
       const readableStream = new ReadableStream<Uint8Array>({
@@ -423,16 +423,16 @@ export async function POST(request: Request) {
               }
 
               // index: 1, 3 files => (2+1) =< 3 is ok
-              if ((index + 2) < filesFound.length) {
+              if ((index + 1) < filesFound.length) {
                 // We can do that for all files, but better do it file by file
                 //  as it invokes an LLM and takes time
                 advRuleAppliedFiles = {
                   ...advRuleAppliedFiles,
-                  [filesFound[index + 2].id]: applyAdvancedFilters(
+                  [filesFound[index + 1].id]: applyAdvancedFilters(
                     chatSettings.embeddingsProvider,
                     supabaseAdmin,
                     profile,
-                    [filesFound[index + 2].id]
+                    [filesFound[index + 1].id]
                   )
                 }
               }

@@ -34,7 +34,7 @@ export const processMultiple = async (
   formData.append("fileProcessor", fileProcessor)
 
   const response = await fetch(
-    "http://127.0.0.1:8000/file_processing/files_to_chunks",
+    `${process.env["ML_SERVER_URL"]}/file_processing/files_to_chunks`,
     {
       method: "POST",
       body: formData
@@ -188,7 +188,7 @@ export const searchFilesMLServer = async (
   }
 
   const response = await fetch(
-    `http://127.0.0.1:8000/file_processing/search_query`,
+    `${process.env["ML_SERVER_URL"]}/file_processing/search_query`,
     {
       method: "POST",
       body: JSON.stringify({
@@ -229,7 +229,7 @@ export const transformTextToBasicRules = async (
   attributes: TargetApiTypeBasicRules[]
 ): Promise<any> => {
   const response = await fetch(
-    `http://127.0.0.1:8000/file_processing/text_2_query`,
+    `${process.env["ML_SERVER_URL"]}/query_processor/text_2_query`,
     {
       method: "POST",
       body: JSON.stringify({
@@ -257,7 +257,7 @@ export const rerankFilesMLServer = async (
     rank: file.rank
   } as SearchResult))
   const response = await fetch(
-    `http://127.0.0.1:8000/file_processing/rerank_results`,
+    `${process.env["ML_SERVER_URL"]}/file_processing/rerank_results`,
     {
       method: "POST",
       body: JSON.stringify({

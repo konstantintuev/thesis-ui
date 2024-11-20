@@ -3,7 +3,7 @@ import { FileProcessor } from "@/types/file-processing"
 export const fetchFileProcessorsMLServer = async () => {
   try {
     const response = await fetch(
-      `http://127.0.0.1:8000/file_processing/available_processors`,
+      `${process.env["ML_SERVER_URL"]}/file_processing/available_processors`,
       {
         method: "GET"
       }

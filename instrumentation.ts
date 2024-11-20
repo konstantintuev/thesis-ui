@@ -131,7 +131,7 @@ function getMultipleFileUploadFromMLServer(supabaseAdmin: SupabaseClient<Databas
     (async function checkFileStatuesEvery30s() {
         try {
             const response = await fetch(
-                `http://127.0.0.1:8000/file_processing/retrieve_multiple_files_from_queue?multiple_files_uuid=${multiple_file_uuid}`,
+                `${process.env["ML_SERVER_URL"]}/file_processing/retrieve_multiple_files_from_queue?multiple_files_uuid=${multiple_file_uuid}`,
                 {
                     method: "GET"
                 }
